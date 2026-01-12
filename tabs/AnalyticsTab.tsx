@@ -28,7 +28,6 @@ const KPICard: React.FC<{
 
     return (
         <div className={`relative overflow-hidden p-8 rounded-[2.5rem] bg-gradient-to-br ${themes[theme]} text-white shadow-2xl hover:-translate-y-3 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group`}>
-            {/* Animated Background Decor */}
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-150 transition-transform duration-1000">
                 <Icon name={icon} className="w-40 h-40 transform translate-x-12 -translate-y-12 rotate-12" />
             </div>
@@ -66,8 +65,36 @@ export const AnalyticsTab: React.FC = () => {
     const { navigateToStudent } = useNavigation();
     
     const [viewMode, setViewMode] = useState<'Analytics' | 'Resources'>('Analytics');
+    const [chartType, setChartType] = useState<'radar' | 'bar'>('radar');
     const [executiveBriefing, setExecutiveBriefing] = useState<string>('');
     const [isGenerating, setIsGenerating] = useState(false);
+
+    // Dynamic stats calculation for graphs
+    const chartData = useMemo(() => {
+        const selectedPeriod = TestPeriod.Baseline; // Or track current midline/endline
+        const levelToUse = classProfile?.gradeLevel || '5';
+
+        return domains.map(domain => {
+            const bench = benchmarks.find(b => b.domain === domain && b.period === selectedPeriod && b.level_name === levelToUse);
+            
+            let total = 0;
+            let count = 0;
+            students.forEach(s => {
+                const latest = s.assessments.find(a => a.type === selectedPeriod);
+                const score = latest?.scores[domain as Domain];
+                if (score !== undefined) {
+                    total += score;
+                    count++;
+                }
+            });
+
+            return {
+                domain: domain as Domain,
+                score: count > 0 ? Math.round(total / count) : 0,
+                target: bench?.target_percent || 70
+            };
+        });
+    }, [students, domains, benchmarks, classProfile]);
 
     const stats = useMemo(() => {
         if (students.length === 0) return null;
@@ -94,7 +121,23 @@ export const AnalyticsTab: React.FC = () => {
         } catch (e) { setExecutiveBriefing('Briefing generation failed.'); } finally { setIsGenerating(false); }
     };
 
-    if (viewMode === 'Resources') return <ResourceBankTab />;
+    if (viewMode === 'Resources') {
+        return (
+            <div className="flex flex-col h-full">
+                <div className="bg-white px-6 py-4 border-b border-slate-100 flex items-center gap-4 shrink-0">
+                    <button onClick={() => setViewMode('Analytics')} className="flex items-center gap-2 text-indigo-600 font-bold text-xs uppercase tracking-widest hover:bg-indigo-50 px-3 py-2 rounded-xl transition-all">
+                        <Icon name="chevronLeft" className="w-4 h-4" />
+                        Back to Executive Dashboard
+                    </button>
+                    <div className="w-px h-6 bg-slate-100"></div>
+                    <span className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Library View</span>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                    <ResourceBankTab />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-6 md:p-10 space-y-10 max-w-[1600px] mx-auto pb-20">
@@ -199,44 +242,57 @@ export const AnalyticsTab: React.FC = () => {
                     </div>
                 </Card>
 
-                <Card variant="glass" className="p-8 bg-slate-900 text-white border-0 shadow-2xl relative overflow-hidden flex flex-col">
-                    <div className="absolute -bottom-10 -right-10 w-60 h-60 bg-indigo-500/10 rounded-full blur-[80px]"></div>
-                    <div className="relative z-10 flex-1 flex flex-col">
-                        <div className="mb-10">
-                            <h3 className="text-2xl font-black flex items-center gap-3 tracking-tight">
-                                <div className="p-2 bg-indigo-500/20 rounded-xl text-indigo-400">
-                                    <Icon name="benchmark" className="w-6 h-6" />
-                                </div>
-                                Academic Momentum
-                            </h3>
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-3 ml-12">Growth Leaderboard</p>
+                <div className="space-y-8 flex flex-col h-full">
+                    {/* Visualizer moved here for class-wide graphs focus */}
+                    <Card variant="glass" className="p-8 border-0 shadow-2xl flex-1 flex flex-col min-h-[400px]">
+                        <div className="flex justify-between items-center mb-6 shrink-0">
+                            <div>
+                                <h3 className="text-lg font-black text-slate-800">Domain Map</h3>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Class Balance vs Targets</p>
+                            </div>
+                            <div className="flex bg-slate-100 p-1 rounded-xl">
+                                <button onClick={() => setChartType('radar')} className={`px-3 py-1 text-[10px] font-black uppercase rounded-lg transition-all ${chartType === 'radar' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Radar</button>
+                                <button onClick={() => setChartType('bar')} className={`px-3 py-1 text-[10px] font-black uppercase rounded-lg transition-all ${chartType === 'bar' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Bar</button>
+                            </div>
                         </div>
-                        
-                        <div className="space-y-4 flex-1">
-                            {stats?.velocityLeaderboard.slice(0, 8).map((s, i) => (
-                                <div key={s.id} onClick={() => navigateToStudent(s.id)} className="flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-3xl cursor-pointer transition-all border border-white/5 hover:border-indigo-500/50 group/item">
-                                    <div className="flex items-center gap-4">
-                                        <span className="w-4 text-[10px] font-black text-slate-500 group-hover/item:text-indigo-400 transition-colors">0{i+1}</span>
-                                        <div className="w-12 h-12 rounded-2xl bg-white/10 p-0.5 overflow-hidden">
-                                            <img src={s.photoUrl} className="w-full h-full rounded-[0.9rem] object-cover" alt="" />
+                        <div className="flex-1 relative">
+                            {chartType === 'radar' ? <RadarPerformanceChart data={chartData} /> : <DomainPerformanceChart data={chartData} />}
+                        </div>
+                    </Card>
+
+                    <Card variant="glass" className="p-8 bg-slate-900 text-white border-0 shadow-2xl relative overflow-hidden shrink-0">
+                        <div className="absolute -bottom-10 -right-10 w-60 h-60 bg-indigo-500/10 rounded-full blur-[80px]"></div>
+                        <div className="relative z-10">
+                            <div className="mb-6">
+                                <h3 className="text-xl font-black flex items-center gap-3 tracking-tight">
+                                    <div className="p-2 bg-indigo-500/20 rounded-xl text-indigo-400">
+                                        <Icon name="benchmark" className="w-5 h-5" />
+                                    </div>
+                                    Growth Leaders
+                                </h3>
+                            </div>
+                            
+                            <div className="space-y-3">
+                                {stats?.velocityLeaderboard.slice(0, 3).map((s, i) => (
+                                    <div key={s.id} onClick={() => navigateToStudent(s.id)} className="flex items-center justify-between p-3 bg-white/5 hover:bg-white/10 rounded-2xl cursor-pointer transition-all border border-white/5 group/item">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-white/10 p-0.5 overflow-hidden">
+                                                <img src={s.photoUrl} className="w-full h-full rounded-[0.7rem] object-cover" alt="" />
+                                            </div>
+                                            <div>
+                                                <span className="font-black text-xs text-white block group-hover/item:text-indigo-200 transition-colors">{s.name}</span>
+                                                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Level {s.level}</span>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <span className="font-black text-sm text-white block group-hover/item:text-indigo-200 transition-colors">{s.name}</span>
-                                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Level {s.level}</span>
+                                        <div className="text-[10px] font-black uppercase tracking-tighter text-emerald-400">
+                                            +{s.growthVelocity}%
                                         </div>
                                     </div>
-                                    <div className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tighter ${s.growthVelocity >= 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
-                                        {s.growthVelocity > 0 ? '+' : ''}{s.growthVelocity}% Improvement
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
                         </div>
-                        
-                        <div className="mt-10 p-5 bg-white/5 rounded-3xl border border-white/10 italic text-[11px] text-slate-400 text-center font-medium">
-                            "Top students are exceeding benchmarks by 12% on average."
-                        </div>
-                    </div>
-                </Card>
+                    </Card>
+                </div>
             </div>
         </div>
     );

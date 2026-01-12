@@ -25,7 +25,7 @@ export const ChatWidget: React.FC = () => {
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Check if there are critical insights for the glow effect
+    // Dynamic insight trigger for the subtle pulse
     const hasCriticalInsight = students.some(s => s.hasAnomaly);
 
     const scrollToBottom = () => {
@@ -166,7 +166,6 @@ export const ChatWidget: React.FC = () => {
                     ${isOpen ? 'w-14 h-14 rounded-full bg-slate-800 hover:bg-slate-900 text-slate-300 rotate-180' : 'w-24 h-24 rounded-[3rem] bg-indigo-600 hover:bg-indigo-500 hover:scale-110 hover:-translate-y-2 text-white shadow-2xl'}
                 `}
             >
-                {/* Proactive Glow Overlay */}
                 {!isOpen && hasCriticalInsight && (
                     <div className="absolute -inset-4 bg-indigo-500/30 rounded-[4rem] blur-2xl animate-pulse -z-10"></div>
                 )}

@@ -54,10 +54,8 @@ const calculateVelocity = (assessments: Assessment[]): number => {
     const sorted = [...assessments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const latest = sorted[sorted.length - 1];
     const previous = sorted[sorted.length - 2];
-    
     const latestAvg = getAvgScore(latest);
     const prevAvg = getAvgScore(previous);
-    
     return Math.round(latestAvg - prevAvg);
 };
 
@@ -78,7 +76,6 @@ const calculateRTIStatus = (assessments: Assessment[]): Intervention | null => {
         const prevAvg = getAvgScore(previous);
         if (avg < prevAvg - 8) return { tier: 2, domain: "General" as any, goal: "Address sudden regression.", trend: Trend.Down, triggerReason: `Regression: -${Math.round(prevAvg - avg)}%`, dateIdentified: new Date().toISOString() };
     }
-
     return null;
 };
 
@@ -95,7 +92,6 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     useEffect(() => {
         if (!user) { setStudents([]); setClassProfile(null); return; }
-
         const sKey = getStorageKey(user.id, 'students');
         const pKey = getStorageKey(user.id, 'profile');
 
@@ -124,19 +120,6 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
     };
 
-    const addLogEntry = async (studentId: string, entry: Omit<StudentLogEntry, 'id'>) => {
-        const newEntry: StudentLogEntry = { ...entry, id: `log-${Date.now()}` };
-        const student = students.find(s => s.id === studentId);
-        if (!student) return;
-        const updatedStudent = { ...student, actionLog: [newEntry, ...(student.actionLog || [])] };
-        if (user?.isDemo) {
-            syncStudents(students.map(s => s.id === studentId ? updatedStudent : s));
-            showToast("Log entry saved.");
-        } else {
-            await updateDoc(doc(db, 'students', studentId), { actionLog: updatedStudent.actionLog });
-        }
-    };
-
     const registerClass = async (profile: ClassProfile) => {
         if (user?.isDemo) { 
             setClassProfile(profile); 
@@ -150,22 +133,8 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!classProfile || !user) return;
         const updatedProfile = { ...classProfile, ...updates };
         setClassProfile(updatedProfile);
-        if (updates.gradeLevel) {
-            const updatedStudents = students.map(s => ({ ...s, level: updates.gradeLevel! }));
-            if (user.isDemo) {
-                syncStudents(updatedStudents);
-                localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(updatedProfile));
-            } else {
-                const batch = writeBatch(db);
-                students.forEach(s => { batch.update(doc(db, 'students', s.id), { level: updates.gradeLevel }); });
-                batch.update(doc(db, 'class_profiles', classProfile.id), updates);
-                await batch.commit();
-            }
-            showToast(`Roster updated to Level ${updates.gradeLevel}`);
-        } else {
-            if (user.isDemo) { localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(updatedProfile)); }
-            else { await updateDoc(doc(db, 'class_profiles', classProfile.id), updates); }
-        }
+        if (user.isDemo) { localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(updatedProfile)); }
+        else { await updateDoc(doc(db, 'class_profiles', classProfile.id), updates); }
     };
 
     const addStudent = async (student: Student) => {
@@ -200,7 +169,6 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (user?.isDemo) { syncStudents(students.map(s => s.id === updated.id ? updated : s)); return; }
         const { id, ...data } = updated;
         await updateDoc(doc(db, 'students', updated.id), data);
-        showToast("Profile updated.");
     };
 
     const deleteStudent = async (id: string) => {
@@ -211,84 +179,63 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const updateAssessmentForStudent = async (studentId: string, assessment: Assessment) => {
         const student = students.find(s => s.id === studentId);
         if (!student) return;
-        
         let assessments = [...student.assessments];
-        // Priority search by ID, fallback to Type
-        const existingIdx = assessments.findIndex(a => a.id === assessment.id || (assessment.id.includes('assess-') && a.type === assessment.type));
-        
+        const existingIdx = assessments.findIndex(a => a.id === assessment.id || (a.type === assessment.type && a.date === assessment.date));
         if (existingIdx !== -1) { assessments[existingIdx] = assessment; } 
         else { assessments.push(assessment); }
-        
         assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        
         const velocity = calculateVelocity(assessments);
-        const growth = assessments.length > 1 
-            ? Math.round(getAvgScore(assessments[assessments.length - 1]) - getAvgScore(assessments[0]))
-            : 0;
-            
+        const growth = assessments.length > 1 ? Math.round(getAvgScore(assessments[assessments.length - 1]) - getAvgScore(assessments[0])) : 0;
         const rti = calculateRTIStatus(assessments);
         const payload = { assessments, overallGrowth: growth, growthVelocity: velocity, interventionStatus: rti, hasAnomaly: !!rti };
-        
-        if (user?.isDemo) { 
-            syncStudents(students.map(s => s.id === studentId ? { ...student, ...payload } : s)); 
-        } else { 
-            await updateDoc(doc(db, 'students', studentId), payload); 
-        }
-        showToast("Assessment synced.");
+        if (user?.isDemo) { syncStudents(students.map(s => s.id === studentId ? { ...student, ...payload } : s)); }
+        else { await updateDoc(doc(db, 'students', studentId), payload); }
+        showToast("Assessment updated.");
     };
 
     const deleteAssessmentForStudent = async (studentId: string, assessmentId: string) => {
         const student = students.find(s => s.id === studentId);
         if (!student) return;
-        
         const assessments = student.assessments.filter(a => a.id !== assessmentId);
         const velocity = calculateVelocity(assessments);
-        const growth = assessments.length > 1 
-            ? Math.round(getAvgScore(assessments[assessments.length - 1]) - getAvgScore(assessments[0]))
-            : 0;
-            
+        const growth = assessments.length > 1 ? Math.round(getAvgScore(assessments[assessments.length - 1]) - getAvgScore(assessments[0])) : 0;
         const rti = calculateRTIStatus(assessments);
         const payload = { assessments, overallGrowth: growth, growthVelocity: velocity, interventionStatus: rti, hasAnomaly: !!rti };
-        
-        if (user?.isDemo) { 
-            syncStudents(students.map(s => s.id === studentId ? { ...student, ...payload } : s)); 
-        } else { 
-            await updateDoc(doc(db, 'students', studentId), payload); 
-        }
-        showToast("Assessment deleted.");
+        if (user?.isDemo) { syncStudents(students.map(s => s.id === studentId ? { ...student, ...payload } : s)); }
+        else { await updateDoc(doc(db, 'students', studentId), payload); }
+        showToast("Assessment removed.");
     };
 
     const addAssessmentBulk = async (items: { studentId: string, assessment: Assessment }[]) => {
         const batch = user?.isDemo ? null : writeBatch(db);
         const updatedStudents = [...students];
-        
         items.forEach(item => {
             const sIdx = updatedStudents.findIndex(s => s.id === item.studentId);
             if (sIdx === -1) return;
             const s = updatedStudents[sIdx];
             let assessments = [...s.assessments];
             const existingIdx = assessments.findIndex(a => a.type === item.assessment.type);
-            
             if (existingIdx !== -1) { assessments[existingIdx] = { ...item.assessment, id: assessments[existingIdx].id }; }
             else { assessments.push(item.assessment); }
-            
             assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            
             const vel = calculateVelocity(assessments);
-            const growth = assessments.length > 1 
-                ? Math.round(getAvgScore(assessments[assessments.length - 1]) - getAvgScore(assessments[0]))
-                : 0;
+            const growth = assessments.length > 1 ? Math.round(getAvgScore(assessments[assessments.length - 1]) - getAvgScore(assessments[0])) : 0;
             const rti = calculateRTIStatus(assessments);
             const payload = { assessments, overallGrowth: growth, growthVelocity: vel, interventionStatus: rti, hasAnomaly: !!rti };
-            
             if (batch) batch.update(doc(db, 'students', s.id), payload);
             updatedStudents[sIdx] = { ...s, ...payload };
         });
-        
-        try {
-            if (batch) await batch.commit(); else syncStudents(updatedStudents);
-            showToast(`Synchronized ${items.length} records.`);
-        } catch (err) { showToast("Bulk sync failed.", "error"); }
+        if (batch) await batch.commit(); else syncStudents(updatedStudents);
+        showToast(`Sync complete.`);
+    };
+
+    const addLogEntry = async (studentId: string, entry: Omit<StudentLogEntry, 'id'>) => {
+        const newEntry: StudentLogEntry = { ...entry, id: `log-${Date.now()}` };
+        const student = students.find(s => s.id === studentId);
+        if (!student) return;
+        const updatedStudent = { ...student, actionLog: [newEntry, ...(student.actionLog || [])] };
+        if (user?.isDemo) { syncStudents(students.map(s => s.id === studentId ? updatedStudent : s)); }
+        else { await updateDoc(doc(db, 'students', studentId), { actionLog: updatedStudent.actionLog }); }
     };
 
     const loadDemoData = () => {
@@ -298,7 +245,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(demoProfile));
         syncStudents(demoStudents);
         setClassProfile(demoProfile);
-        showToast("Demo environment ready.");
+        showToast("Demo data loaded.");
     };
 
     return (

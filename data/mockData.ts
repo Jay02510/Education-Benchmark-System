@@ -1,24 +1,18 @@
 import { Student, Benchmark, Domain, TestPeriod, Trend, TeacherStrategy, Resource, ResourceType } from '../types';
 
-// Helper to generate mock subdomain scores for a given domain average
-const genSubScores = (domain: Domain, avg: number): Record<string, number> => {
-    const scores: Record<string, number> = {};
-    const subdomains = [
-        "Decoding & Word Rec", "Literal Comp", "Inferential Comp", 
-        "Sentence Construction", "Text Organization", 
-        "Verb Tenses", "Agreement & Consistency",
-        "Sight Words", "Academic Vocabulary",
-        "Phoneme Awareness", "Decoding Patterns",
-        "Detail Recognition", "Dialogues & Stories",
-        "Pronunciation", "Communication Skills",
-        "Chart Interpretation", "Comparison & Inference"
-    ]; 
-    
-    subdomains.forEach(sub => {
-        const variance = Math.floor(Math.random() * 10) - 5;
-        scores[`${domain}:${sub}`] = Math.min(100, Math.max(0, avg + variance));
-    });
-    return scores;
+let bCounter = 0;
+const createBench = (level: string, period: TestPeriod, domain: Domain, target: number, desc: string, cefr: string, yle: string): Benchmark => {
+    bCounter++;
+    return {
+        id: `bench-${level}-${bCounter}`,
+        level_name: level,
+        period,
+        domain,
+        target_percent: target,
+        descriptor_short: desc,
+        cefr_alignment: cefr,
+        yle_equivalent: yle
+    };
 };
 
 export const mockStudents: Student[] = [
@@ -84,21 +78,6 @@ export const mockStudents: Student[] = [
     },
 ];
 
-let bCounter = 0;
-const createBench = (level: string, period: TestPeriod, domain: Domain, target: number, desc: string, cefr: string, yle: string): Benchmark => {
-    bCounter++;
-    return {
-        id: `bench-${level}-${bCounter}`,
-        level_name: level,
-        period,
-        domain,
-        target_percent: target,
-        descriptor_short: desc,
-        cefr_alignment: cefr,
-        yle_equivalent: yle
-    };
-};
-
 export const mockBenchmarkFramework: Benchmark[] = [
     // ================= LEVEL 5 (5Y) =================
     createBench("5", TestPeriod.Baseline, Domain.Reading, 80, "Recognizes letter names; matches CVC words", "Pre-A1", "Pre-Starters"),
@@ -119,15 +98,6 @@ export const mockBenchmarkFramework: Benchmark[] = [
     createBench("5", TestPeriod.Midline, Domain.Speaking, 70, "Short responses ('I see a...')", "Pre-A1", "Pre-Starters"),
     createBench("5", TestPeriod.Midline, Domain.DataLiteracy, 70, "Answers 'Which has more?'", "Pre-A1", "Pre-Starters"),
 
-    createBench("5", TestPeriod.Endline, Domain.Reading, 80, "Reads basic sentences (80% acc)", "Pre-A1", "Starters"),
-    createBench("5", TestPeriod.Endline, Domain.Phonics, 80, "Blends CVC & simple blends independently", "Pre-A1", "Starters"),
-    createBench("5", TestPeriod.Endline, Domain.Vocabulary, 80, "40-50 sight words", "Pre-A1", "Starters"),
-    createBench("5", TestPeriod.Endline, Domain.Writing, 80, "Writes 2-3 word captions", "Pre-A1", "Starters"),
-    createBench("5", TestPeriod.Endline, Domain.Grammar, 80, "Applies nouns/verbs in simple sentences", "Pre-A1", "Starters"),
-    createBench("5", TestPeriod.Endline, Domain.Listening, 80, "Follows 2-step directions", "Pre-A1", "Starters"),
-    createBench("5", TestPeriod.Endline, Domain.Speaking, 80, "Full-sentence responses to familiar topics", "Pre-A1", "Starters"),
-    createBench("5", TestPeriod.Endline, Domain.DataLiteracy, 80, "Interprets 'most/least' in pictograms", "Pre-A1", "Starters"),
-
     // ================= LEVEL 6-1 =================
     createBench("6-1", TestPeriod.Baseline, Domain.Reading, 80, "Decodes CVC + common blends; short sentences", "Mid Pre-A1", "Starters"),
     createBench("6-1", TestPeriod.Baseline, Domain.Writing, 80, "Writes 1-2 simple sentences", "Mid Pre-A1", "Starters"),
@@ -137,24 +107,6 @@ export const mockBenchmarkFramework: Benchmark[] = [
     createBench("6-1", TestPeriod.Baseline, Domain.Listening, 80, "Answers WH-questions with support", "Mid Pre-A1", "Starters"),
     createBench("6-1", TestPeriod.Baseline, Domain.Speaking, 80, "1-2 sentence responses", "Mid Pre-A1", "Starters"),
     createBench("6-1", TestPeriod.Baseline, Domain.DataLiteracy, 80, "Answers 'how many' questions", "Mid Pre-A1", "Starters"),
-
-    createBench("6-1", TestPeriod.Midline, Domain.Reading, 70, "Reads 3-5 sentence passages; literal comp", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Midline, Domain.Writing, 70, "Sentences with correct spacing/capitals", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Midline, Domain.Grammar, 70, "Basic subject-verb agreement", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Midline, Domain.Vocabulary, 70, "40 sight words", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Midline, Domain.Phonics, 70, "Reads blends + digraphs automatically", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Midline, Domain.Listening, 70, "Answers WH questions independently", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Midline, Domain.Speaking, 70, "Short responses with details", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Midline, Domain.DataLiteracy, 70, "Compares 2 categories", "Mid Pre-A1", "Starters"),
-
-    createBench("6-1", TestPeriod.Endline, Domain.Reading, 80, "Reads beginner-level passages fluently", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Endline, Domain.Writing, 80, "Writes 3-4 sentences with basic cohesion", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Endline, Domain.Grammar, 80, "Consistent tense control", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Endline, Domain.Vocabulary, 80, "70+ sight words", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Endline, Domain.Phonics, 80, "Applies phonics to spelling", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Endline, Domain.Listening, 80, "Answers comprehension questions", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Endline, Domain.Speaking, 80, "3-5 sentence picture descriptions", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Endline, Domain.DataLiteracy, 80, "Answer comparison + inference Qs", "Mid Pre-A1", "Starters"),
 ];
 
 export const mockStrategies: TeacherStrategy[] = [

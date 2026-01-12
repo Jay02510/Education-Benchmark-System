@@ -20,7 +20,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
     const [isSaving, setIsSaving] = useState(false);
 
     // Layout & Adjustment State
-    const [gridScale, setGridScale] = useState(1); // 0.7 to 1.3
+    const [gridScale, setGridScale] = useState(1);
     const [scrollProgress, setScrollProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -157,12 +157,10 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
     const handleSave = async () => {
         if (isSaving) return;
         setIsSaving(true);
-        
         try {
             const bulkUpdateData = students.map(student => {
                 const studentScores = gridData[student.id] || {};
                 const aggregateScores: Record<Domain, number> = {} as any;
-                
                 DOMAINS.forEach(domain => {
                     const subs = subdomains[domain] || [];
                     let totalScore = 0;
@@ -178,7 +176,6 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                     });
                     aggregateScores[domain] = (hasEntry && totalMax > 0) ? Math.round((totalScore / totalMax) * 100) : 0;
                 });
-
                 return {
                     studentId: student.id,
                     assessment: {
@@ -190,7 +187,6 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                     } as Assessment
                 };
             });
-
             await addAssessmentBulk(bulkUpdateData);
             onClose();
             setGridData({});
@@ -213,7 +209,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
     const inputHeight = Math.round(72 * gridScale);
 
     return (
-        <div className="fixed inset-0 bg-white z-[9999] flex flex-col overflow-hidden animate-in fade-in duration-300 select-none">
+        <div className="fixed inset-0 bg-white flex flex-col overflow-hidden animate-in fade-in duration-300 select-none !z-[100000]">
             <style dangerouslySetInnerHTML={{ __html: `
                 .pro-scrollbar::-webkit-scrollbar {
                     width: 14px;
@@ -221,10 +217,9 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                 }
                 .pro-scrollbar::-webkit-scrollbar-track {
                     background: #f8fafc;
-                    border-left: 1px solid #f1f5f9;
                 }
                 .pro-scrollbar::-webkit-scrollbar-thumb {
-                    background: #e2e8f0;
+                    background: #cbd5e1;
                     border: 4px solid #f8fafc;
                     border-radius: 20px;
                 }
@@ -232,7 +227,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                     background: #6366f1;
                 }
                 .pro-scrollbar {
-                    scrollbar-width: auto;
+                    scrollbar-width: thin;
                     scrollbar-color: #6366f1 #f8fafc;
                 }
             `}} />
@@ -244,7 +239,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                 ></div>
             </div>
 
-            <div className="flex justify-between items-center px-8 py-5 border-b border-slate-100 bg-white shrink-0 shadow-sm relative z-[100]">
+            <div className="flex justify-between items-center px-8 py-5 border-b border-slate-100 bg-white shrink-0 shadow-sm relative z-[150]">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-4">
                         <div className="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-100">
@@ -252,20 +247,14 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                         </div>
                         <div>
                             <h2 className="text-2xl font-black text-slate-900 tracking-tight">Batch Entry Mode</h2>
-                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Adjust scale and enter scores for {students.length} students</p>
+                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Global Overlay Active • {students.length} students</p>
                         </div>
                     </div>
-
                     <div className="h-10 w-px bg-slate-100 mx-2"></div>
-
                     <div className="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Adjust View</span>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scale</span>
                         <input 
-                            type="range" 
-                            min="0.7" 
-                            max="1.5" 
-                            step="0.05" 
-                            value={gridScale}
+                            type="range" min="0.7" max="1.5" step="0.05" value={gridScale}
                             onChange={(e) => setGridScale(parseFloat(e.target.value))}
                             className="w-32 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                         />
@@ -289,14 +278,11 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                         <div className="flex items-center gap-2">
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</label>
                             <input 
-                                type="date" 
-                                value={date} 
-                                onChange={(e) => setDate(e.target.value)}
+                                type="date" value={date} onChange={(e) => setDate(e.target.value)}
                                 className="bg-transparent text-sm font-black text-slate-800 outline-none"
                             />
                         </div>
                     </div>
-                    
                     <button onClick={onClose} disabled={isSaving} className="p-3 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-2xl transition-all disabled:opacity-30">
                         <Icon name="close" className="w-6 h-6" />
                     </button>
@@ -316,7 +302,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                     <thead>
                         <tr>
                             <th 
-                                className="sticky top-0 left-0 z-[80] bg-white p-6 text-left border-r border-b border-slate-200 shadow-[2px_2px_10px_rgba(0,0,0,0.02)]"
+                                className="sticky top-0 left-0 z-[140] bg-white p-6 text-left border-r border-b border-slate-200 shadow-[2px_2px_10px_rgba(0,0,0,0.02)]"
                                 style={{ width: sideWidth, minWidth: sideWidth }}
                             >
                                 <div className="flex flex-col gap-1">
@@ -324,11 +310,10 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                                     <span className="text-sm font-black text-slate-800">Domain / Skill Set</span>
                                 </div>
                             </th>
-                            
                             {students.map(student => (
                                 <th 
                                     key={student.id} 
-                                    className="sticky top-0 z-[70] bg-white p-4 border-r border-b border-slate-200 text-center shadow-[0_4px_6px_-2px_rgba(0,0,0,0.02)]"
+                                    className="sticky top-0 z-[130] bg-white p-4 border-r border-b border-slate-200 text-center shadow-[0_4px_6px_-2px_rgba(0,0,0,0.02)]"
                                     style={{ width: colWidth, minWidth: colWidth }}
                                 >
                                     <div className="flex flex-col items-center gap-2">
@@ -340,13 +325,15 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                                     </div>
                                 </th>
                             ))}
+                            {/* Horizontal Padding Column */}
+                            <th className="sticky top-0 z-[120] bg-white border-b border-slate-200 w-16 min-w-[64px]"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {flatSubdomains.map((sub, rowIndex) => (
                             <tr key={`${sub.domain}-${sub.name}`} className="group transition-colors">
                                 <td 
-                                    className="sticky left-0 z-[65] bg-white group-hover:bg-slate-50 p-6 border-r border-b border-slate-100 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.02)] transition-colors cursor-grab active:cursor-grabbing"
+                                    className="sticky left-0 z-[125] bg-white group-hover:bg-slate-50 p-6 border-r border-b border-slate-100 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.02)] transition-colors cursor-grab active:cursor-grabbing"
                                     style={{ width: sideWidth, minWidth: sideWidth }}
                                 >
                                     <div className="flex flex-col pointer-events-none">
@@ -358,7 +345,6 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                                         <span className={`font-bold text-slate-700 leading-tight ${gridScale < 0.9 ? 'text-xs' : 'text-sm'}`}>{sub.name}</span>
                                     </div>
                                 </td>
-                                
                                 {students.map((student, sIndex) => (
                                     <td 
                                         key={student.id} 
@@ -367,9 +353,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                                     >
                                         <input 
                                             id={`input-${student.id}-${sub.domain}-${sub.name}`}
-                                            type="number"
-                                            min="0"
-                                            max={sub.maxScore}
+                                            type="number" min="0" max={sub.maxScore}
                                             value={getScore(student.id, sub.domain, sub.name)}
                                             disabled={isSaving}
                                             onChange={(e) => handleScoreChange(student.id, sub.domain, sub.name, e.target.value, sub.maxScore)}
@@ -379,46 +363,41 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                                         />
                                     </td>
                                 ))}
+                                <td className="bg-slate-50/20 border-b border-slate-100 w-16"></td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
 
-            <div className="p-8 border-t border-slate-100 bg-white flex justify-between items-center shrink-0 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] relative z-[100]">
+            <div className="p-8 border-t border-slate-100 bg-white flex justify-between items-center shrink-0 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] relative z-[150]">
                 <div className="flex gap-10">
                     <div className="flex flex-col gap-1.5">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Grid Controls</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Navigation</p>
                         <div className="flex gap-6">
                             <span className="flex items-center gap-2 text-[11px] font-bold text-slate-600">
                                 <kbd className="px-1.5 py-0.5 bg-slate-100 rounded border border-slate-200 shadow-sm text-[10px]">Space</kbd> Grab & Pan
                             </span>
-                            <span className="flex items-center gap-2 text-[11px] font-bold text-slate-600">
-                                <Icon name="refresh" className="w-3.5 h-3.5 text-slate-300" />
-                                <button onClick={() => setGridScale(1)} className="hover:text-indigo-600 hover:underline">Reset Zoom</button>
-                            </span>
+                            <button onClick={() => setGridScale(1)} className="text-[11px] font-bold text-indigo-600 hover:underline flex items-center gap-1">
+                                <Icon name="refresh" className="w-3.5 h-3.5" />
+                                Reset Zoom
+                            </button>
                         </div>
                     </div>
                 </div>
                 
                 <div className="flex gap-4">
                     <button 
-                        onClick={onClose} 
-                        disabled={isSaving}
+                        onClick={onClose} disabled={isSaving}
                         className="px-8 py-4 border-2 border-slate-100 text-slate-500 font-black rounded-2xl hover:bg-slate-50 hover:text-slate-800 transition-all text-xs uppercase tracking-widest active:scale-95 disabled:opacity-50"
                     >
                         Discard
                     </button>
                     <button 
-                        onClick={handleSave} 
-                        disabled={isSaving}
+                        onClick={handleSave} disabled={isSaving}
                         className="px-10 py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-indigo-600 transition-all shadow-2xl shadow-indigo-100 active:scale-95 flex items-center gap-3 text-xs uppercase tracking-widest disabled:bg-slate-400"
                     >
-                        {isSaving ? (
-                            <Icon name="refresh" className="w-5 h-5 animate-spin" />
-                        ) : (
-                            <Icon name="check" className="w-5 h-5 text-emerald-400" />
-                        )}
+                        {isSaving ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="check" className="w-5 h-5 text-emerald-400" />}
                         {isSaving ? 'Syncing...' : 'Finalize & Sync'}
                     </button>
                 </div>

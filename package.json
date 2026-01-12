@@ -14,7 +14,7 @@
     "recharts": "^3.4.1",
     "@google/genai": "^1.29.1",
     "firebase": "^12.6.0",
-    "xlsx": "latest"
+    "xlsx": "0.20.1"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

@@ -6,7 +6,7 @@ import { useBenchmarks } from '../../context/BenchmarkContext';
 import { Icon } from '../common/Icon';
 import { useStudents } from '../../context/StudentContext';
 import { useToast } from '../../context/ToastContext';
-import * as XLSX from 'xlsx';
+import { read, utils, writeFile } from 'xlsx';
 
 interface BulkAssessmentModalProps {
     isOpen: boolean;
@@ -86,21 +86,26 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
     // --- EXCEL LOGIC ---
     
     const downloadTemplate = () => {
-        const flatSubdomains: { domain: Domain, name: string, maxScore: number }[] = [];
-        DOMAINS.forEach((d) => {
-            (subdomains[d] || []).forEach((s) => {
-                flatSubdomains.push({ domain: d, name: s.name, maxScore: s.maxScore });
+        try {
+            const flatSubdomains: { domain: Domain, name: string, maxScore: number }[] = [];
+            DOMAINS.forEach((d) => {
+                (subdomains[d] || []).forEach((s) => {
+                    flatSubdomains.push({ domain: d, name: s.name, maxScore: s.maxScore });
+                });
             });
-        });
 
-        const headers = ['Student Name', ...flatSubdomains.map(s => `${s.domain}:${s.name} (Max ${s.maxScore})`)];
-        const data = students.map(s => [s.name, ...flatSubdomains.map(() => '')]);
-        
-        const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Scores");
-        XLSX.writeFile(workbook, `Benchmark_Template_${testPeriod}.xlsx`);
-        showToast("Template downloaded. Fill it out and upload back.");
+            const headers = ['Student Name', ...flatSubdomains.map(s => `${s.domain}:${s.name} (Max ${s.maxScore})`)];
+            const data = students.map(s => [s.name, ...flatSubdomains.map(() => '')]);
+            
+            const worksheet = utils.aoa_to_sheet([headers, ...data]);
+            const workbook = utils.book_new();
+            utils.book_append_sheet(workbook, worksheet, "Scores");
+            writeFile(workbook, `Benchmark_Template_${testPeriod}.xlsx`);
+            showToast("Template downloaded. Fill it out and upload back.", "success");
+        } catch (err) {
+            console.error("Template download error:", err);
+            showToast("Failed to generate Excel template.", "error");
+        }
     };
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -111,10 +116,10 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
         reader.onload = (evt) => {
             try {
                 const bstr = evt.target?.result;
-                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wb = read(bstr, { type: 'binary' });
                 const wsname = wb.SheetNames[0];
                 const ws = wb.Sheets[wsname];
-                const rawData = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+                const rawData = utils.sheet_to_json(ws, { header: 1 }) as any[][];
 
                 if (rawData.length < 2) throw new Error("File is empty or invalid format");
 
@@ -148,7 +153,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                 setGridData(newGridData);
                 showToast("Excel data imported successfully.", "success");
             } catch (err) {
-                console.error(err);
+                console.error("Excel parse error:", err);
                 showToast("Failed to parse Excel file. Check format.", "error");
             }
             if (fileInputRef.current) fileInputRef.current.value = '';

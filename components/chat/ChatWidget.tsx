@@ -71,7 +71,7 @@ export const ChatWidget: React.FC = () => {
                         <div className="relative">
                             <div className="absolute -inset-1 bg-indigo-500 rounded-2xl blur opacity-40 animate-pulse"></div>
                             <div className="relative p-2.5 bg-indigo-600 rounded-2xl shadow-lg">
-                                <Icon name="brain" className="w-5 h-5 text-white" />
+                                <Icon name="robot" className="w-5 h-5 text-white" />
                             </div>
                         </div>
                         <div>
@@ -97,7 +97,7 @@ export const ChatWidget: React.FC = () => {
                         <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-500`}>
                             {msg.role === 'model' && (
                                 <div className="w-8 h-8 rounded-2xl bg-indigo-100 flex items-center justify-center shrink-0 mr-3 mt-1 border border-indigo-200 shadow-sm">
-                                    <Icon name="brain" className="w-4 h-4 text-indigo-600" />
+                                    <Icon name="robot" className="w-4 h-4 text-indigo-600" />
                                 </div>
                             )}
                             <div 
@@ -118,7 +118,7 @@ export const ChatWidget: React.FC = () => {
                     {isTyping && (
                         <div className="flex justify-start">
                              <div className="w-8 h-8 rounded-2xl bg-indigo-100 flex items-center justify-center shrink-0 mr-3 mt-1">
-                                <Icon name="brain" className="w-4 h-4 text-indigo-600" />
+                                <Icon name="robot" className="w-4 h-4 text-indigo-600" />
                             </div>
                             <div className="bg-white border border-slate-100 p-4 rounded-[1.5rem] rounded-tl-none shadow-sm flex gap-1.5 items-center">
                                 <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
@@ -168,7 +168,7 @@ export const ChatWidget: React.FC = () => {
             >
                 {/* Proactive Glow Overlay */}
                 {!isOpen && hasCriticalInsight && (
-                    <div className="absolute -inset-4 bg-rose-500/30 rounded-[4rem] blur-2xl animate-pulse -z-10"></div>
+                    <div className="absolute -inset-4 bg-indigo-500/30 rounded-[4rem] blur-2xl animate-pulse -z-10"></div>
                 )}
                 
                 {isOpen ? (
@@ -177,9 +177,9 @@ export const ChatWidget: React.FC = () => {
                     <div className="flex flex-col items-center">
                         <div className="relative">
                             {hasCriticalInsight && (
-                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full border-2 border-indigo-600 z-10 animate-bounce"></div>
+                                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-indigo-400 rounded-full border-2 border-indigo-600 z-10 animate-pulse shadow-sm"></div>
                             )}
-                            <Icon name="brain" className="w-12 h-12" />
+                            <Icon name="robot" className="w-12 h-12" />
                         </div>
                         <span className="text-[10px] font-black uppercase mt-1 tracking-widest opacity-80">AI Insight</span>
                     </div>

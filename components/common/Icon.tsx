@@ -82,6 +82,16 @@ const icons: Record<string, (props: any) => React.ReactNode> = {
       <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" {...props} />
     </>
   ),
+  robot: (props) => (
+    <>
+      <path d="M12 8V4H8" {...props} />
+      <rect width="16" height="12" x="4" y="8" rx="2" {...props} />
+      <path d="M2 14h2" {...props} />
+      <path d="M20 14h2" {...props} />
+      <path d="M15 13v2" {...props} />
+      <path d="M9 13v2" {...props} />
+    </>
+  ),
   chat: (props) => (
     <>
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" {...props} />

@@ -154,7 +154,7 @@ export const AnalyticsTab: React.FC = () => {
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
                             <div className="flex items-center gap-5">
                                 <div className="p-4 bg-indigo-600 rounded-[1.8rem] text-white shadow-xl shadow-indigo-200">
-                                    <Icon name="brain" className="w-8 h-8" />
+                                    <Icon name="robot" className="w-8 h-8" />
                                 </div>
                                 <div>
                                     <h3 className="text-2xl font-black text-slate-900 tracking-tight">Strategic Performance Briefing</h3>
@@ -186,7 +186,7 @@ export const AnalyticsTab: React.FC = () => {
                         ) : (
                             <div className="flex flex-col items-center justify-center py-24 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200">
                                 <div className="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center text-slate-300 mb-6 shadow-sm ring-1 ring-black/5">
-                                    <Icon name="brain" className="w-10 h-10" />
+                                    <Icon name="robot" className="w-10 h-10" />
                                 </div>
                                 <h4 className="text-xl font-black text-slate-900 mb-2">Ready to analyze Institutional Health?</h4>
                                 <p className="text-sm text-slate-400 mb-10 max-w-md text-center font-medium px-4">Our AI will summarize class performance, risk levels, and teaching impact for school leadership using humanized metrics.</p>

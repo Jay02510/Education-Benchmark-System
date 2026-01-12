@@ -77,7 +77,6 @@ const MainAppLayout: React.FC = () => {
     const { user, logout } = useAuth();
     const { activeTab, setActiveTab } = useNavigation();
     const { classProfile } = useStudents();
-    const { showToast } = useToast();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
@@ -102,11 +101,11 @@ const MainAppLayout: React.FC = () => {
         <div className="flex flex-col h-screen bg-[#F8FAFC] font-sans overflow-hidden text-slate-800 print:h-auto print:overflow-visible">
             <ConnectivityBanner />
             
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden relative">
                 {(!classProfile && !user?.isDemo) && <OnboardingWizard />}
 
                 {isMobileMenuOpen && (
-                    <div className="fixed inset-0 bg-slate-900/60 z-30 lg:hidden backdrop-blur-sm transition-opacity print:hidden" onClick={() => setIsMobileMenuOpen(false)} />
+                    <div className="fixed inset-0 bg-slate-900/60 z-[100] lg:hidden backdrop-blur-sm transition-opacity print:hidden" onClick={() => setIsMobileMenuOpen(false)} />
                 )}
 
                 <aside className={`
@@ -177,28 +176,17 @@ const MainAppLayout: React.FC = () => {
                                 />
                              </ul>
                          </div>
-
-                         {user?.isDemo && !isSidebarCollapsed && (
-                            <div className="bg-indigo-50/50 p-4 rounded-xl border border-indigo-100 mx-1">
-                                <p className="text-xs font-bold text-indigo-800 mb-1">Demo Access</p>
-                                <p className="text-[10px] text-indigo-600 mb-3">Settings & Admin require a full Pro account.</p>
-                                <button onClick={logout} className="text-xs font-bold text-indigo-700 bg-white border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50 w-full shadow-sm">
-                                    Exit Demo
-                                </button>
-                            </div>
-                         )}
                     </nav>
 
                     <div className={`pt-4 border-t border-slate-100 ${isSidebarCollapsed ? 'flex flex-col items-center gap-4' : 'px-2'}`}>
                         <div 
                             className={`flex items-center justify-center gap-2 mb-4 py-1.5 rounded-lg border transition-all ${isSidebarCollapsed ? 'px-2' : 'w-full'} ${navigator.onLine ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-amber-600 bg-amber-50 border-amber-100'}`}
-                            title={navigator.onLine ? "Connected to Cloud Database" : "No Internet Connection"}
                         >
                             <div className="relative flex h-2 w-2">
                               <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${navigator.onLine ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
                               <span className={`relative inline-flex rounded-full h-2 w-2 ${navigator.onLine ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
                             </div>
-                            {!isSidebarCollapsed && <span className="text-[10px] font-bold uppercase tracking-wider">{navigator.onLine ? 'Sync Active' : 'Offline Mode'}</span>}
+                            {!isSidebarCollapsed && <span className="text-[10px] font-bold uppercase tracking-wider">{navigator.onLine ? 'Sync Active' : 'Offline'}</span>}
                         </div>
 
                         <button 
@@ -206,18 +194,14 @@ const MainAppLayout: React.FC = () => {
                             className={`hidden lg:flex items-center justify-center rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-50 transition-colors mb-4 ${isSidebarCollapsed ? 'w-10 h-10' : 'w-full py-2 gap-2'}`}
                         >
                             <Icon name={isSidebarCollapsed ? "arrowRight" : "chevronLeft"} className="w-5 h-5" />
-                            {!isSidebarCollapsed && <span className="text-xs font-bold">Collapse Sidebar</span>}
                         </button>
 
                         <div className={`flex items-center gap-3 p-2 rounded-xl transition-colors cursor-pointer group ${isSidebarCollapsed ? 'justify-center p-0' : 'hover:bg-slate-50'}`}>
-                            <div className="w-9 h-9 shrink-0 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden">
-                                 <div className="w-full h-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
-                                    {user?.name.charAt(0)}
-                                 </div>
+                            <div className="w-9 h-9 shrink-0 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm">
+                                {user?.name.charAt(0)}
                             </div>
                             <div className={`flex-1 overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
                                 <p className="text-sm font-bold text-slate-800 truncate">{user?.name}</p>
-                                <p className="text-xs text-slate-500 truncate capitalize">{user?.role}</p>
                             </div>
                              {!isSidebarCollapsed && (
                                  <button onClick={logout} className="text-slate-400 hover:text-rose-500 transition p-1">
@@ -230,13 +214,11 @@ const MainAppLayout: React.FC = () => {
 
                 <main className="flex-1 relative flex flex-col w-full overflow-hidden print:overflow-visible print:h-auto print:w-full bg-[#F8FAFC]">
                      <div className="lg:hidden bg-white/80 backdrop-blur-md border-b border-slate-200 p-4 flex items-center justify-between shadow-sm z-20 relative print:hidden">
-                         <div className="flex items-center gap-3">
-                             <button onClick={() => setIsMobileMenuOpen(true)} className="text-slate-700 hover:text-indigo-600 p-2 -ml-2 rounded-lg hover:bg-slate-100 transition flex items-center gap-2">
-                                 <Icon name="menu" className="w-6 h-6" /> 
-                                 <span className="font-bold text-sm">Menu</span>
-                             </button>
-                         </div>
-                         <span className="font-bold text-slate-800 text-sm absolute left-1/2 -translate-x-1/2">{activeTab}</span>
+                         <button onClick={() => setIsMobileMenuOpen(true)} className="text-slate-700 hover:text-indigo-600 p-2 -ml-2 rounded-lg hover:bg-slate-100 transition flex items-center gap-2">
+                             <Icon name="menu" className="w-6 h-6" /> 
+                             <span className="font-bold text-sm">Menu</span>
+                         </button>
+                         <span className="font-bold text-slate-800 text-sm">{activeTab}</span>
                          <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xs">
                              {user?.name.charAt(0)}
                          </div>

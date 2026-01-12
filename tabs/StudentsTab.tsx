@@ -32,9 +32,9 @@ const DashboardWidget: React.FC<{
     return (
         <button 
             onClick={onClick}
-            className={`w-full text-left relative overflow-hidden p-6 rounded-[2rem] bg-gradient-to-br ${gradient} shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl group active:scale-[0.98] outline-none focus:ring-4 focus:ring-indigo-500/20`}
+            className={`w-full text-left relative overflow-hidden p-6 rounded-[2rem] bg-gradient-to-br ${gradient} shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl group active:scale-[0.98] outline-none focus:ring-4 focus:ring-indigo-500/20 z-10`}
         >
-            <div className="relative z-10">
+            <div className="relative z-20">
                 <div className="flex justify-between items-start mb-4">
                     <div className={`p-2.5 rounded-xl bg-white/30 backdrop-blur-md shadow-inner text-white`}>
                         <Icon name={icon} className="w-6 h-6" />
@@ -43,7 +43,10 @@ const DashboardWidget: React.FC<{
                         <div 
                             onMouseEnter={() => setShowInfo(true)}
                             onMouseLeave={() => setShowInfo(false)}
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                            }}
                             className="p-1 rounded-full bg-white/10 text-white/50 hover:text-white transition cursor-help"
                         >
                             <Icon name="info" className="w-4 h-4" />
@@ -65,7 +68,7 @@ const DashboardWidget: React.FC<{
                     )}
                 </div>
             </div>
-            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-1000"></div>
+            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-1000 z-0"></div>
         </button>
     );
 };
@@ -190,7 +193,7 @@ export const StudentsTab: React.FC = () => {
                         </div>
                     </div>
                     <h2 className="text-xl font-bold text-slate-900 relative z-10 truncate w-full px-2">{classProfile?.className || 'Class Name'}</h2>
-                    <p className="text-sm text-slate-500 mb-6 relative z-10">Grade {classProfile?.gradeLevel || '-'}</p>
+                    <p className="text-sm text-slate-500 mb-6 relative z-10">Level {classProfile?.gradeLevel || '-'}</p>
                     <div className="flex gap-4 w-full relative z-10">
                         <div className="flex-1 bg-slate-50 rounded-2xl p-3">
                             <p className="text-xl font-bold text-slate-800">{students.length}</p>
@@ -284,16 +287,16 @@ export const StudentsTab: React.FC = () => {
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-1 uppercase tracking-wide">Class Name</label>
-                        <input value={editClassName} onChange={(e) => setEditClassName(e.target.value)} className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500" />
+                        <input value={editClassName} onChange={(e) => setEditClassName(e.target.value)} className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold" />
                     </div>
                     <div>
                         <label className="block text-sm font-bold text-slate-700 mb-1 uppercase tracking-wide">Grade Level</label>
-                        <select value={editGradeLevel} onChange={(e) => setEditGradeLevel(e.target.value)} className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500">
-                            <option value="5">Level 5</option>
-                            <option value="6-1">Level 6-1</option>
-                            <option value="6-2">Level 6-2</option>
-                            <option value="7-2">Level 7-2</option>
-                            <option value="7-3">Level 7-3</option>
+                        <select value={editGradeLevel} onChange={(e) => setEditGradeLevel(e.target.value)} className="w-full px-4 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 font-bold">
+                            <option value="5">Level 5 (Pre-A1)</option>
+                            <option value="6-1">Level 6-1 (Starters)</option>
+                            <option value="6-2">Level 6-2 (Movers)</option>
+                            <option value="7-2">Level 7-2 (Flyers)</option>
+                            <option value="7-3">Level 7-3 (KET/PET)</option>
                         </select>
                     </div>
                     <div className="flex justify-end gap-3 pt-4">

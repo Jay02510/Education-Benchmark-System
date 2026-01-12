@@ -14,7 +14,8 @@ import {
     query, 
     where, 
     onSnapshot,
-    writeBatch
+    writeBatch,
+    setDoc
 } from 'firebase/firestore';
 
 interface StudentContextType {
@@ -39,15 +40,14 @@ interface StudentContextType {
 
 const StudentContext = createContext<StudentContextType | undefined>(undefined);
 
-// Helper to calculate "Velocity" (Speed of improvement)
 const calculateVelocity = (assessments: Assessment[]): number => {
     if (assessments.length < 2) return 0;
     const sorted = [...assessments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const latest = sorted[sorted.length - 1];
     const previous = sorted[sorted.length - 2];
     
-    const latestAvg = Object.values(latest.scores).reduce((a, b) => a + b, 0) / Object.keys(latest.scores).length;
-    const prevAvg = Object.values(previous.scores).reduce((a, b) => a + b, 0) / Object.keys(previous.scores).length;
+    const latestAvg = Object.values(latest.scores).reduce((a: number, b: number) => a + b, 0) / Object.keys(latest.scores).length;
+    const prevAvg = Object.values(previous.scores).reduce((a: number, b: number) => a + b, 0) / Object.keys(previous.scores).length;
     
     return Math.round(latestAvg - prevAvg);
 };
@@ -67,7 +67,7 @@ const calculateRTIStatus = (assessments: Assessment[]): Intervention | null => {
     if (weakDomain) return { tier: 2, domain: weakDomain[0], goal: `Remedial ${weakDomain[0]} focus.`, trend: Trend.Stable, triggerReason: `${weakDomain[0]} under 65%`, dateIdentified: new Date().toISOString() };
 
     if (previous) {
-        const prevAvg = Object.values(previous.scores).reduce((a, b) => a + (b as number), 0) / Object.keys(previous.scores).length;
+        const prevAvg = Object.values(previous.scores).reduce((a: number, b: number) => a + b, 0) / Object.keys(previous.scores).length;
         if (avg < prevAvg - 8) return { tier: 2, domain: "General", goal: "Address sudden regression.", trend: Trend.Down, triggerReason: `Regression: -${Math.round(prevAvg - avg)}%`, dateIdentified: new Date().toISOString() };
     }
 
@@ -134,15 +134,23 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const updateClassProfile = async (updates: Partial<ClassProfile>) => {
         if (!classProfile) return;
         const updated = { ...classProfile, ...updates };
-        if (user?.isDemo) { setClassProfile(updated); localStorage.setItem('demo_classProfile', JSON.stringify(updated)); return; }
+        // Update local state immediately for responsive UI
+        setClassProfile(updated);
+        if (user?.isDemo) { 
+            localStorage.setItem('demo_classProfile', JSON.stringify(updated)); 
+            return; 
+        }
         await updateDoc(doc(db, 'class_profiles', classProfile.id), updates);
+        showToast("Class profile updated.");
     };
 
     const addStudent = async (student: Student) => {
         const studentWithLog = { ...student, actionLog: student.actionLog || [] };
         if (user?.isDemo) { syncStudents([...students, studentWithLog]); return; }
+        
+        const newDocRef = doc(collection(db, 'students'));
         const { id, ...data } = studentWithLog;
-        await addDoc(collection(db, 'students'), { ...data, userId: user?.id });
+        await setDoc(newDocRef, { ...data, userId: user?.id });
     };
 
     const addStudentsBulk = async (names: string[]) => {
@@ -164,7 +172,8 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const batch = writeBatch(db);
         newStudents.forEach(s => {
             const { id, ...data } = s;
-            batch.set(doc(collection(db, 'students')), { ...data, userId: user?.id });
+            const newDocRef = doc(collection(db, 'students'));
+            batch.set(newDocRef, { ...data, userId: user?.id });
         });
         await batch.commit();
     };
@@ -173,6 +182,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (user?.isDemo) { syncStudents(students.map(s => s.id === updated.id ? updated : s)); return; }
         const { id, ...data } = updated;
         await updateDoc(doc(db, 'students', updated.id), data);
+        showToast("Profile updated.");
     };
 
     const deleteStudent = async (id: string) => {

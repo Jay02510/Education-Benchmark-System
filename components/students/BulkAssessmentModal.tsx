@@ -109,23 +109,23 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
     if (!isOpen) return null;
 
     const colWidth = Math.round(180 * gridScale);
-    const sideWidth = Math.round(320 * gridScale);
+    const sideWidth = Math.round(300 * gridScale);
     const inputHeight = Math.round(80 * gridScale);
 
     return (
-        <div className="fixed inset-0 bg-white flex flex-col overflow-hidden animate-in fade-in duration-300 z-[9999]">
+        <div className="fixed inset-0 bg-white flex flex-col overflow-hidden animate-in fade-in duration-300 z-[100000]">
             <style dangerouslySetInnerHTML={{ __html: `
                 .grid-container::-webkit-scrollbar {
-                    width: 12px;
-                    height: 12px;
+                    width: 14px;
+                    height: 14px;
                 }
                 .grid-container::-webkit-scrollbar-track {
                     background: #f1f5f9;
                 }
                 .grid-container::-webkit-scrollbar-thumb {
                     background: #cbd5e1;
-                    border: 3px solid #f1f5f9;
-                    border-radius: 10px;
+                    border: 4px solid #f1f5f9;
+                    border-radius: 20px;
                 }
                 .grid-container::-webkit-scrollbar-thumb:hover {
                     background: #6366f1;
@@ -137,50 +137,52 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
             `}} />
 
             {/* Header */}
-            <div className="flex justify-between items-center px-8 py-5 border-b border-slate-100 bg-white shrink-0 shadow-sm relative z-[100]">
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-4">
-                        <div className="p-2.5 bg-indigo-600 rounded-xl text-white">
-                            <Icon name="benchmark" className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Batch Entry Mode</h2>
-                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Workspace for {students.length} students</p>
-                        </div>
+            <div className="flex justify-between items-center px-4 md:px-8 py-4 border-b border-slate-100 bg-white shrink-0 shadow-sm relative z-[200]">
+                <div className="flex items-center gap-4">
+                    <div className="p-2 bg-indigo-600 rounded-lg text-white shrink-0">
+                        <Icon name="benchmark" className="w-5 h-5" />
                     </div>
-                    <div className="h-10 w-px bg-slate-100 mx-2"></div>
-                    <div className="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Adjust Scale</span>
+                    <div className="hidden sm:block">
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight">Batch Entry</h2>
+                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">{students.length} students</p>
+                    </div>
+                    <div className="h-8 w-px bg-slate-100 mx-1"></div>
+                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                        <span className="text-[9px] font-black text-slate-400 uppercase">Scale</span>
                         <input 
                             type="range" min="0.6" max="1.4" step="0.1" value={gridScale}
                             onChange={(e) => setGridScale(parseFloat(e.target.value))}
-                            className="w-32 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                            className="w-20 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                         />
-                        <span className="text-[10px] font-black text-indigo-600 w-8">{Math.round(gridScale * 100)}%</span>
+                        <span className="text-[9px] font-black text-indigo-600 w-8">{Math.round(gridScale * 100)}%</span>
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-100 text-sm font-bold">
-                        <div className="flex items-center gap-2 border-r border-slate-200 pr-3">
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Cycle</label>
-                            <select value={testPeriod} onChange={(e) => setTestPeriod(e.target.value as TestPeriod)} className="bg-transparent outline-none">
-                                {Object.values(TestPeriod).map(q => <option key={q} value={q}>{q}</option>)}
-                            </select>
-                        </div>
-                        <div className="flex items-center gap-2 pl-1">
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Date</label>
-                            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="bg-transparent outline-none" />
-                        </div>
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                        <select 
+                            value={testPeriod} 
+                            onChange={(e) => setTestPeriod(e.target.value as TestPeriod)} 
+                            className="bg-transparent text-[11px] font-black outline-none"
+                        >
+                            {Object.values(TestPeriod).map(q => <option key={q} value={q}>{q}</option>)}
+                        </select>
+                        <div className="w-px h-3 bg-slate-200"></div>
+                        <input 
+                            type="date" 
+                            value={date} 
+                            onChange={(e) => setDate(e.target.value)} 
+                            className="bg-transparent text-[11px] font-black outline-none w-24" 
+                        />
                     </div>
-                    <button onClick={onClose} disabled={isSaving} className="p-3 text-slate-400 hover:text-slate-900 transition-all">
-                        <Icon name="close" className="w-6 h-6" />
+                    <button onClick={onClose} disabled={isSaving} className="p-2 text-slate-400 hover:text-slate-900 transition-all rounded-lg hover:bg-slate-100">
+                        <Icon name="close" className="w-5 h-5" />
                     </button>
                 </div>
             </div>
 
             {/* Scrollable Progress Indicator */}
-            <div className="h-1 bg-slate-100 shrink-0">
+            <div className="h-1 bg-slate-100 shrink-0 relative z-[200]">
                 <div className="h-full bg-indigo-500 transition-all duration-300" style={{ width: `${scrollProgress}%` }}></div>
             </div>
 
@@ -188,13 +190,13 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
             <div 
                 ref={containerRef}
                 onScroll={handleScroll}
-                className="flex-1 overflow-auto bg-[#F8FAFC] grid-container"
+                className="flex-1 overflow-auto bg-[#F8FAFC] grid-container relative"
             >
                 <table className="border-separate border-spacing-0 min-w-max">
                     <thead>
                         <tr>
                             <th 
-                                className="sticky top-0 left-0 z-[150] bg-white p-6 text-left border-r border-b border-slate-200 shadow-sm"
+                                className="sticky top-0 left-0 z-[160] bg-white p-6 text-left border-r border-b border-slate-200 shadow-sm"
                                 style={{ width: sideWidth, minWidth: sideWidth }}
                             >
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Framework</span>
@@ -203,7 +205,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                             {students.map(student => (
                                 <th 
                                     key={student.id} 
-                                    className="sticky top-0 z-[140] bg-white p-4 border-r border-b border-slate-200 text-center"
+                                    className="sticky top-0 z-[150] bg-white p-4 border-r border-b border-slate-200 text-center"
                                     style={{ width: colWidth, minWidth: colWidth }}
                                 >
                                     <div className="flex flex-col items-center">
@@ -215,13 +217,15 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                                     </div>
                                 </th>
                             ))}
+                            {/* Horizontal End Spacer to prevent clipping */}
+                            <th className="sticky top-0 z-[140] bg-white border-b border-slate-200 w-32 min-w-[128px]"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {flatSubdomains.map((sub, rowIndex) => (
                             <tr key={`${sub.domain}-${sub.name}`} className="group">
                                 <td 
-                                    className="sticky left-0 z-[130] bg-white group-hover:bg-slate-50 p-6 border-r border-b border-slate-100 shadow-sm transition-colors"
+                                    className="sticky left-0 z-[140] bg-white group-hover:bg-slate-50 p-6 border-r border-b border-slate-100 shadow-sm transition-colors"
                                     style={{ width: sideWidth, minWidth: sideWidth }}
                                 >
                                     <div className="flex items-center gap-2 mb-1">
@@ -246,6 +250,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                                         />
                                     </td>
                                 ))}
+                                <td className="bg-slate-50/20 border-b border-slate-100 w-32"></td>
                             </tr>
                         ))}
                     </tbody>
@@ -253,23 +258,26 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
             </div>
 
             {/* Footer */}
-            <div className="p-8 border-t border-slate-100 bg-white flex justify-between items-center shrink-0 shadow-lg relative z-[150]">
-                <div className="text-slate-400 font-bold text-xs uppercase tracking-widest">
-                    Scroll for all students and skills
+            <div className="px-6 py-4 md:p-8 border-t border-slate-100 bg-white flex flex-col md:flex-row justify-between items-center shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)] relative z-[200] gap-4">
+                <div className="flex items-center gap-3 text-slate-400">
+                    <Icon name="search" className="w-4 h-4 opacity-50" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                        Scroll for all students and skills
+                    </span>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex gap-3 w-full md:w-auto">
                     <button 
                         onClick={onClose} disabled={isSaving}
-                        className="px-8 py-4 border-2 border-slate-100 text-slate-500 font-black rounded-2xl hover:bg-slate-50 transition-all text-xs uppercase tracking-widest"
+                        className="flex-1 md:flex-none px-6 py-3 border border-slate-200 text-slate-500 font-black rounded-xl hover:bg-slate-50 transition-all text-[10px] uppercase tracking-widest"
                     >
                         Discard
                     </button>
                     <button 
                         onClick={handleSave} disabled={isSaving}
-                        className="px-10 py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-indigo-600 transition-all shadow-xl flex items-center gap-3 text-xs uppercase tracking-widest disabled:opacity-50"
+                        className="flex-1 md:flex-none px-10 py-3 bg-slate-900 text-white font-black rounded-xl hover:bg-indigo-600 transition-all shadow-xl flex items-center justify-center gap-3 text-[10px] uppercase tracking-widest disabled:bg-slate-300"
                     >
-                        {isSaving ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="check" className="w-5 h-5" />}
-                        {isSaving ? 'Syncing...' : 'Finalize & Sync'}
+                        {isSaving ? <Icon name="refresh" className="w-4 h-4 animate-spin" /> : <Icon name="check" className="w-4 h-4 text-emerald-400" />}
+                        {isSaving ? 'Syncing' : 'Finalize & Sync'}
                     </button>
                 </div>
             </div>

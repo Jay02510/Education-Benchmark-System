@@ -58,10 +58,10 @@ export const ChatWidget: React.FC = () => {
     if (!user) return null;
 
     return (
-        <div className="fixed bottom-6 left-8 z-[10000] flex flex-col items-start pointer-events-none">
+        <div className="fixed bottom-6 right-8 z-[110000] flex flex-col items-end pointer-events-none">
             <div 
                 className={`
-                    pointer-events-auto bg-white/95 backdrop-blur-2xl w-[90vw] md:w-[420px] rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.2)] border border-white/60 overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] origin-bottom-left mb-6 flex flex-col
+                    pointer-events-auto bg-white/95 backdrop-blur-2xl w-[90vw] md:w-[420px] rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.2)] border border-white/60 overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] origin-bottom-right mb-6 flex flex-col
                     ${isOpen ? 'opacity-100 scale-100 h-[650px] max-h-[85vh]' : 'opacity-0 scale-75 h-0 overflow-hidden translate-y-12'}
                 `}
             >
@@ -103,7 +103,7 @@ export const ChatWidget: React.FC = () => {
                                 className={`
                                     max-w-[85%] p-4 rounded-[1.8rem] text-sm leading-relaxed shadow-sm transition-all
                                     ${msg.role === 'user' 
-                                        ? 'bg-slate-900 text-white rounded-bl-none shadow-indigo-900/10' 
+                                        ? 'bg-slate-900 text-white rounded-br-none shadow-indigo-900/10' 
                                         : 'bg-white text-slate-700 border border-slate-100 rounded-bl-none ring-1 ring-black/5'
                                     }
                                     ${msg.isError ? 'bg-rose-50 text-rose-600 border-rose-100' : ''}
@@ -159,24 +159,24 @@ export const ChatWidget: React.FC = () => {
                 onClick={toggleChat}
                 className={`
                     pointer-events-auto transition-all duration-700 flex items-center justify-center relative
-                    ${isOpen ? 'w-14 h-14 rounded-full bg-slate-800 hover:bg-slate-900 text-slate-300' : 'w-24 h-24 rounded-[3rem] bg-indigo-600 hover:bg-indigo-500 hover:scale-110 hover:-translate-y-2 text-white shadow-2xl'}
+                    ${isOpen ? 'w-12 h-12 rounded-full bg-slate-800 hover:bg-slate-900 text-slate-300 shadow-lg' : 'w-20 h-20 rounded-[2.5rem] bg-indigo-600 hover:bg-indigo-500 hover:scale-110 hover:-translate-y-2 text-white shadow-2xl shadow-indigo-500/30'}
                 `}
             >
                 {!isOpen && hasCriticalInsight && (
-                    <div className="absolute -inset-4 bg-indigo-500/30 rounded-[4rem] blur-2xl animate-pulse -z-10"></div>
+                    <div className="absolute -inset-4 bg-indigo-500/20 rounded-[3rem] blur-2xl animate-pulse -z-10"></div>
                 )}
                 
                 {isOpen ? (
-                     <Icon name="close" className="w-7 h-7" />
+                     <Icon name="close" className="w-6 h-6" />
                 ) : (
                     <div className="flex flex-col items-center">
                         <div className="relative">
                             {hasCriticalInsight && (
-                                <div className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-indigo-400 rounded-full border-2 border-indigo-600 z-10 animate-pulse shadow-sm"></div>
+                                <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-indigo-400 rounded-full border-2 border-indigo-600 z-10 animate-pulse"></div>
                             )}
-                            <Icon name="robot" className="w-12 h-12" />
+                            <Icon name="robot" className="w-10 h-10" />
                         </div>
-                        <span className="text-[10px] font-black uppercase mt-1 tracking-widest opacity-80">AI Guide</span>
+                        <span className="text-[8px] font-black uppercase mt-0.5 tracking-widest opacity-70">AI Guide</span>
                     </div>
                 )}
             </button>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Benchmark App</title>
+    <title>Benchmark App | Professional Educator Analytics</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,9 +12,15 @@
     <style>
       body {
         font-family: 'Inter', sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f8fafc;
+      }
+      #root {
+        min-height: 100vh;
       }
     </style>
-  <script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@19.0.0",
@@ -31,9 +37,9 @@
   }
 }
 </script>
-</head>
-  <body class="bg-gray-50 text-gray-800 antialiased">
+  </head>
+  <body class="text-gray-800 antialiased">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>

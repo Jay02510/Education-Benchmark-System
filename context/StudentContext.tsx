@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Student, ClassProfile, Assessment, Resource, Intervention, Trend, Domain, StudentLogEntry, TestPeriod } from '../types';
 import { mockStudents } from '../data/mockData';
@@ -15,8 +14,7 @@ import {
     where, 
     onSnapshot,
     writeBatch,
-    setDoc,
-    getDocs
+    setDoc
 } from 'firebase/firestore';
 
 interface StudentContextType {
@@ -115,14 +113,11 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
     }, [user]);
 
-    const syncStudentsLocally = (updateFn: (prev: Student[]) => Student[]) => {
-        setStudents(prev => {
-            const next = updateFn(prev);
-            if (user && user.isDemo) {
-                localStorage.setItem(getStorageKey(user.id, 'students'), JSON.stringify(next));
-            }
-            return next;
-        });
+    const syncStudents = (newStudents: Student[]) => {
+        setStudents(newStudents);
+        if (user) {
+            localStorage.setItem(getStorageKey(user.id, 'students'), JSON.stringify(newStudents));
+        }
     };
 
     const registerClass = async (profile: ClassProfile) => {
@@ -139,7 +134,6 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const updatedProfile = { ...classProfile, ...updates };
         setClassProfile(updatedProfile);
         if (user.isDemo) { 
-            // Fixed line 139: Argument of type function is not assignable to string
             localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(updatedProfile));
         } else {
             await updateDoc(doc(db, 'class_profiles', classProfile.id), updates);
@@ -149,13 +143,14 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const addStudent = async (student: Student) => {
         if (!user) return;
+        const studentWithLog = { ...student, actionLog: student.actionLog || [] };
         if (user.isDemo) {
-            syncStudentsLocally(prev => [...prev, student]);
+            syncStudents([...students, studentWithLog]);
             showToast("Student added.");
             return;
         }
-        const { id, ...data } = student;
-        await addDoc(collection(db, 'students'), { ...data, userId: user.id });
+        const { id, ...data } = studentWithLog;
+        await setDoc(doc(collection(db, 'students')), { ...data, userId: user.id });
         showToast("Student added.");
     };
 
@@ -163,7 +158,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!user) return;
         const newStudents = names.map(name => ({
             id: `s-${Date.now()}-${Math.random()}`,
-            name,
+            name: name.trim(),
             level: classProfile?.gradeLevel || '5',
             class: classProfile?.className || 'General',
             photoUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
@@ -173,43 +168,42 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             assessments: [],
             interventionStatus: null,
             actionLog: [],
-        }));
+        })) as Student[];
 
         if (user.isDemo) {
-            syncStudentsLocally(prev => [...prev, ...newStudents]);
+            syncStudents([...students, ...newStudents]);
             showToast(`${names.length} students added.`);
             return;
         }
 
         const batch = writeBatch(db);
         newStudents.forEach(s => {
-            const ref = doc(collection(db, 'students'));
             const { id, ...data } = s;
-            batch.set(ref, { ...data, userId: user.id });
+            batch.set(doc(collection(db, 'students')), { ...data, userId: user.id });
         });
         await batch.commit();
         showToast(`${names.length} students added.`);
     };
 
-    const updateStudent = async (updatedStudent: Student) => {
+    const updateStudent = async (updated: Student) => {
         if (!user) return;
         if (user.isDemo) {
-            syncStudentsLocally(prev => prev.map(s => s.id === updatedStudent.id ? updatedStudent : s));
+            syncStudents(students.map(s => s.id === updated.id ? updated : s));
             return;
         }
-        const { id, ...data } = updatedStudent;
+        const { id, ...data } = updated;
         await updateDoc(doc(db, 'students', id), data as any);
     };
 
     const deleteStudent = async (id: string) => {
         if (!user) return;
         if (user.isDemo) {
-            syncStudentsLocally(prev => prev.filter(s => s.id !== id));
-            showToast("Student deleted.");
+            syncStudents(students.filter(s => s.id !== id));
+            showToast("Student removed.");
             return;
         }
         await deleteDoc(doc(db, 'students', id));
-        showToast("Student deleted.");
+        showToast("Student removed.");
     };
 
     const updateAssessmentForStudent = async (studentId: string, assessment: Assessment) => {
@@ -217,84 +211,33 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const student = students.find(s => s.id === studentId);
         if (!student) return;
 
-        let newAssessments = [...student.assessments];
-        const idx = newAssessments.findIndex(a => a.id === assessment.id);
-        if (idx > -1) newAssessments[idx] = assessment;
-        else newAssessments.push(assessment);
+        let assessments = [...student.assessments];
+        const idx = assessments.findIndex(a => a.id === assessment.id || (a.type === assessment.type && a.date === assessment.date));
+        
+        if (idx > -1) assessments[idx] = assessment;
+        else assessments.push(assessment);
 
-        const velocity = calculateVelocity(newAssessments);
-        const intervention = calculateRTIStatus(newAssessments);
-        const sorted = [...newAssessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        const growth = sorted.length >= 2 ? getAvgScore(sorted[sorted.length-1]) - getAvgScore(sorted[0]) : 0;
+        assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        const velocity = calculateVelocity(assessments);
+        const rti = calculateRTIStatus(assessments);
+        const growth = assessments.length >= 2 ? getAvgScore(assessments[assessments.length-1]) - getAvgScore(assessments[0]) : 0;
 
-        const updatedStudent = { 
-            ...student, 
-            assessments: newAssessments, 
+        const payload = { 
+            assessments, 
+            overallGrowth: Math.round(growth), 
             growthVelocity: velocity, 
-            interventionStatus: intervention,
-            overallGrowth: Math.round(growth),
-            hasAnomaly: intervention !== null
+            interventionStatus: rti, 
+            hasAnomaly: !!rti 
         };
 
         if (user.isDemo) {
-            syncStudentsLocally(prev => prev.map(s => s.id === studentId ? updatedStudent : s));
-            showToast("Assessment updated.");
-            return;
+            syncStudents(students.map(s => s.id === studentId ? { ...s, ...payload } : s));
+            showToast("Assessment recorded.");
+        } else {
+            await updateDoc(doc(db, 'students', studentId), payload);
+            showToast("Assessment recorded.");
         }
-        const { id, ...data } = updatedStudent;
-        await updateDoc(doc(db, 'students', studentId), data as any);
-    };
-
-    const addAssessmentBulk = async (bulkData: { studentId: string, assessment: Assessment }[]) => {
-        if (!user) return;
-        if (user.isDemo) {
-            syncStudentsLocally(prev => {
-                return prev.map(student => {
-                    const update = bulkData.find(d => d.studentId === student.id);
-                    if (!update) return student;
-
-                    const newAssessments = [...student.assessments, update.assessment];
-                    const velocity = calculateVelocity(newAssessments);
-                    const intervention = calculateRTIStatus(newAssessments);
-                    const sorted = [...newAssessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-                    const growth = sorted.length >= 2 ? getAvgScore(sorted[sorted.length-1]) - getAvgScore(sorted[0]) : 0;
-
-                    return {
-                        ...student,
-                        assessments: newAssessments,
-                        growthVelocity: velocity,
-                        interventionStatus: intervention,
-                        overallGrowth: Math.round(growth),
-                        hasAnomaly: intervention !== null
-                    };
-                });
-            });
-            showToast("Bulk assessments recorded.");
-            return;
-        }
-
-        const batch = writeBatch(db);
-        bulkData.forEach(update => {
-            const student = students.find(s => s.id === update.studentId);
-            if (student) {
-                const newAssessments = [...student.assessments, update.assessment];
-                const velocity = calculateVelocity(newAssessments);
-                const intervention = calculateRTIStatus(newAssessments);
-                const sorted = [...newAssessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-                const growth = sorted.length >= 2 ? getAvgScore(sorted[sorted.length-1]) - getAvgScore(sorted[0]) : 0;
-
-                const updatedData = {
-                    assessments: newAssessments,
-                    growthVelocity: velocity,
-                    interventionStatus: intervention,
-                    overallGrowth: Math.round(growth),
-                    hasAnomaly: intervention !== null
-                };
-                batch.update(doc(db, 'students', student.id), updatedData);
-            }
-        });
-        await batch.commit();
-        showToast("Bulk assessments recorded.");
     };
 
     const deleteAssessmentForStudent = async (studentId: string, assessmentId: string) => {
@@ -302,27 +245,64 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const student = students.find(s => s.id === studentId);
         if (!student) return;
 
-        const newAssessments = student.assessments.filter(a => a.id !== assessmentId);
-        const velocity = calculateVelocity(newAssessments);
-        const intervention = calculateRTIStatus(newAssessments);
-        const sorted = [...newAssessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        const growth = sorted.length >= 2 ? getAvgScore(sorted[sorted.length-1]) - getAvgScore(sorted[0]) : 0;
+        const assessments = student.assessments.filter(a => a.id !== assessmentId);
+        const velocity = calculateVelocity(assessments);
+        const rti = calculateRTIStatus(assessments);
+        const growth = assessments.length >= 2 ? getAvgScore(assessments[assessments.length-1]) - getAvgScore(assessments[0]) : 0;
 
-        const updatedStudent = { 
-            ...student, 
-            assessments: newAssessments, 
+        const payload = { 
+            assessments, 
+            overallGrowth: Math.round(growth), 
             growthVelocity: velocity, 
-            interventionStatus: intervention,
-            overallGrowth: Math.round(growth),
-            hasAnomaly: intervention !== null
+            interventionStatus: rti, 
+            hasAnomaly: !!rti 
         };
 
         if (user.isDemo) {
-            syncStudentsLocally(prev => prev.map(s => s.id === studentId ? updatedStudent : s));
-            return;
+            syncStudents(students.map(s => s.id === studentId ? { ...s, ...payload } : s));
+            showToast("Assessment deleted.");
+        } else {
+            await updateDoc(doc(db, 'students', studentId), payload);
+            showToast("Assessment deleted.");
         }
-        const { id, ...data } = updatedStudent;
-        await updateDoc(doc(db, 'students', studentId), data as any);
+    };
+
+    const addAssessmentBulk = async (items: { studentId: string, assessment: Assessment }[]) => {
+        if (!user) return;
+        const batch = user.isDemo ? null : writeBatch(db);
+        const updatedStudents = [...students];
+
+        items.forEach(item => {
+            const sIdx = updatedStudents.findIndex(s => s.id === item.studentId);
+            if (sIdx === -1) return;
+            const s = updatedStudents[sIdx];
+            
+            let assessments = [...s.assessments];
+            const idx = assessments.findIndex(a => a.type === item.assessment.type);
+            if (idx !== -1) assessments[idx] = { ...item.assessment, id: assessments[idx].id };
+            else assessments.push(item.assessment);
+
+            assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            
+            const vel = calculateVelocity(assessments);
+            const growth = assessments.length >= 2 ? getAvgScore(assessments[assessments.length-1]) - getAvgScore(assessments[0]) : 0;
+            const rti = calculateRTIStatus(assessments);
+            
+            const payload = { 
+                assessments, 
+                overallGrowth: Math.round(growth), 
+                growthVelocity: vel, 
+                interventionStatus: rti, 
+                hasAnomaly: !!rti 
+            };
+
+            if (batch) batch.update(doc(db, 'students', s.id), payload);
+            updatedStudents[sIdx] = { ...s, ...payload };
+        });
+
+        if (batch) await batch.commit();
+        else syncStudents(updatedStudents);
+        showToast(`Sync complete.`);
     };
 
     const addLogEntry = async (studentId: string, entry: Omit<StudentLogEntry, 'id'>) => {
@@ -331,31 +311,22 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!student) return;
 
         const newLog = [...(student.actionLog || []), { ...entry, id: `log-${Date.now()}` }];
-        const updatedStudent = { ...student, actionLog: newLog };
-
         if (user.isDemo) {
-            syncStudentsLocally(prev => prev.map(s => s.id === studentId ? updatedStudent : s));
-            showToast("Note logged.");
-            return;
+            syncStudents(students.map(s => s.id === studentId ? { ...s, actionLog: newLog } : s));
+        } else {
+            await updateDoc(doc(db, 'students', studentId), { actionLog: newLog });
         }
-        await updateDoc(doc(db, 'students', studentId), { actionLog: newLog });
-        showToast("Note logged.");
+        showToast("Note recorded.");
     };
 
     const loadDemoData = () => {
         if (!user) return;
-        const sKey = getStorageKey(user.id, 'students');
-        const pKey = getStorageKey(user.id, 'profile');
-        
-        setStudents(mockStudents);
         const profile = { id: 'demo-p', className: 'Demo Class', gradeLevel: '5', academicYear: '2024' };
+        localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(profile));
+        localStorage.setItem(getStorageKey(user.id, 'students'), JSON.stringify(mockStudents));
+        setStudents(mockStudents);
         setClassProfile(profile);
-        
-        if (user.isDemo) {
-            localStorage.setItem(sKey, JSON.stringify(mockStudents));
-            localStorage.setItem(pKey, JSON.stringify(profile));
-        }
-        showToast("Demo data loaded!");
+        showToast("Demo environment loaded.");
     };
 
     return (
@@ -370,7 +341,6 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     );
 };
 
-// Export useStudents hook to fix missing export errors
 export const useStudents = () => {
     const context = useContext(StudentContext);
     if (context === undefined) {

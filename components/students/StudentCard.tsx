@@ -42,14 +42,22 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) =>
         onClick={onClick}
     >
       {/* Dynamic Status Indicator */}
-      <div className={`absolute top-4 right-4 px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-tighter transition-all duration-500 ${statusColor}`}>
+      <div className={`absolute top-4 right-4 px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-tighter transition-all duration-500 z-20 ${statusColor}`}>
         {statusText}
       </div>
       
-      {/* Avatar with dynamic ring */}
+      {/* Avatar with dynamic ring and intervention badge */}
       <div className="relative mb-6 mt-2">
           <div className={`absolute -inset-2 rounded-full blur-lg opacity-0 group-hover:opacity-40 transition-opacity duration-700 ${student.hasAnomaly ? 'bg-rose-400' : 'bg-indigo-400'}`}></div>
-          <div className="relative w-24 h-24 rounded-[2.5rem] bg-white p-1 shadow-lg group-hover:scale-105 transition-transform duration-500 overflow-hidden">
+          
+          {/* Status Badge Over Image */}
+          {student.hasAnomaly && (
+            <div className="absolute -top-1 -left-1 w-6 h-6 bg-rose-500 rounded-full border-2 border-white shadow-lg z-30 flex items-center justify-center animate-bounce">
+                <Icon name="alert" className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+            </div>
+          )}
+
+          <div className="relative w-24 h-24 rounded-[2.5rem] bg-white p-1 shadow-lg group-hover:scale-105 transition-transform duration-500 overflow-hidden z-10">
             <img 
                 src={student.photoUrl} 
                 alt={student.name} 

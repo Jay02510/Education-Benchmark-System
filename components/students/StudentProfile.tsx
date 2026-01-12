@@ -207,10 +207,17 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div className="flex items-center gap-6">
                         <div className="relative group">
-                            <img src={student.photoUrl} className="w-20 h-20 rounded-3xl object-cover shadow-xl border-4 border-white transition-all group-hover:scale-105" alt="" />
+                            {/* Status Badge Over Image */}
+                            {student.hasAnomaly && (
+                                <div className="absolute -top-2 -left-2 w-8 h-8 bg-rose-500 rounded-full border-2 border-white shadow-xl z-20 flex items-center justify-center animate-bounce">
+                                    <Icon name="alert" className="w-4 h-4 text-white" strokeWidth={3} />
+                                </div>
+                            )}
+
+                            <img src={student.photoUrl} className="w-20 h-20 rounded-3xl object-cover shadow-xl border-4 border-white transition-all group-hover:scale-105 z-10" alt="" />
                             <button 
                                 onClick={() => setIsEditProfileModalOpen(true)}
-                                className="absolute -bottom-1 -right-1 p-1.5 bg-white border border-slate-100 rounded-xl shadow-lg text-slate-400 hover:text-indigo-600 transition-colors"
+                                className="absolute -bottom-1 -right-1 p-1.5 bg-white border border-slate-100 rounded-xl shadow-lg text-slate-400 hover:text-indigo-600 transition-colors z-20"
                                 title="Edit Photo"
                             >
                                 <Icon name="settings" className="w-3.5 h-3.5" />

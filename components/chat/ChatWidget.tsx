@@ -4,6 +4,7 @@ import { useChat } from '../../context/ChatContext';
 import { Icon } from '../common/Icon';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigation } from '../../context/NavigationContext';
+import { useStudents } from '../../context/StudentContext';
 import { TABS } from '../../constants';
 
 const formatText = (text: string) => {
@@ -20,8 +21,12 @@ export const ChatWidget: React.FC = () => {
     const { isOpen, toggleChat, messages, isTyping, sendMessage, clearHistory } = useChat();
     const { user } = useAuth();
     const { activeTab } = useNavigation();
+    const { students } = useStudents();
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Check if there are critical insights for the glow effect
+    const hasCriticalInsight = students.some(s => s.hasAnomaly);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -57,20 +62,23 @@ export const ChatWidget: React.FC = () => {
         <div className="fixed bottom-6 right-6 z-[60] flex flex-col items-end pointer-events-none">
             <div 
                 className={`
-                    pointer-events-auto bg-white w-[90vw] md:w-[420px] rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)] border border-slate-200 overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] origin-bottom-right mb-6 flex flex-col
+                    pointer-events-auto bg-white/95 backdrop-blur-2xl w-[90vw] md:w-[420px] rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.2)] border border-white/60 overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] origin-bottom-right mb-6 flex flex-col
                     ${isOpen ? 'opacity-100 scale-100 h-[650px] max-h-[85vh]' : 'opacity-0 scale-75 h-0 overflow-hidden translate-y-12'}
                 `}
             >
-                <div className="bg-slate-900 p-5 flex justify-between items-center shrink-0">
+                <div className="bg-slate-900 p-6 flex justify-between items-center shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-900/40">
-                            <Icon name="brain" className="w-5 h-5 text-white" />
+                        <div className="relative">
+                            <div className="absolute -inset-1 bg-indigo-500 rounded-2xl blur opacity-40 animate-pulse"></div>
+                            <div className="relative p-2.5 bg-indigo-600 rounded-2xl shadow-lg">
+                                <Icon name="brain" className="w-5 h-5 text-white" />
+                            </div>
                         </div>
                         <div>
                             <h3 className="text-white font-black text-sm tracking-tight">Benchmark AI Assistant</h3>
                             <div className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]"></span>
-                                <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Online & Syncing</span>
+                                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                                <span className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">Contextually Aware</span>
                             </div>
                         </div>
                     </div>
@@ -84,19 +92,19 @@ export const ChatWidget: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="flex-1 bg-[#FDFDFE] overflow-y-auto p-5 space-y-5 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                     {messages.map((msg) => (
-                        <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                        <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-500`}>
                             {msg.role === 'model' && (
-                                <div className="w-7 h-7 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0 mr-2.5 mt-1 border border-indigo-200 shadow-sm">
+                                <div className="w-8 h-8 rounded-2xl bg-indigo-100 flex items-center justify-center shrink-0 mr-3 mt-1 border border-indigo-200 shadow-sm">
                                     <Icon name="brain" className="w-4 h-4 text-indigo-600" />
                                 </div>
                             )}
                             <div 
                                 className={`
-                                    max-w-[85%] p-4 rounded-[1.5rem] text-sm leading-relaxed shadow-sm
+                                    max-w-[85%] p-4 rounded-[1.8rem] text-sm leading-relaxed shadow-sm transition-all
                                     ${msg.role === 'user' 
-                                        ? 'bg-slate-900 text-white rounded-tr-none' 
+                                        ? 'bg-slate-900 text-white rounded-tr-none shadow-indigo-900/10' 
                                         : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none ring-1 ring-black/5'
                                     }
                                     ${msg.isError ? 'bg-rose-50 text-rose-600 border-rose-100' : ''}
@@ -109,10 +117,10 @@ export const ChatWidget: React.FC = () => {
                     
                     {isTyping && (
                         <div className="flex justify-start">
-                             <div className="w-7 h-7 rounded-xl bg-indigo-100 flex items-center justify-center shrink-0 mr-2.5 mt-1">
+                             <div className="w-8 h-8 rounded-2xl bg-indigo-100 flex items-center justify-center shrink-0 mr-3 mt-1">
                                 <Icon name="brain" className="w-4 h-4 text-indigo-600" />
                             </div>
-                            <div className="bg-white border border-slate-100 p-4 rounded-[1.5rem] rounded-tl-none shadow-sm flex gap-1.5 items-center ring-1 ring-black/5">
+                            <div className="bg-white border border-slate-100 p-4 rounded-[1.5rem] rounded-tl-none shadow-sm flex gap-1.5 items-center">
                                 <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
                                 <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
                                 <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></div>
@@ -122,31 +130,31 @@ export const ChatWidget: React.FC = () => {
                     <div ref={messagesEndRef} />
                 </div>
 
-                {!isTyping && messages.length < 3 && (
-                    <div className="px-5 py-3 bg-[#FDFDFE] border-t border-slate-50 flex gap-2 overflow-x-auto scrollbar-none">
+                {!isTyping && (
+                    <div className="px-6 py-4 bg-white/50 border-t border-slate-50 flex gap-2 overflow-x-auto scrollbar-none">
                         {suggestions.map((s, i) => (
-                            <button key={i} onClick={() => sendMessage(s)} className="whitespace-nowrap px-4 py-2 bg-white border border-slate-200 text-[11px] font-black text-indigo-600 rounded-full hover:bg-indigo-50 hover:border-indigo-200 transition shadow-sm uppercase tracking-wider">
+                            <button key={i} onClick={() => sendMessage(s)} className="whitespace-nowrap px-4 py-2 bg-white border border-slate-200 text-[10px] font-black text-slate-600 rounded-full hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all shadow-sm uppercase tracking-widest">
                                 {s}
                             </button>
                         ))}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="p-4 bg-white border-t border-slate-100 flex items-center gap-3">
+                <form onSubmit={handleSubmit} className="p-6 bg-white border-t border-slate-100 flex items-center gap-4">
                     <input 
                         type="text" 
                         value={inputValue}
                         onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="Ask me anything about your class..."
-                        className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-2xl px-5 py-3.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+                        placeholder="Ask me anything..."
+                        className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-2xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all shadow-inner"
                         disabled={isTyping}
                     />
                     <button 
                         type="submit" 
                         disabled={!inputValue.trim() || isTyping}
-                        className="p-3.5 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 disabled:opacity-50 disabled:grayscale transition shadow-lg shadow-indigo-200 active:scale-90"
+                        className="p-4 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 disabled:opacity-50 transition shadow-xl shadow-indigo-200 active:scale-90"
                     >
-                        <Icon name="arrowRight" className="w-5 h-5" />
+                        <Icon name="arrowRight" className="w-6 h-6" />
                     </button>
                 </form>
             </div>
@@ -154,16 +162,26 @@ export const ChatWidget: React.FC = () => {
             <button 
                 onClick={toggleChat}
                 className={`
-                    pointer-events-auto shadow-[0_15px_40px_-5px_rgba(79,70,229,0.4)] transition-all duration-500 flex items-center justify-center
-                    ${isOpen ? 'w-14 h-14 rounded-full bg-slate-800 hover:bg-slate-900 text-slate-300 rotate-180' : 'w-20 h-20 rounded-[2.5rem] bg-indigo-600 hover:bg-indigo-500 hover:scale-105 hover:-translate-y-2 text-white'}
+                    pointer-events-auto transition-all duration-700 flex items-center justify-center relative
+                    ${isOpen ? 'w-14 h-14 rounded-full bg-slate-800 hover:bg-slate-900 text-slate-300 rotate-180' : 'w-24 h-24 rounded-[3rem] bg-indigo-600 hover:bg-indigo-500 hover:scale-110 hover:-translate-y-2 text-white shadow-2xl'}
                 `}
             >
+                {/* Proactive Glow Overlay */}
+                {!isOpen && hasCriticalInsight && (
+                    <div className="absolute -inset-4 bg-rose-500/30 rounded-[4rem] blur-2xl animate-pulse -z-10"></div>
+                )}
+                
                 {isOpen ? (
                      <Icon name="close" className="w-7 h-7" />
                 ) : (
                     <div className="flex flex-col items-center">
-                        <Icon name="brain" className="w-10 h-10" />
-                        <span className="text-[9px] font-black uppercase mt-1 tracking-tighter opacity-80">AI Help</span>
+                        <div className="relative">
+                            {hasCriticalInsight && (
+                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full border-2 border-indigo-600 z-10 animate-bounce"></div>
+                            )}
+                            <Icon name="brain" className="w-12 h-12" />
+                        </div>
+                        <span className="text-[10px] font-black uppercase mt-1 tracking-widest opacity-80">AI Insight</span>
                     </div>
                 )}
             </button>

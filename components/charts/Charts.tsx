@@ -3,7 +3,7 @@ import React from 'react';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
     LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-    AreaChart, Area
+    AreaChart, Area, ReferenceLine, ReferenceArea
 } from 'recharts';
 import { Domain } from '../../types';
 
@@ -16,7 +16,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                     <div key={i} className="flex items-center gap-2 text-sm mb-1 last:mb-0">
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></div>
                         <span className="text-slate-500">{p.name}:</span>
-                        <span className="font-semibold text-slate-700">{p.value}</span>
+                        <span className="font-semibold text-slate-700">
+                            {typeof p.value === 'number' ? `${p.value}%` : p.value}
+                        </span>
                     </div>
                 ))}
             </div>
@@ -24,7 +26,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     }
     return null;
 };
-
 
 interface DomainPerformanceChartProps {
     data: { domain: Domain; score: number; target: number }[];
@@ -54,11 +55,13 @@ export const DomainPerformanceChart: React.FC<DomainPerformanceChartProps> = ({ 
                     tickMargin={10}
                 />
                 <YAxis 
+                    domain={[0, 100]}
                     tick={{ fontSize: 11, fill: '#64748b' }} 
                     axisLine={false} 
                     tickLine={false} 
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{fill: '#f8fafc'}} />
+                <ReferenceArea y1={80} y2={100} fill="#10b981" fillOpacity={0.05} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{fontSize: "12px", paddingTop: "20px"}}/>
                 <Bar dataKey="score" fill="url(#colorScore)" name="Current Score" radius={[6, 6, 0, 0]} barSize={32} />
                 <Bar dataKey="target" fill="url(#colorTarget)" name="Target Benchmark" radius={[6, 6, 0, 0]} barSize={32} />
@@ -94,12 +97,13 @@ interface LongitudinalGrowthChartProps {
     data: { name: string, [key: string]: number | string }[];
     lines: { key: string, color: string }[];
     type?: 'line' | 'area' | 'bar';
+    actions?: { date: string, type: string }[]; // New: Action point markers
 }
 
-export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = ({ data, lines, type = 'line' }) => {
+export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = ({ data, lines, type = 'line', actions = [] }) => {
     const commonProps = {
         data: data,
-        margin: { top: 10, right: 10, left: -20, bottom: 0 }
+        margin: { top: 20, right: 20, left: -20, bottom: 0 }
     };
 
     const renderChart = () => {
@@ -117,8 +121,12 @@ export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = (
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} tickMargin={10} />
-                        <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                         <Tooltip content={<CustomTooltip />} />
+                        <ReferenceLine y={80} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'right', value: 'Mastery', fill: '#10b981', fontSize: 10, fontWeight: 'bold' }} />
+                        {actions.map((action, idx) => (
+                            <ReferenceLine key={idx} x={action.date} stroke="#f59e0b" label={{ position: 'top', value: 'Action', fill: '#f59e0b', fontSize: 9, fontWeight: 'bold' }} />
+                        ))}
                         <Legend iconType="circle" iconSize={8} wrapperStyle={{fontSize: "12px", paddingTop: "20px"}} />
                         {lines.map(line => (
                             <Area 
@@ -128,7 +136,7 @@ export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = (
                                 stroke={line.color} 
                                 fillOpacity={1}
                                 fill={`url(#color-${line.key})`}
-                                strokeWidth={2}
+                                strokeWidth={3}
                             />
                         ))}
                     </AreaChart>
@@ -138,17 +146,9 @@ export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = (
                     <BarChart {...commonProps}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} tickMargin={10} />
-                        <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                         <Tooltip content={<CustomTooltip />} />
-                        <Legend iconType="circle" iconSize={8} wrapperStyle={{fontSize: "12px", paddingTop: "20px"}} />
-                        {lines.map(line => (
-                            <Bar 
-                                key={line.key} 
-                                dataKey={line.key} 
-                                fill={line.color} 
-                                radius={[4, 4, 0, 0]} 
-                            />
-                        ))}
+                        <Bar dataKey={lines[0].key} fill={lines[0].color} radius={[4, 4, 0, 0]} barSize={40} />
                     </BarChart>
                 );
             case 'line':
@@ -157,9 +157,9 @@ export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = (
                     <LineChart {...commonProps}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} tickMargin={10} />
-                        <YAxis tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                        <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                         <Tooltip content={<CustomTooltip />} />
-                        <Legend iconType="circle" iconSize={8} wrapperStyle={{fontSize: "12px", paddingTop: "20px"}} />
+                        <ReferenceArea y1={80} y2={100} fill="#10b981" fillOpacity={0.05} />
                         {lines.map(line => (
                              <Line 
                                 key={line.key} 

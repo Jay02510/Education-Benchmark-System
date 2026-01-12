@@ -25,6 +25,7 @@ export enum Trend {
     Up = "up",
     Down = "down",
     Stable = "stable",
+    Plateau = "plateau",
 }
 
 export enum ResourceType {
@@ -43,6 +44,15 @@ export interface ClassProfile {
     academicYear: string;
 }
 
+export interface StudentLogEntry {
+    id: string;
+    date: string;
+    author: string;
+    category: 'Intervention' | 'Observation' | 'Parent Communication' | 'Goal Met';
+    content: string;
+    impactScore?: number; // -1 to 1 to track if the action helped
+}
+
 export interface Student {
     id: string;
     name: string;
@@ -50,21 +60,23 @@ export interface Student {
     class: string;
     photoUrl: string;
     overallGrowth: number;
+    growthVelocity: number; // New: Speed of change
     hasAnomaly: boolean;
     assessments: Assessment[];
     interventionStatus: Intervention | null;
+    actionLog: StudentLogEntry[]; // New: Historical log
 }
 
 export interface Assessment {
     id: string;
     type: TestPeriod;
     date: string;
-    scores: Record<Domain, number>; // Calculated Average (0-100%)
-    subdomainScores: Record<string, number>; // Raw scores for each subdomain
+    scores: Record<Domain, number>; 
+    subdomainScores: Record<string, number>; 
 }
 
 export interface Benchmark {
-    id: string; // Added ID for editing
+    id: string;
     level_name: string;
     period: TestPeriod;
     domain: Domain;
@@ -84,7 +96,7 @@ export interface Intervention {
     domain: Domain | "General";
     goal: string;
     trend: Trend;
-    triggerReason: string; // e.g., "Reading score < 50%" or "Regression -10%"
+    triggerReason: string;
     dateIdentified: string;
 }
 
@@ -92,7 +104,7 @@ export interface User {
     id: string;
     name: string;
     role: UserRole;
-    isDemo?: boolean; // New flag for restricted access
+    isDemo?: boolean;
 }
 
 export interface Resource {
@@ -104,7 +116,7 @@ export interface Resource {
     type: ResourceType;
     title: string;
     description: string;
-    content: string; // Could be markdown, link, etc.
+    content: string;
     aiGenerated: boolean;
 }
 

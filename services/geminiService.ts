@@ -2,16 +2,15 @@
 import { Student, Domain, Resource, ResourceType, TestPeriod } from '../types';
 import { GoogleGenAI, Type } from "@google/genai";
 
-const apiKey = process.env.API_KEY || ''; 
-const ai = new GoogleGenAI({ apiKey });
+// Always use process.env.API_KEY directly and use named parameter in constructor
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export class GeminiService {
     
     // Unified Analysis Engine (Replaces individual Student/Trend calls)
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
-        if (!apiKey) return { report_card: "AI Unavailable", trend_insights: "AI Unavailable" };
-
-        const model = 'gemini-2.5-flash';
+        // Use recommended model for text tasks
+        const model = 'gemini-3-flash-preview';
         
         // 1. Prepare Rich Data Payload
         const sortedAssessments = [...student.assessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -78,6 +77,7 @@ export class GeminiService {
                 }
             });
 
+            // Use the .text property directly
             return JSON.parse(response.text || '{}');
         } catch (error) {
             console.error("Error generating comprehensive analysis:", error);
@@ -95,9 +95,7 @@ export class GeminiService {
         strongestDomain: string,
         atRiskCount: number
     ): Promise<string> {
-        if (!apiKey) return "Class Insight unavailable: Missing API Key.";
-
-        const model = 'gemini-2.5-flash';
+        const model = 'gemini-3-flash-preview';
         const prompt = `
         You are a Teaching Mentor reviewing class data.
         Provide a warm, human-centered analysis.
@@ -123,7 +121,7 @@ export class GeminiService {
                 model: model,
                 contents: prompt,
             });
-            return response.text;
+            return response.text || "**Error:** Unable to generate response text.";
         } catch (error) {
             return "**Error:** Unable to generate class analysis.";
         }
@@ -136,9 +134,7 @@ export class GeminiService {
         level: string,
         prompt: string
     ): Promise<{ title: string; description: string; content: string } | null> {
-        if (!apiKey) return null;
-
-        const model = "gemini-2.5-flash";
+        const model = "gemini-3-flash-preview";
         const fullPrompt = `
         Generate a resource for:
         - Level: ${level}
@@ -174,9 +170,7 @@ export class GeminiService {
 
     // Helper to generate a prompt based on class weakness
     static async generateRemedialPrompt(domain: Domain, avgScore: number, level: string): Promise<string> {
-        if (!apiKey) return `Create a fun remedial activity for ${domain}.`;
-
-        const model = 'gemini-2.5-flash';
+        const model = 'gemini-3-flash-preview';
         const prompt = `
         Class Level: ${level}
         Struggling Domain: ${domain} (Avg: ${avgScore}%)
@@ -189,16 +183,14 @@ export class GeminiService {
                 model,
                 contents: prompt,
             });
-            return response.text.trim();
+            return (response.text || '').trim();
         } catch (error) {
             return `Create a fun and simple remedial activity for ${domain} suitable for ${level} students.`;
         }
     }
 
     static async getRecommendedResources(domain: Domain, subdomain: string, level: string): Promise<Resource[]> {
-        if (!apiKey) return [];
-
-        const model = 'gemini-2.5-flash';
+        const model = 'gemini-3-flash-preview';
         const prompt = `
         Suggest 2 educational resource ideas for Level ${level} students struggling with ${domain}.
         Return JSON with an array of objects: { title, description, type, domain, subdomain }.

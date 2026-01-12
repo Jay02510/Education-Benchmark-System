@@ -23,7 +23,7 @@ const genSubScores = (domain: Domain, avg: number): Record<string, number> => {
     return scores;
 };
 
-// Updated mock students to use separate Listening and Speaking domains
+// Updated mock students with missing growthVelocity and actionLog properties
 export const mockStudents: Student[] = [
     {
         id: 's1',
@@ -32,6 +32,7 @@ export const mockStudents: Student[] = [
         class: 'Class A',
         photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
         overallGrowth: 12,
+        growthVelocity: 4,
         hasAnomaly: true,
         assessments: [
             { 
@@ -50,6 +51,7 @@ export const mockStudents: Student[] = [
             },
         ],
         interventionStatus: { tier: 1, domain: Domain.Reading, goal: 'Improve inferential skills by 10% in 3 weeks', trend: Trend.Stable, triggerReason: 'Low initial baseline', dateIdentified: '2023-09-20' },
+        actionLog: [],
     },
     {
         id: 's2',
@@ -58,12 +60,14 @@ export const mockStudents: Student[] = [
         class: 'Class A',
         photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bella',
         overallGrowth: 18,
+        growthVelocity: 6,
         hasAnomaly: false,
         assessments: [
             { id: 'a3', type: TestPeriod.Baseline, date: '2023-09-15', scores: { [Domain.Reading]: 75, [Domain.Writing]: 72, [Domain.Grammar]: 80, [Domain.Vocabulary]: 78, [Domain.Phonics]: 85, [Domain.Listening]: 75, [Domain.Speaking]: 74, [Domain.DataLiteracy]: 70 }, subdomainScores: {} },
             { id: 'a4', type: TestPeriod.Midline, date: '2023-12-05', scores: { [Domain.Reading]: 85, [Domain.Writing]: 80, [Domain.Grammar]: 88, [Domain.Vocabulary]: 85, [Domain.Phonics]: 92, [Domain.Listening]: 83, [Domain.Speaking]: 82, [Domain.DataLiteracy]: 80 }, subdomainScores: {} },
         ],
         interventionStatus: null,
+        actionLog: [],
     },
     {
         id: 's3',
@@ -72,12 +76,14 @@ export const mockStudents: Student[] = [
         class: 'Class B',
         photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Chris',
         overallGrowth: -3,
+        growthVelocity: -2,
         hasAnomaly: true,
         assessments: [
             { id: 'a5', type: TestPeriod.Baseline, date: '2023-09-15', scores: { [Domain.Reading]: 55, [Domain.Writing]: 50, [Domain.Grammar]: 60, [Domain.Vocabulary]: 58, [Domain.Phonics]: 65, [Domain.Listening]: 52, [Domain.Speaking]: 50, [Domain.DataLiteracy]: 45 }, subdomainScores: {} },
             { id: 'a6', type: TestPeriod.Midline, date: '2023-12-05', scores: { [Domain.Reading]: 52, [Domain.Writing]: 51, [Domain.Grammar]: 58, [Domain.Vocabulary]: 60, [Domain.Phonics]: 63, [Domain.Listening]: 50, [Domain.Speaking]: 48, [Domain.DataLiteracy]: 48 }, subdomainScores: {} },
         ],
         interventionStatus: { tier: 2, domain: Domain.Writing, goal: 'Improve organization in writing by 10% in 4 weeks', trend: Trend.Down, triggerReason: 'Regression in scores', dateIdentified: '2023-11-15' },
+        actionLog: [],
     },
     {
         id: 's4',
@@ -86,12 +92,14 @@ export const mockStudents: Student[] = [
         class: 'Class B',
         photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Dana',
         overallGrowth: 15,
+        growthVelocity: 5,
         hasAnomaly: false,
         assessments: [
             { id: 'a7', type: TestPeriod.Baseline, date: '2023-09-15', scores: { [Domain.Reading]: 80, [Domain.Writing]: 82, [Domain.Grammar]: 78, [Domain.Vocabulary]: 85, [Domain.Phonics]: 90, [Domain.Listening]: 81, [Domain.Speaking]: 80, [Domain.DataLiteracy]: 77 }, subdomainScores: {} },
             { id: 'a8', type: TestPeriod.Midline, date: '2023-12-05', scores: { [Domain.Reading]: 88, [Domain.Writing]: 89, [Domain.Grammar]: 85, [Domain.Vocabulary]: 92, [Domain.Phonics]: 95, [Domain.Listening]: 88, [Domain.Speaking]: 87, [Domain.DataLiteracy]: 85 }, subdomainScores: {} },
         ],
         interventionStatus: null,
+        actionLog: [],
     },
 ];
 

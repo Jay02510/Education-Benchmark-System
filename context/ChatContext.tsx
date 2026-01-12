@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { ChatMessage, Student, Domain, Resource } from '../types';
-import { GoogleGenAI, Chat } from "@google/genai";
+import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { teacherTools, adminTools } from '../services/agentTools';
 import { useStudents } from './StudentContext';
 import { useNavigation } from './NavigationContext';
@@ -21,8 +21,8 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-const apiKey = process.env.API_KEY || '';
-const ai = new GoogleGenAI({ apiKey });
+// Always use process.env.API_KEY directly and use named parameter in constructor
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const TEACHER_INSTRUCTION = `
 You are the "Benchmark AI Assistant", a friendly, encouraging, and highly capable educational coach for teachers.
@@ -98,12 +98,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }, []);
 
-    // Initialize Chat Session
+    // Initialize Chat Session with recommended model
     const getChatSession = () => {
         if (!chatSessionRef.current) {
             const isTeacher = currentPersona === 'Teacher';
             chatSessionRef.current = ai.chats.create({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3-flash-preview',
                 config: {
                     systemInstruction: isTeacher ? TEACHER_INSTRUCTION : ADMIN_INSTRUCTION,
                     tools: [{ functionDeclarations: isTeacher ? teacherTools : adminTools }],
@@ -276,7 +276,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const chat = getChatSession();
             
             // 2. Send to Gemini
-            let result = await chat.sendMessage({ message: text });
+            let result: GenerateContentResponse = await chat.sendMessage({ message: text });
             
             // 3. Handle Function Calls Loop
             while (result.functionCalls && result.functionCalls.length > 0) {
@@ -293,11 +293,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     })
                 );
 
-                // Send tool outputs back to model
+                // Send tool outputs back to model via sendMessage as per chat usage
                 result = await chat.sendMessage({ message: functionResponseParts });
             }
 
-            // 4. Final Response
+            // 4. Final Response using .text property
             const modelText = result.text;
             const aiMsg: ChatMessage = {
                 id: (Date.now() + 1).toString(),

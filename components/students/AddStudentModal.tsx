@@ -62,9 +62,11 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
                 class: classProfile?.className || 'General',
                 photoUrl: finalPhotoUrl,
                 overallGrowth: 0,
+                growthVelocity: 0,
                 hasAnomaly: false,
                 assessments: [],
                 interventionStatus: null,
+                actionLog: [],
             };
             addStudent(newStudent);
         }

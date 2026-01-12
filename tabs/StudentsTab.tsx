@@ -30,9 +30,9 @@ const DashboardWidget: React.FC<{
     const [showInfo, setShowInfo] = useState(false);
 
     return (
-        <div 
+        <button 
             onClick={onClick}
-            className={`relative overflow-hidden p-6 rounded-[2rem] bg-gradient-to-br ${gradient} shadow-lg transition-all hover:-translate-y-1 group ${onClick ? 'cursor-pointer active:scale-95' : ''}`}
+            className={`w-full text-left relative overflow-hidden p-6 rounded-[2rem] bg-gradient-to-br ${gradient} shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl group active:scale-[0.98] outline-none focus:ring-4 focus:ring-indigo-500/20`}
         >
             <div className="relative z-10">
                 <div className="flex justify-between items-start mb-4">
@@ -40,30 +40,33 @@ const DashboardWidget: React.FC<{
                         <Icon name={icon} className="w-6 h-6" />
                     </div>
                     {info && (
-                        <button 
-                            onMouseEnter={(e) => { e.stopPropagation(); setShowInfo(true); }}
-                            onMouseLeave={(e) => { e.stopPropagation(); setShowInfo(false); }}
-                            className="p-1 rounded-full bg-white/10 text-white/50 hover:text-white transition"
+                        <div 
+                            onMouseEnter={() => setShowInfo(true)}
+                            onMouseLeave={() => setShowInfo(false)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="p-1 rounded-full bg-white/10 text-white/50 hover:text-white transition cursor-help"
                         >
                             <Icon name="info" className="w-4 h-4" />
-                        </button>
+                        </div>
                     )}
                 </div>
                 
-                {showInfo && info ? (
-                    <div className="absolute inset-x-0 top-12 bg-white/10 backdrop-blur-xl p-4 rounded-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200 z-20">
-                        <p className="text-[11px] font-bold text-white leading-relaxed">{info}</p>
-                    </div>
-                ) : (
-                    <>
-                        <h3 className="text-4xl font-extrabold text-white mb-1 tracking-tight">{value}</h3>
-                        <p className="text-white/90 font-medium text-sm mb-4">{subtext}</p>
-                        <p className="text-[10px] font-black uppercase tracking-[0.15em] text-white/60">{title}</p>
-                    </>
-                )}
+                <div className="relative min-h-[80px]">
+                    {showInfo && info ? (
+                        <div className="bg-white/10 backdrop-blur-xl p-3 rounded-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200">
+                            <p className="text-[10px] font-bold text-white leading-relaxed">{info}</p>
+                        </div>
+                    ) : (
+                        <>
+                            <h3 className="text-4xl font-extrabold text-white mb-1 tracking-tight">{value}</h3>
+                            <p className="text-white/90 font-medium text-sm mb-4">{subtext}</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-white/60">{title}</p>
+                        </>
+                    )}
+                </div>
             </div>
             <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-1000"></div>
-        </div>
+        </button>
     );
 };
 

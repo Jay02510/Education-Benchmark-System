@@ -13,6 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 import { AddAssessmentModal } from './AddAssessmentModal';
 import { StudentReportModal } from './StudentReportModal';
 import { AddStudentModal } from './AddStudentModal';
+import { Tooltip } from '../common/Tooltip';
 
 interface StudentProfileProps {
     student: Student;
@@ -37,7 +38,7 @@ const LogEntryView: React.FC<{ entry: StudentLogEntry }> = ({ entry }) => (
     </div>
 );
 
-const ProfileStatWidget: React.FC<{ title: string; value: string | number; subtext: string; icon: string; gradient: string; }> = ({ title, value, subtext, icon, gradient }) => (
+const ProfileStatWidget: React.FC<{ title: string; value: string | number; subtext: string; icon: string; gradient: string; tooltip: string; }> = ({ title, value, subtext, icon, gradient, tooltip }) => (
     <div className={`relative overflow-hidden p-6 rounded-[2rem] bg-gradient-to-br ${gradient} shadow-lg transition-transform hover:-translate-y-1`}>
         <div className="relative z-10 text-white">
             <div className="flex justify-between items-start mb-4">
@@ -47,7 +48,9 @@ const ProfileStatWidget: React.FC<{ title: string; value: string | number; subte
             </div>
             <h3 className="text-3xl font-extrabold mb-1 tracking-tight">{value}</h3>
             <p className="font-medium text-sm mb-3 opacity-90">{subtext}</p>
-            <p className="text-[10px] font-bold uppercase tracking-wider opacity-70">{title}</p>
+            <Tooltip content={tooltip}>
+                <p className="text-[10px] font-bold uppercase tracking-wider opacity-70">{title}</p>
+            </Tooltip>
         </div>
         <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
     </div>
@@ -260,10 +263,38 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
                 {activeSection === 'Overview' && (
                     <div className="space-y-8 animate-in fade-in duration-500">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <ProfileStatWidget title="Institutional Avg" value={`${avg}%`} subtext="Class Standard" icon="analytics" gradient="from-blue-500 to-indigo-600" />
-                            <ProfileStatWidget title="Growth Velocity" value={`${student.growthVelocity}%`} subtext="Per Cycle" icon="trendUp" gradient={student.growthVelocity >= 0 ? "from-emerald-400 to-teal-500" : "from-rose-400 to-pink-500"} />
-                            <ProfileStatWidget title="Milestone Progress" value="85%" subtext="Estimated Target" icon="benchmark" gradient="from-purple-500 to-indigo-500" />
-                            <ProfileStatWidget title="Action Records" value={student.actionLog?.length || 0} subtext="Logged Events" icon="chat" gradient="from-slate-700 to-slate-900" />
+                            <ProfileStatWidget 
+                              title="Institutional Avg" 
+                              value={`${avg}%`} 
+                              subtext="Class Standard" 
+                              icon="analytics" 
+                              gradient="from-blue-500 to-indigo-600" 
+                              tooltip="Current skill average compared to classmates."
+                            />
+                            <ProfileStatWidget 
+                              title="Growth Velocity" 
+                              value={`${student.growthVelocity}%`} 
+                              subtext="Per Cycle" 
+                              icon="trendUp" 
+                              gradient={student.growthVelocity >= 0 ? "from-emerald-400 to-teal-500" : "from-rose-400 to-pink-500"} 
+                              tooltip="How fast the student is improving compared to previous tests."
+                            />
+                            <ProfileStatWidget 
+                              title="Milestone Progress" 
+                              value="85%" 
+                              subtext="Estimated Target" 
+                              icon="benchmark" 
+                              gradient="from-purple-500 to-indigo-500" 
+                              tooltip="Proximity to the international learning standard."
+                            />
+                            <ProfileStatWidget 
+                              title="Action Records" 
+                              value={student.actionLog?.length || 0} 
+                              subtext="Logged Events" 
+                              icon="chat" 
+                              gradient="from-slate-700 to-slate-900" 
+                              tooltip="Number of manual interventions or notes logged by teachers."
+                            />
                         </div>
 
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">

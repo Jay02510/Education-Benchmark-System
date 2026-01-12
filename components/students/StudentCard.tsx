@@ -3,6 +3,7 @@ import React from 'react';
 import { Student } from '../../types';
 import { Card } from '../common/Card';
 import { Icon } from '../common/Icon';
+import { Tooltip } from '../common/Tooltip';
 
 interface StudentCardProps {
   student: Student;
@@ -65,11 +66,15 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) =>
       {/* Performance Stats */}
       <div className="w-full grid grid-cols-2 gap-2 mt-auto">
          <div className="flex flex-col items-center py-3 bg-white/40 rounded-2xl group-hover:bg-white/80 transition-all duration-300 border border-white/20">
-             <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Proficiency</span>
+             <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5">
+               <Tooltip content="Current skill level based on latest test results.">Proficiency</Tooltip>
+             </span>
              <span className="text-sm font-black text-slate-700">{latestAvg}%</span>
          </div>
          <div className="flex flex-col items-center py-3 bg-white/40 rounded-2xl group-hover:bg-white/80 transition-all duration-300 border border-white/20">
-              <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5">Velocity</span>
+              <span className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-0.5">
+                <Tooltip content="The speed of improvement. Higher is faster learning.">Velocity</Tooltip>
+              </span>
               <span className={`text-sm font-black ${student.growthVelocity >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {student.growthVelocity > 0 ? '+' : ''}{student.growthVelocity}%
               </span>

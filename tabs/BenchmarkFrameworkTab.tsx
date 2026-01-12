@@ -5,6 +5,7 @@ import { Domain, TestPeriod } from '../types';
 import { useStudents } from '../context/StudentContext';
 import { useBenchmarks } from '../context/BenchmarkContext';
 import { DomainPerformanceChart, RadarPerformanceChart } from '../components/charts/Charts';
+import { Tooltip } from '../components/common/Tooltip';
 
 interface BenchmarkRowProps {
     id?: string;
@@ -52,8 +53,16 @@ const BenchmarkRow: React.FC<BenchmarkRowProps> = ({ id, domain, target, actual,
             <div className="md:col-span-3">
                 <p className="font-extrabold text-slate-800 text-lg">{domain}</p>
                 <div className="flex gap-2 mt-2">
-                    {cefr && cefr !== "N/A" && <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 tracking-wide">{cefr}</span>}
-                    {yle && yle !== "N/A" && <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-600 border border-purple-100 tracking-wide">{yle}</span>}
+                    {cefr && cefr !== "N/A" && (
+                      <Tooltip content="The International standard for language ability.">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 tracking-wide">{cefr}</span>
+                      </Tooltip>
+                    )}
+                    {yle && yle !== "N/A" && (
+                      <Tooltip content="Cambridge English equivalent level (Starters, Movers, Flyers).">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-600 border border-purple-100 tracking-wide">{yle}</span>
+                      </Tooltip>
+                    )}
                 </div>
             </div>
 

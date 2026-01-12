@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Assessment, Domain, TestPeriod } from '../../types';
 import { DOMAINS } from '../../constants';
 import { useBenchmarks } from '../../context/BenchmarkContext';
@@ -16,13 +16,73 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
     const { subdomains } = useBenchmarks();
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [testPeriod, setTestPeriod] = useState<TestPeriod>(TestPeriod.Baseline);
-    
     const [gridData, setGridData] = useState<Record<string, Record<string, number>>>({});
+
+    // Draggable / Panning State
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [isPanning, setIsPanning] = useState(false);
+    const [isSpacePressed, setIsSpacePressed] = useState(false);
+    const [startX, setStartX] = useState(0);
+    const [startY, setStartY] = useState(0);
+    const [scrollLeft, setScrollLeft] = useState(0);
+    const [scrollTop, setScrollTop] = useState(0);
 
     const makeKey = (domain: Domain, subdomain: string) => `${domain}:${subdomain}`;
 
     const getScore = (studentId: string, domain: Domain, subdomain: string) => {
         return gridData[studentId]?.[makeKey(domain, subdomain)] ?? '';
+    };
+
+    // Keyboard Pan Listener
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.code === 'Space' && (document.activeElement?.tagName !== 'INPUT')) {
+                setIsSpacePressed(true);
+                // Prevent scrolling page with space
+                if (e.target === document.body || e.target === containerRef.current) {
+                    e.preventDefault();
+                }
+            }
+        };
+        const handleKeyUp = (e: KeyboardEvent) => {
+            if (e.code === 'Space') setIsSpacePressed(false);
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, []);
+
+    // Mouse Drag Logic
+    const onMouseDown = (e: React.MouseEvent) => {
+        // Only trigger drag if clicking a header, sticky cell, or holding Space
+        const isHeader = (e.target as HTMLElement).closest('th') || (e.target as HTMLElement).closest('td.sticky');
+        const isInput = (e.target as HTMLElement).tagName === 'INPUT';
+        
+        if ((isHeader || isSpacePressed) && !isInput) {
+            setIsPanning(true);
+            setStartX(e.pageX - (containerRef.current?.offsetLeft || 0));
+            setStartY(e.pageY - (containerRef.current?.offsetTop || 0));
+            setScrollLeft(containerRef.current?.scrollLeft || 0);
+            setScrollTop(containerRef.current?.scrollTop || 0);
+        }
+    };
+
+    const onMouseLeave = () => setIsPanning(false);
+    const onMouseUp = () => setIsPanning(false);
+
+    const onMouseMove = (e: React.MouseEvent) => {
+        if (!isPanning || !containerRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - (containerRef.current.offsetLeft || 0);
+        const y = e.pageY - (containerRef.current.offsetTop || 0);
+        const walkX = (x - startX) * 1.5; // Scroll speed multiplier
+        const walkY = (y - startY) * 1.5;
+        containerRef.current.scrollLeft = scrollLeft - walkX;
+        containerRef.current.scrollTop = scrollTop - walkY;
     };
 
     const handleScoreChange = (studentId: string, domain: Domain, subdomain: string, value: string, maxScore: number) => {
@@ -45,7 +105,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
         }));
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent, sIndex: number, dIndex: number, subIndex: number, allSubdomainsFlat: any[]) => {
+    const handleInputKeyDown = (e: React.KeyboardEvent, sIndex: number, dIndex: number, subIndex: number, allSubdomainsFlat: any[]) => {
         if (e.key === 'ArrowRight' || e.key === 'Enter') {
             e.preventDefault();
             const nextSIndex = sIndex + 1;
@@ -133,7 +193,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-white z-[9999] flex flex-col overflow-hidden animate-in fade-in duration-300">
+        <div className="fixed inset-0 bg-white z-[9999] flex flex-col overflow-hidden animate-in fade-in duration-300 select-none">
             {/* Full-Width Header */}
             <div className="flex justify-between items-center px-8 py-5 border-b border-slate-100 bg-white shrink-0 shadow-sm relative z-[100]">
                 <div className="flex items-center gap-4">
@@ -142,7 +202,13 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                     </div>
                     <div>
                         <h2 className="text-2xl font-black text-slate-900 tracking-tight">Batch Entry Mode</h2>
-                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Entering Data for {students.length} Students</p>
+                        <div className="flex items-center gap-3">
+                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Entering Data for {students.length} Students</p>
+                            <div className="h-1 w-1 rounded-full bg-slate-200"></div>
+                            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-1">
+                                <kbd className="px-1.5 py-0.5 bg-indigo-50 border border-indigo-100 rounded text-[9px]">Space</kbd> + Drag to Pan
+                            </span>
+                        </div>
                     </div>
                 </div>
                 
@@ -176,8 +242,15 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                 </div>
             </div>
 
-            {/* Immersive Scrollable Grid Container */}
-            <div className="flex-1 overflow-auto bg-[#F8FAFC]">
+            {/* Draggable Scrollable Grid Container */}
+            <div 
+                ref={containerRef}
+                onMouseDown={onMouseDown}
+                onMouseMove={onMouseMove}
+                onMouseUp={onMouseUp}
+                onMouseLeave={onMouseLeave}
+                className={`flex-1 overflow-auto bg-[#F8FAFC] scroll-smooth ${isSpacePressed ? 'cursor-grab' : ''} ${isPanning ? 'cursor-grabbing' : ''}`}
+            >
                 <table className="border-separate border-spacing-0 min-w-full">
                     <thead>
                         <tr>
@@ -206,9 +279,9 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                     <tbody>
                         {flatSubdomains.map((sub, rowIndex) => (
                             <tr key={`${sub.domain}-${sub.name}`} className="group transition-colors">
-                                {/* Sticky Skill Row Labels */}
-                                <td className="sticky left-0 z-[65] bg-white group-hover:bg-slate-50 p-6 border-r border-b border-slate-100 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.02)] transition-colors">
-                                    <div className="flex flex-col">
+                                {/* Sticky Skill Row Labels - Made Draggable */}
+                                <td className="sticky left-0 z-[65] bg-white group-hover:bg-slate-50 p-6 border-r border-b border-slate-100 shadow-[4px_0_10px_-2px_rgba(0,0,0,0.02)] transition-colors cursor-grab active:cursor-grabbing">
+                                    <div className="flex flex-col pointer-events-none">
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">{sub.domain}</span>
                                             <span className="w-1 h-1 rounded-full bg-slate-300"></span>
@@ -227,8 +300,8 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                                             max={sub.maxScore}
                                             value={getScore(student.id, sub.domain, sub.name)}
                                             onChange={(e) => handleScoreChange(student.id, sub.domain, sub.name, e.target.value, sub.maxScore)}
-                                            onKeyDown={(e) => handleKeyDown(e, sIndex, sub.dIndex, sub.sIndex, flatSubdomains)}
-                                            className="w-full h-[72px] px-4 py-2 text-center text-base font-black text-slate-800 bg-transparent focus:bg-indigo-50 focus:ring-inset focus:ring-4 focus:ring-indigo-100 focus:outline-none transition-all placeholder-slate-200"
+                                            onKeyDown={(e) => handleInputKeyDown(e, sIndex, sub.dIndex, sub.sIndex, flatSubdomains)}
+                                            className={`w-full h-[72px] px-4 py-2 text-center text-base font-black text-slate-800 bg-transparent focus:bg-indigo-50 focus:ring-inset focus:ring-4 focus:ring-indigo-100 focus:outline-none transition-all placeholder-slate-200 ${isPanning ? 'pointer-events-none' : ''}`}
                                             placeholder="-"
                                         />
                                     </td>
@@ -243,13 +316,16 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
             <div className="p-8 border-t border-slate-100 bg-white flex justify-between items-center shrink-0 shadow-[0_-10px_40px_rgba(0,0,0,0.03)] relative z-[100]">
                 <div className="flex gap-10">
                     <div className="flex flex-col gap-1.5">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hotkeys</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Navigation Tools</p>
                         <div className="flex gap-6">
                             <span className="flex items-center gap-2 text-[11px] font-bold text-slate-600">
-                                <kbd className="px-1.5 py-0.5 bg-slate-100 rounded border border-slate-200 shadow-sm text-[10px]">Enter</kbd> Next Student
+                                <kbd className="px-1.5 py-0.5 bg-slate-100 rounded border border-slate-200 shadow-sm text-[10px]">Space</kbd> Pan Grid
                             </span>
                             <span className="flex items-center gap-2 text-[11px] font-bold text-slate-600">
-                                <kbd className="px-1.5 py-0.5 bg-slate-100 rounded border border-slate-200 shadow-sm text-[10px]">Arrows</kbd> Move Grid
+                                <kbd className="px-1.5 py-0.5 bg-slate-100 rounded border border-slate-200 shadow-sm text-[10px]">Arrows</kbd> Move Selection
+                            </span>
+                            <span className="flex items-center gap-2 text-[11px] font-bold text-slate-600">
+                                <kbd className="px-1.5 py-0.5 bg-slate-100 rounded border border-slate-200 shadow-sm text-[10px]">Enter</kbd> Next Row
                             </span>
                         </div>
                     </div>

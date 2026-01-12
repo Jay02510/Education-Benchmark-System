@@ -4,6 +4,7 @@ import { Student } from '../types';
 import { StudentCard } from '../components/students/StudentCard';
 import { StudentProfile } from '../components/students/StudentProfile';
 import { useStudents } from '../context/StudentContext';
+import { useBenchmarks } from '../context/BenchmarkContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '../context/NavigationContext';
 import { Icon } from '../components/common/Icon';
@@ -13,6 +14,8 @@ import { StudentCardSkeleton } from '../components/common/Skeleton';
 import { Card } from '../components/common/Card';
 import { LongitudinalGrowthChart } from '../components/charts/Charts';
 import { Modal } from '../components/common/Modal';
+import { AtRiskDetailsModal } from '../components/students/AtRiskDetailsModal';
+import { TABS } from '../constants';
 
 const DashboardWidget: React.FC<{ 
     title: string; 
@@ -22,11 +25,15 @@ const DashboardWidget: React.FC<{
     gradient: string;
     textColor: string;
     info?: string;
-}> = ({ title, value, subtext, icon, gradient, textColor, info }) => {
+    onClick?: () => void;
+}> = ({ title, value, subtext, icon, gradient, textColor, info, onClick }) => {
     const [showInfo, setShowInfo] = useState(false);
 
     return (
-        <div className={`relative overflow-hidden p-6 rounded-[2rem] bg-gradient-to-br ${gradient} shadow-lg transition-transform hover:-translate-y-1 group`}>
+        <div 
+            onClick={onClick}
+            className={`relative overflow-hidden p-6 rounded-[2rem] bg-gradient-to-br ${gradient} shadow-lg transition-all hover:-translate-y-1 group ${onClick ? 'cursor-pointer active:scale-95' : ''}`}
+        >
             <div className="relative z-10">
                 <div className="flex justify-between items-start mb-4">
                     <div className={`p-2.5 rounded-xl bg-white/30 backdrop-blur-md shadow-inner text-white`}>
@@ -34,8 +41,8 @@ const DashboardWidget: React.FC<{
                     </div>
                     {info && (
                         <button 
-                            onMouseEnter={() => setShowInfo(true)}
-                            onMouseLeave={() => setShowInfo(false)}
+                            onMouseEnter={(e) => { e.stopPropagation(); setShowInfo(true); }}
+                            onMouseLeave={(e) => { e.stopPropagation(); setShowInfo(false); }}
                             className="p-1 rounded-full bg-white/10 text-white/50 hover:text-white transition"
                         >
                             <Icon name="info" className="w-4 h-4" />
@@ -62,13 +69,15 @@ const DashboardWidget: React.FC<{
 
 export const StudentsTab: React.FC = () => {
     const { students, classProfile, updateClassProfile } = useStudents();
+    const { domains } = useBenchmarks();
     const { user } = useAuth();
-    const { selectedStudentId, setSelectedStudentId } = useNavigation();
+    const { selectedStudentId, setSelectedStudentId, setActiveTab } = useNavigation();
     
     const [searchTerm, setSearchTerm] = useState('');
     const [isBulkAssessmentOpen, setIsBulkAssessmentOpen] = useState(false);
     const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
     const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
+    const [isAtRiskModalOpen, setIsAtRiskModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
     // Class Edit State
@@ -83,15 +92,14 @@ export const StudentsTab: React.FC = () => {
     }, [classProfile]);
 
     const stats = useMemo(() => {
-        if (!students.length) return { classAvg: 0, interventionCount: 0, growth: 0 };
+        if (!students.length) return { classAvg: 0, interventionCount: 0, growth: 0, atRiskList: [] };
         
         let totalScore = 0;
         let count = 0;
-        let interventionCount = 0;
         let totalGrowth = 0;
+        const atRiskList = students.filter(s => s.interventionStatus !== null || s.hasAnomaly);
 
         students.forEach(s => {
-            if (s.interventionStatus) interventionCount++;
             totalGrowth += s.overallGrowth;
             const last = s.assessments[s.assessments.length - 1];
             if (last) {
@@ -103,8 +111,9 @@ export const StudentsTab: React.FC = () => {
 
         return {
             classAvg: count ? Math.round(totalScore / count) : 0,
-            interventionCount,
-            growth: count ? Math.round(totalGrowth / count) : 0
+            interventionCount: atRiskList.length,
+            growth: count ? Math.round(totalGrowth / count) : 0,
+            atRiskList
         };
     }, [students]);
 
@@ -200,6 +209,7 @@ export const StudentsTab: React.FC = () => {
                         gradient="from-orange-400 to-pink-500" 
                         textColor="text-white" 
                         info="Number of students flagged for RTI support based on low scores or regression."
+                        onClick={() => setIsAtRiskModalOpen(true)}
                     />
                     <DashboardWidget 
                         title="Class Performance" 
@@ -209,6 +219,7 @@ export const StudentsTab: React.FC = () => {
                         gradient="from-cyan-400 to-blue-500" 
                         textColor="text-white" 
                         info="The weighted average of all student domain scores in the current testing cycle."
+                        onClick={() => setActiveTab(TABS.ANALYTICS)}
                     />
                 </div>
 
@@ -291,6 +302,12 @@ export const StudentsTab: React.FC = () => {
 
             <BulkAssessmentModal isOpen={isBulkAssessmentOpen} onClose={() => setIsBulkAssessmentOpen(false)} />
             <AddStudentModal isOpen={isAddStudentModalOpen} onClose={() => setIsAddStudentModalOpen(false)} />
+            <AtRiskDetailsModal 
+                isOpen={isAtRiskModalOpen} 
+                onClose={() => setIsAtRiskModalOpen(false)} 
+                atRiskStudents={stats.atRiskList} 
+                domainCount={domains.length}
+            />
         </div>
     );
 };

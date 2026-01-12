@@ -5,6 +5,8 @@ import { DOMAINS } from '../../constants';
 import { useBenchmarks } from '../../context/BenchmarkContext';
 import { Icon } from '../common/Icon';
 import { useStudents } from '../../context/StudentContext';
+import { useToast } from '../../context/ToastContext';
+import * as XLSX from 'xlsx';
 
 interface BulkAssessmentModalProps {
     isOpen: boolean;
@@ -14,6 +16,8 @@ interface BulkAssessmentModalProps {
 export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen, onClose }) => {
     const { students, addAssessmentBulk } = useStudents();
     const { subdomains } = useBenchmarks();
+    const { showToast } = useToast();
+    
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [testPeriod, setTestPeriod] = useState<TestPeriod>(TestPeriod.Baseline);
     const [gridData, setGridData] = useState<Record<string, Record<string, number>>>({});
@@ -25,6 +29,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
     const [scrollProgress, setScrollProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const modalRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const makeKey = (domain: Domain, subdomain: string) => `${domain}:${subdomain}`;
 
@@ -78,6 +83,79 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
         }));
     };
 
+    // --- EXCEL LOGIC ---
+    
+    const downloadTemplate = () => {
+        const flatSubdomains: { domain: Domain, name: string, maxScore: number }[] = [];
+        DOMAINS.forEach((d) => {
+            (subdomains[d] || []).forEach((s) => {
+                flatSubdomains.push({ domain: d, name: s.name, maxScore: s.maxScore });
+            });
+        });
+
+        const headers = ['Student Name', ...flatSubdomains.map(s => `${s.domain}:${s.name} (Max ${s.maxScore})`)];
+        const data = students.map(s => [s.name, ...flatSubdomains.map(() => '')]);
+        
+        const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Scores");
+        XLSX.writeFile(workbook, `Benchmark_Template_${testPeriod}.xlsx`);
+        showToast("Template downloaded. Fill it out and upload back.");
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const rawData = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+
+                if (rawData.length < 2) throw new Error("File is empty or invalid format");
+
+                const headers = rawData[0];
+                const rows = rawData.slice(1);
+                const newGridData: Record<string, Record<string, number>> = { ...gridData };
+
+                rows.forEach(row => {
+                    const excelStudentName = String(row[0] || '').trim().toLowerCase();
+                    const student = students.find(s => s.name.trim().toLowerCase() === excelStudentName);
+                    
+                    if (student) {
+                        const studentScores: Record<string, number> = newGridData[student.id] || {};
+                        
+                        headers.forEach((header, colIdx) => {
+                            if (colIdx === 0) return; // Skip name column
+                            
+                            // Extract domain:subdomain from "Domain:Subdomain (Max X)"
+                            const cleanHeader = String(header).split(' (Max')[0].trim();
+                            const scoreVal = parseFloat(row[colIdx]);
+                            
+                            if (!isNaN(scoreVal)) {
+                                studentScores[cleanHeader] = scoreVal;
+                            }
+                        });
+                        
+                        newGridData[student.id] = studentScores;
+                    }
+                });
+
+                setGridData(newGridData);
+                showToast("Excel data imported successfully.", "success");
+            } catch (err) {
+                console.error(err);
+                showToast("Failed to parse Excel file. Check format.", "error");
+            }
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        };
+        reader.readAsBinaryString(file);
+    };
+
     const handleSave = async () => {
         if (isSaving) return;
         setIsSaving(true);
@@ -129,7 +207,6 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
     if (!isOpen) return null;
 
     const colWidth = Math.round(180 * gridScale);
-    // Dynamically adjust side width for narrow screens so the header doesn't swallow the whole width
     const sideWidth = Math.max(160, Math.min(300, Math.round(300 * gridScale)));
     const inputHeight = Math.round(80 * gridScale);
 
@@ -158,7 +235,6 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                     scrollbar-width: auto;
                     scrollbar-color: #cbd5e1 #f1f5f9;
                 }
-                /* Ensure focus mode handles the full screen well */
                 :fullscreen .grid-container {
                     height: 100%;
                 }
@@ -187,18 +263,43 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                         <span className="text-[9px] font-black text-indigo-600 w-8">{Math.round(gridScale * 100)}%</span>
                     </div>
 
+                    <div className="h-8 w-px bg-slate-100 mx-1 hidden md:block"></div>
+
+                    {/* Excel Tools */}
+                    <div className="hidden md:flex items-center gap-2">
+                         <button 
+                            onClick={downloadTemplate}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
+                            title="Download Excel Template"
+                        >
+                            <Icon name="arrowDown" className="w-4 h-4" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">Get Template</span>
+                        </button>
+                        <input 
+                            type="file" ref={fileInputRef} onChange={handleFileUpload} 
+                            accept=".xlsx, .xls, .csv" className="hidden" 
+                        />
+                        <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all shadow-sm"
+                            title="Upload Filled Excel"
+                        >
+                            <Icon name="arrowUp" className="w-4 h-4" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">Import scores</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
                     {/* True Fullscreen Toggle */}
                     <button 
                         onClick={toggleFullscreen}
                         className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all ${isFullscreen ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'}`}
-                        title="Toggle Browser Fullscreen (Focus Mode)"
                     >
                         <Icon name="analytics" className="w-4 h-4" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">{isFullscreen ? 'Exit Focus' : 'Focus View'}</span>
+                        <span className="text-[9px] font-black uppercase tracking-widest">{isFullscreen ? 'Exit Focus' : 'Focus'}</span>
                     </button>
-                </div>
-                
-                <div className="flex items-center gap-3">
+
                     <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
                         <select 
                             value={testPeriod} 

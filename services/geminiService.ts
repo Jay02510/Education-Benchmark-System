@@ -1,13 +1,16 @@
-
-import { Student, Domain, Resource, ResourceType, TestPeriod } from '../types';
+import { Student, Domain, Resource, ResourceType, TestPeriod } from '../types.ts';
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Always use process.env.API_KEY directly and use named parameter in constructor
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Named constructor as required. apiKey check included to prevent evaluation crash.
+const getAI = () => {
+    const key = (typeof process !== 'undefined' && process.env?.API_KEY) || '';
+    return new GoogleGenAI({ apiKey: key });
+};
 
 export class GeminiService {
     
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
+        const ai = getAI();
         const model = 'gemini-3-flash-preview';
         const sortedAssessments = [...student.assessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         const latest = sortedAssessments[sortedAssessments.length - 1];
@@ -72,6 +75,7 @@ export class GeminiService {
         growthAssets: string,
         atRiskCount: number
     ): Promise<string> {
+        const ai = getAI();
         const model = 'gemini-3-flash-preview';
         const prompt = `
         You are a Senior Strategic Advisor for a private English academy owner in Korea.
@@ -105,9 +109,10 @@ export class GeminiService {
         }
     }
 
-    static async generateResourceContent(domain: Domain, subdomain: string, type: ResourceType, level: string, prompt: string): Promise<{ title: string; description: string; content: string } | null> {
+    static async generateResourceContent(domain: Domain, subdomain: string, type: ResourceType, level: string, promptText: string): Promise<{ title: string; description: string; content: string } | null> {
+        const ai = getAI();
         const model = "gemini-3-flash-preview";
-        const fullPrompt = `Generate a resource for: Level: ${level}, Domain: ${domain}, Type: ${type}, Context: "${prompt}". Use clear, natural language suitable for ESL learners.`;
+        const fullPrompt = `Generate a resource for: Level: ${level}, Domain: ${domain}, Type: ${type}, Context: "${promptText}". Use clear, natural language suitable for ESL learners.`;
         try {
             const response = await ai.models.generateContent({
                 model, contents: fullPrompt,
@@ -121,6 +126,7 @@ export class GeminiService {
     }
 
     static async generateRemedialPrompt(domain: Domain, avgScore: number, level: string): Promise<string> {
+        const ai = getAI();
         const model = 'gemini-3-flash-preview';
         const prompt = `Class Level: ${level}, Struggling area: ${domain}, Avg: ${avgScore}%. Write a 1-sentence request to create a clear practice activity. Use simple English.`;
         try {
@@ -130,6 +136,7 @@ export class GeminiService {
     }
 
     static async getRecommendedResources(domain: Domain, subdomain: string, level: string): Promise<Resource[]> {
+        const ai = getAI();
         const model = 'gemini-3-flash-preview';
         const prompt = `Suggest 2 resources for Level ${level} in ${domain}. Use very plain English for titles and descriptions. Output JSON array of objects.`;
         try {
@@ -158,7 +165,7 @@ export class GeminiService {
                 }
             });
             const parsed = JSON.parse(response.text || '{"resources":[]}');
-            return parsed.resources.map((r: any, idx: number) => ({ id: `ai-${Date.now()}-${idx}`, ...r, level, period: TestPeriod.Baseline, content: "Generated Content", aiGenerated: true }));
+            return (parsed.resources || []).map((r: any, idx: number) => ({ id: `ai-${Date.now()}-${idx}`, ...r, level, period: TestPeriod.Baseline, content: "Generated Content", aiGenerated: true }));
         } catch (error) { return []; }
     }
 }

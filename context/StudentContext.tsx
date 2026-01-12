@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Student, ClassProfile, Assessment, Resource, Intervention, Trend, Domain, StudentLogEntry, TestPeriod } from '../types';
-import { mockStudents } from '../data/mockData';
-import { useToast } from './ToastContext';
-import { useAuth } from './AuthContext';
-import { db } from '../firebase';
+import { Student, ClassProfile, Assessment, Resource, Intervention, Trend, Domain, StudentLogEntry, TestPeriod } from '../types.ts';
+import { mockStudents } from '../data/mockData.ts';
+import { useToast } from './ToastContext.tsx';
+import { useAuth } from './AuthContext.tsx';
+import { db } from '../firebase.ts';
 import { 
     collection, 
     addDoc, 

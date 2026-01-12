@@ -1,24 +1,24 @@
 
 import React, { useState, useEffect } from 'react';
-import { StudentsTab } from './tabs/StudentsTab';
-import { BenchmarkFrameworkTab } from './tabs/BenchmarkFrameworkTab';
-import { AnalyticsTab } from './tabs/AnalyticsTab';
-import { SettingsTab } from './tabs/SettingsTab';
-import { AdminPanel } from './tabs/AdminPanel';
-import { TABS } from './constants';
-import { Icon } from './components/common/Icon';
-import { StudentProvider, useStudents } from './context/StudentContext';
-import { ResourceProvider } from './context/ResourceContext';
-import { BenchmarkProvider } from './context/BenchmarkContext';
-import { ToastProvider, useToast } from './context/ToastContext';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { NavigationProvider, useNavigation } from './context/NavigationContext';
-import { ChatProvider } from './context/ChatContext';
-import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
-import { LoginScreen } from './components/auth/LoginScreen';
-import { ChatWidget } from './components/chat/ChatWidget';
-import { PlatformGuideModal } from './components/common/PlatformGuideModal';
-import { BulkAssessmentModal } from './components/students/BulkAssessmentModal';
+import { StudentsTab } from './tabs/StudentsTab.tsx';
+import { BenchmarkFrameworkTab } from './tabs/BenchmarkFrameworkTab.tsx';
+import { AnalyticsTab } from './tabs/AnalyticsTab.tsx';
+import { SettingsTab } from './tabs/SettingsTab.tsx';
+import { AdminPanel } from './tabs/AdminPanel.tsx';
+import { TABS } from './constants.ts';
+import { Icon } from './components/common/Icon.tsx';
+import { StudentProvider, useStudents } from './context/StudentContext.tsx';
+import { ResourceProvider } from './context/ResourceContext.tsx';
+import { BenchmarkProvider } from './context/BenchmarkContext.tsx';
+import { ToastProvider, useToast } from './context/ToastContext.tsx';
+import { AuthProvider, useAuth } from './context/AuthContext.tsx';
+import { NavigationProvider, useNavigation } from './context/NavigationContext.tsx';
+import { ChatProvider } from './context/ChatContext.tsx';
+import { OnboardingWizard } from './components/onboarding/OnboardingWizard.tsx';
+import { LoginScreen } from './components/auth/LoginScreen.tsx';
+import { ChatWidget } from './components/chat/ChatWidget.tsx';
+import { PlatformGuideModal } from './components/common/PlatformGuideModal.tsx';
+import { BulkAssessmentModal } from './components/students/BulkAssessmentModal.tsx';
 
 type TabName = typeof TABS[keyof typeof TABS];
 
@@ -98,6 +98,11 @@ const MainAppLayout: React.FC = () => {
         }
     };
     
+    // Ensure LoginScreen is shown if user is not authenticated
+    if (!user) {
+        return <LoginScreen />;
+    }
+
     return (
         <div className="flex flex-col h-screen bg-[#F8FAFC] font-sans overflow-hidden text-slate-800 print:h-auto print:overflow-visible">
             <ConnectivityBanner />
@@ -240,43 +245,25 @@ const MainAppLayout: React.FC = () => {
     );
 };
 
-const AuthWrapper: React.FC = () => {
-    const { user, isLoading } = useAuth();
-
-    if (isLoading) {
-        return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                    <p className="text-slate-400 font-medium text-sm">Loading Workspace...</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (!user) return <LoginScreen />;
-
-    return (
-        <NavigationProvider>
-            <StudentProvider>
-                <BenchmarkProvider>
-                    <ResourceProvider>
-                        <ChatProvider>
-                            <MainAppLayout />
-                        </ChatProvider>
-                    </ResourceProvider>
-                </BenchmarkProvider>
-            </StudentProvider>
-        </NavigationProvider>
-    );
-};
-
-export default function App() {
+// Root App component providing necessary context and wrapping the layout
+const App: React.FC = () => {
     return (
         <ToastProvider>
             <AuthProvider>
-                <AuthWrapper />
+                <BenchmarkProvider>
+                    <StudentProvider>
+                        <ResourceProvider>
+                            <NavigationProvider>
+                                <ChatProvider>
+                                    <MainAppLayout />
+                                </ChatProvider>
+                            </NavigationProvider>
+                        </ResourceProvider>
+                    </StudentProvider>
+                </BenchmarkProvider>
             </AuthProvider>
         </ToastProvider>
     );
-}
+};
+
+export default App;

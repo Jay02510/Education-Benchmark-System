@@ -18,6 +18,7 @@ import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { ChatWidget } from './components/chat/ChatWidget';
 import { PlatformGuideModal } from './components/common/PlatformGuideModal';
+import { BulkAssessmentModal } from './components/students/BulkAssessmentModal';
 
 type TabName = typeof TABS[keyof typeof TABS];
 
@@ -75,7 +76,7 @@ const ConnectivityBanner: React.FC = () => {
 
 const MainAppLayout: React.FC = () => {
     const { user, logout } = useAuth();
-    const { activeTab, setActiveTab } = useNavigation();
+    const { activeTab, setActiveTab, isBulkEntryOpen, setBulkEntryOpen } = useNavigation();
     const { classProfile } = useStudents();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -230,6 +231,9 @@ const MainAppLayout: React.FC = () => {
 
                      <ChatWidget />
                      <PlatformGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+                     
+                     {/* Global Root Modals */}
+                     <BulkAssessmentModal isOpen={isBulkEntryOpen} onClose={() => setBulkEntryOpen(false)} />
                 </main>
             </div>
         </div>

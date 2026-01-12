@@ -7,8 +7,10 @@ type TabName = typeof TABS[keyof typeof TABS];
 interface NavigationContextType {
     activeTab: TabName;
     selectedStudentId: string | null;
+    isBulkEntryOpen: boolean;
     setActiveTab: (tab: TabName) => void;
     setSelectedStudentId: (id: string | null) => void;
+    setBulkEntryOpen: (open: boolean) => void;
     navigateToStudent: (id: string) => void;
 }
 
@@ -17,6 +19,7 @@ const NavigationContext = createContext<NavigationContextType | undefined>(undef
 export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [activeTab, setActiveTab] = useState<TabName>(TABS.STUDENTS);
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+    const [isBulkEntryOpen, setIsBulkEntryOpen] = useState(false);
 
     const navigateToStudent = (id: string) => {
         setSelectedStudentId(id);
@@ -27,8 +30,10 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         <NavigationContext.Provider value={{ 
             activeTab, 
             selectedStudentId, 
+            isBulkEntryOpen,
             setActiveTab, 
             setSelectedStudentId,
+            setBulkEntryOpen: setIsBulkEntryOpen,
             navigateToStudent 
         }}>
             {children}

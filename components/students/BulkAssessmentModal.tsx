@@ -18,11 +18,13 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
     const [testPeriod, setTestPeriod] = useState<TestPeriod>(TestPeriod.Baseline);
     const [gridData, setGridData] = useState<Record<string, Record<string, number>>>({});
     const [isSaving, setIsSaving] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     // Layout & Adjustment State
     const [gridScale, setGridScale] = useState(1);
     const [scrollProgress, setScrollProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
+    const modalRef = useRef<HTMLDivElement>(null);
 
     const makeKey = (domain: Domain, subdomain: string) => `${domain}:${subdomain}`;
 
@@ -30,11 +32,29 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
         return gridData[studentId]?.[makeKey(domain, subdomain)] ?? '';
     };
 
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            modalRef.current?.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+            });
+            setIsFullscreen(true);
+        } else {
+            document.exitFullscreen();
+            setIsFullscreen(false);
+        }
+    };
+
+    useEffect(() => {
+        const handleFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', handleFsChange);
+        return () => document.removeEventListener('fullscreenchange', handleFsChange);
+    }, []);
+
     const handleScroll = () => {
         if (containerRef.current) {
             const { scrollLeft, scrollWidth, clientWidth } = containerRef.current;
             const progress = (scrollLeft / (scrollWidth - clientWidth)) * 100;
-            setScrollProgress(progress);
+            setScrollProgress(progress || 0);
         }
     };
 
@@ -109,11 +129,15 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
     if (!isOpen) return null;
 
     const colWidth = Math.round(180 * gridScale);
-    const sideWidth = Math.round(300 * gridScale);
+    // Dynamically adjust side width for narrow screens so the header doesn't swallow the whole width
+    const sideWidth = Math.max(160, Math.min(300, Math.round(300 * gridScale)));
     const inputHeight = Math.round(80 * gridScale);
 
     return (
-        <div className="fixed inset-0 bg-white flex flex-col overflow-hidden animate-in fade-in duration-300 z-[100000]">
+        <div 
+            ref={modalRef}
+            className="fixed inset-0 bg-white flex flex-col overflow-hidden z-[999999] shadow-2xl"
+        >
             <style dangerouslySetInnerHTML={{ __html: `
                 .grid-container::-webkit-scrollbar {
                     width: 14px;
@@ -134,10 +158,14 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                     scrollbar-width: auto;
                     scrollbar-color: #cbd5e1 #f1f5f9;
                 }
+                /* Ensure focus mode handles the full screen well */
+                :fullscreen .grid-container {
+                    height: 100%;
+                }
             `}} />
 
             {/* Header */}
-            <div className="flex justify-between items-center px-4 md:px-8 py-4 border-b border-slate-100 bg-white shrink-0 shadow-sm relative z-[200]">
+            <div className="flex justify-between items-center px-4 md:px-8 py-4 border-b border-slate-100 bg-white shrink-0 shadow-sm relative z-[300]">
                 <div className="flex items-center gap-4">
                     <div className="p-2 bg-indigo-600 rounded-lg text-white shrink-0">
                         <Icon name="benchmark" className="w-5 h-5" />
@@ -147,15 +175,27 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                         <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">{students.length} students</p>
                     </div>
                     <div className="h-8 w-px bg-slate-100 mx-1"></div>
+                    
+                    {/* Scale Control */}
                     <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
                         <span className="text-[9px] font-black text-slate-400 uppercase">Scale</span>
                         <input 
                             type="range" min="0.6" max="1.4" step="0.1" value={gridScale}
                             onChange={(e) => setGridScale(parseFloat(e.target.value))}
-                            className="w-20 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                            className="w-16 md:w-20 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
                         />
                         <span className="text-[9px] font-black text-indigo-600 w-8">{Math.round(gridScale * 100)}%</span>
                     </div>
+
+                    {/* True Fullscreen Toggle */}
+                    <button 
+                        onClick={toggleFullscreen}
+                        className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all ${isFullscreen ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'}`}
+                        title="Toggle Browser Fullscreen (Focus Mode)"
+                    >
+                        <Icon name="analytics" className="w-4 h-4" />
+                        <span className="text-[9px] font-black uppercase tracking-widest">{isFullscreen ? 'Exit Focus' : 'Focus View'}</span>
+                    </button>
                 </div>
                 
                 <div className="flex items-center gap-3">
@@ -167,12 +207,12 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                         >
                             {Object.values(TestPeriod).map(q => <option key={q} value={q}>{q}</option>)}
                         </select>
-                        <div className="w-px h-3 bg-slate-200"></div>
+                        <div className="hidden md:block w-px h-3 bg-slate-200 mx-1"></div>
                         <input 
                             type="date" 
                             value={date} 
                             onChange={(e) => setDate(e.target.value)} 
-                            className="bg-transparent text-[11px] font-black outline-none w-24" 
+                            className="bg-transparent text-[11px] font-black outline-none w-24 hidden md:block" 
                         />
                     </div>
                     <button onClick={onClose} disabled={isSaving} className="p-2 text-slate-400 hover:text-slate-900 transition-all rounded-lg hover:bg-slate-100">
@@ -182,7 +222,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
             </div>
 
             {/* Scrollable Progress Indicator */}
-            <div className="h-1 bg-slate-100 shrink-0 relative z-[200]">
+            <div className="h-1 bg-slate-100 shrink-0 relative z-[300]">
                 <div className="h-full bg-indigo-500 transition-all duration-300" style={{ width: `${scrollProgress}%` }}></div>
             </div>
 
@@ -192,20 +232,20 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                 onScroll={handleScroll}
                 className="flex-1 overflow-auto bg-[#F8FAFC] grid-container relative"
             >
-                <table className="border-separate border-spacing-0 min-w-max">
+                <table className="border-separate border-spacing-0 min-w-full">
                     <thead>
                         <tr>
                             <th 
-                                className="sticky top-0 left-0 z-[160] bg-white p-6 text-left border-r border-b border-slate-200 shadow-sm"
+                                className="sticky top-0 left-0 z-[250] bg-white p-4 md:p-6 text-left border-r border-b border-slate-200 shadow-sm"
                                 style={{ width: sideWidth, minWidth: sideWidth }}
                             >
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Framework</span>
-                                <p className="text-sm font-black text-slate-800">Domain / Skill Set</p>
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Framework</span>
+                                <p className="text-xs md:text-sm font-black text-slate-800 leading-tight">Domain / Skill Set</p>
                             </th>
                             {students.map(student => (
                                 <th 
                                     key={student.id} 
-                                    className="sticky top-0 z-[150] bg-white p-4 border-r border-b border-slate-200 text-center"
+                                    className="sticky top-0 z-[240] bg-white p-4 border-r border-b border-slate-200 text-center"
                                     style={{ width: colWidth, minWidth: colWidth }}
                                 >
                                     <div className="flex flex-col items-center">
@@ -217,22 +257,21 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                                     </div>
                                 </th>
                             ))}
-                            {/* Horizontal End Spacer to prevent clipping */}
-                            <th className="sticky top-0 z-[140] bg-white border-b border-slate-200 w-32 min-w-[128px]"></th>
+                            <th className="sticky top-0 z-[230] bg-white border-b border-slate-200 w-32 min-w-[128px]"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {flatSubdomains.map((sub, rowIndex) => (
                             <tr key={`${sub.domain}-${sub.name}`} className="group">
                                 <td 
-                                    className="sticky left-0 z-[140] bg-white group-hover:bg-slate-50 p-6 border-r border-b border-slate-100 shadow-sm transition-colors"
+                                    className="sticky left-0 z-[240] bg-white group-hover:bg-slate-50 p-4 md:p-6 border-r border-b border-slate-100 shadow-sm transition-colors"
                                     style={{ width: sideWidth, minWidth: sideWidth }}
                                 >
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">{sub.domain}</span>
-                                        <span className="text-[9px] font-bold text-slate-400">• Max {sub.maxScore}</span>
+                                    <div className="flex flex-wrap items-center gap-x-2 mb-1">
+                                        <span className="text-[8px] md:text-[9px] font-black text-indigo-500 uppercase tracking-widest">{sub.domain}</span>
+                                        <span className="text-[8px] md:text-[9px] font-bold text-slate-400">• Max {sub.maxScore}</span>
                                     </div>
-                                    <p className="font-bold text-slate-700 leading-tight text-sm">{sub.name}</p>
+                                    <p className="font-bold text-slate-700 leading-tight text-xs md:text-sm">{sub.name}</p>
                                 </td>
                                 {students.map((student) => (
                                     <td 
@@ -258,11 +297,11 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 md:p-8 border-t border-slate-100 bg-white flex flex-col md:flex-row justify-between items-center shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)] relative z-[200] gap-4">
+            <div className="px-6 py-4 md:p-8 border-t border-slate-100 bg-white flex flex-col md:flex-row justify-between items-center shrink-0 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] relative z-[300] gap-4">
                 <div className="flex items-center gap-3 text-slate-400">
                     <Icon name="search" className="w-4 h-4 opacity-50" />
                     <span className="text-[10px] font-black uppercase tracking-widest">
-                        Scroll for all students and skills
+                        Swipe to see more students and skills
                     </span>
                 </div>
                 <div className="flex gap-3 w-full md:w-auto">

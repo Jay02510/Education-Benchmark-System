@@ -8,10 +8,8 @@ import { useBenchmarks } from '../context/BenchmarkContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '../context/NavigationContext';
 import { Icon } from '../components/common/Icon';
-import { BulkAssessmentModal } from '../components/students/BulkAssessmentModal';
 import { AddStudentModal } from '../components/students/AddStudentModal';
 import { StudentCardSkeleton } from '../components/common/Skeleton';
-import { Card } from '../components/common/Card';
 import { LongitudinalGrowthChart } from '../components/charts/Charts';
 import { Modal } from '../components/common/Modal';
 import { AtRiskDetailsModal } from '../components/students/AtRiskDetailsModal';
@@ -77,10 +75,9 @@ export const StudentsTab: React.FC = () => {
     const { students, classProfile, updateClassProfile } = useStudents();
     const { domains } = useBenchmarks();
     const { user } = useAuth();
-    const { selectedStudentId, setSelectedStudentId, setActiveTab } = useNavigation();
+    const { selectedStudentId, setSelectedStudentId, setActiveTab, setBulkEntryOpen } = useNavigation();
     
     const [searchTerm, setSearchTerm] = useState('');
-    const [isBulkAssessmentOpen, setIsBulkAssessmentOpen] = useState(false);
     const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
     const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
     const [isAtRiskModalOpen, setIsAtRiskModalOpen] = useState(false);
@@ -252,7 +249,7 @@ export const StudentsTab: React.FC = () => {
                     <p className="text-slate-400 text-sm font-medium">Class management for {classProfile?.className}</p>
                 </div>
                 <div className="flex gap-3 w-full sm:w-auto">
-                    <button onClick={() => setIsBulkAssessmentOpen(true)} className="flex-1 sm:flex-none px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black hover:bg-slate-50 transition flex items-center justify-center gap-2 shadow-sm active:scale-95">
+                    <button onClick={() => setBulkEntryOpen(true)} className="flex-1 sm:flex-none px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black hover:bg-slate-50 transition flex items-center justify-center gap-2 shadow-sm active:scale-95">
                         <Icon name="benchmark" className="w-4 h-4 text-indigo-500" />
                         <span className="text-xs uppercase tracking-widest">Batch Entry</span>
                     </button>
@@ -310,7 +307,6 @@ export const StudentsTab: React.FC = () => {
                 </div>
             </Modal>
 
-            <BulkAssessmentModal isOpen={isBulkAssessmentOpen} onClose={() => setIsBulkAssessmentOpen(false)} />
             <AddStudentModal isOpen={isAddStudentModalOpen} onClose={() => setIsAddStudentModalOpen(false)} />
             <AtRiskDetailsModal 
                 isOpen={isAtRiskModalOpen} 

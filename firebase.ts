@@ -1,4 +1,3 @@
-
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
@@ -12,22 +11,19 @@ const firebaseConfig = {
   appId: "1:473159328676:web:85cb8024d9bf0c92e7d731"
 };
 
-// Initialize Firebase
+// Singleton initialization
 const app = initializeApp(firebaseConfig);
 
-// Initialize Services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// Enable Offline Persistence
+// Enable Offline Persistence with error handling to prevent startup crashes
 if (typeof window !== 'undefined') {
     enableIndexedDbPersistence(db).catch((err) => {
         if (err.code === 'failed-precondition') {
-            // Multiple tabs open, persistence can only be enabled in one tab at a time.
-            console.warn('Firestore persistence failed: Multiple tabs open');
+            console.warn('Firestore persistence: multiple tabs open');
         } else if (err.code === 'unimplemented') {
-            // The current browser does not support all of the features required to enable persistence
-            console.warn('Firestore persistence failed: Browser not supported');
+            console.warn('Firestore persistence: not supported');
         }
     });
 }

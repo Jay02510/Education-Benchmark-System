@@ -10,16 +10,24 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-      body {
-        font-family: 'Inter', sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #f8fafc;
-      }
-      #root {
-        min-height: 100vh;
+      body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
+      #root { min-height: 100vh; }
+      /* Fail-safe loading state */
+      #root:empty::before {
+        content: 'Initializing System...';
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        font-weight: 800;
+        color: #6366f1;
+        letter-spacing: -0.025em;
       }
     </style>
+    <!-- CRITICAL: Shim must run before modules load -->
+    <script>
+      window.process = { env: { API_KEY: "" } };
+    </script>
     <script type="importmap">
 {
   "imports": {
@@ -40,7 +48,6 @@
   </head>
   <body class="text-gray-800 antialiased">
     <div id="root"></div>
-    <!-- Script order is critical: index.tsx is the entry point -->
     <script type="module" src="./index.tsx"></script>
   </body>
 </html>

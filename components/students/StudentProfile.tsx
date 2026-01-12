@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Student, Resource, Domain, Assessment, StudentLogEntry } from '../../types';
 import { GeminiService } from '../../services/geminiService';
@@ -68,14 +67,16 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
 
     // Stats calculation
     const latestAssessment = student.assessments[student.assessments.length - 1];
-    const avg = latestAssessment ? Math.round(Object.values(latestAssessment.scores).reduce((a, b) => a + (b as number), 0) / Object.keys(latestAssessment.scores).length) : 0;
+    // Fix: Cast Object.values to number[] to ensure reduce accumulator type is correctly inferred as number
+    const avg = latestAssessment ? Math.round((Object.values(latestAssessment.scores) as number[]).reduce((a, b) => a + b, 0) / Object.keys(latestAssessment.scores).length) : 0;
     
     // Fixed numeric access to scores using the Domain enum
     const projectionData = useMemo(() => {
         const firstAssessment = student.assessments[0];
-        const baseline = (firstAssessment?.scores[Domain.Reading] as number) || 60;
-        const current = (latestAssessment?.scores[Domain.Reading] as number) || baseline;
-        const velocity = student.growthVelocity || 0;
+        // Fix: Use Number() and optional chaining to ensure numeric results for arithmetic operations
+        const baseline = Number(firstAssessment?.scores?.[Domain.Reading] ?? 60);
+        const current = Number(latestAssessment?.scores?.[Domain.Reading] ?? baseline);
+        const velocity = Number(student.growthVelocity || 0);
         return [
             { name: 'Baseline', score: baseline },
             { name: 'Current', score: current },

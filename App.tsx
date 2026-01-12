@@ -17,6 +17,7 @@ import { ChatProvider } from './context/ChatContext';
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { ChatWidget } from './components/chat/ChatWidget';
+import { PlatformGuideModal } from './components/common/PlatformGuideModal';
 
 type TabName = typeof TABS[keyof typeof TABS];
 
@@ -79,6 +80,7 @@ const MainAppLayout: React.FC = () => {
     const { showToast } = useToast();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isGuideOpen, setIsGuideOpen] = useState(false);
 
     const handleTabChange = (tab: TabName) => {
         setActiveTab(tab);
@@ -135,6 +137,25 @@ const MainAppLayout: React.FC = () => {
                             </ul>
                         </div>
                         
+                        <div>
+                            {!isSidebarCollapsed && <p className="px-3 ml-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Help Center</p>}
+                            <ul className="space-y-1">
+                                <li>
+                                    <button
+                                        onClick={() => setIsGuideOpen(true)}
+                                        className={`group flex items-center w-full py-3 px-3 mx-auto rounded-xl transition-all duration-200 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 font-medium ${isSidebarCollapsed ? 'justify-center w-10 h-10 px-0' : ''}`}
+                                    >
+                                        <div className="flex items-center justify-center shrink-0 w-8 h-8">
+                                            <Icon name="book" className="w-5 h-5 text-slate-400 group-hover:text-indigo-600" />
+                                        </div>
+                                        <span className={`text-sm ml-2 transition-all duration-300 ${isSidebarCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
+                                            Platform Guide
+                                        </span>
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
                         <div>
                             {!isSidebarCollapsed && <p className="px-3 ml-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">System</p>}
                              <ul className="space-y-1">
@@ -226,6 +247,7 @@ const MainAppLayout: React.FC = () => {
                      </div>
 
                      <ChatWidget />
+                     <PlatformGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
                 </main>
             </div>
         </div>

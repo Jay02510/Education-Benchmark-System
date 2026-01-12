@@ -21,21 +21,44 @@ const DashboardWidget: React.FC<{
     icon: string; 
     gradient: string;
     textColor: string;
-}> = ({ title, value, subtext, icon, gradient, textColor }) => (
-    <div className={`relative overflow-hidden p-6 rounded-[2rem] bg-gradient-to-br ${gradient} shadow-lg transition-transform hover:-translate-y-1`}>
-        <div className="relative z-10">
-            <div className="flex justify-between items-start mb-4">
-                <div className={`p-2.5 rounded-xl bg-white/30 backdrop-blur-md shadow-inner text-white`}>
-                    <Icon name={icon} className="w-6 h-6" />
+    info?: string;
+}> = ({ title, value, subtext, icon, gradient, textColor, info }) => {
+    const [showInfo, setShowInfo] = useState(false);
+
+    return (
+        <div className={`relative overflow-hidden p-6 rounded-[2rem] bg-gradient-to-br ${gradient} shadow-lg transition-transform hover:-translate-y-1 group`}>
+            <div className="relative z-10">
+                <div className="flex justify-between items-start mb-4">
+                    <div className={`p-2.5 rounded-xl bg-white/30 backdrop-blur-md shadow-inner text-white`}>
+                        <Icon name={icon} className="w-6 h-6" />
+                    </div>
+                    {info && (
+                        <button 
+                            onMouseEnter={() => setShowInfo(true)}
+                            onMouseLeave={() => setShowInfo(false)}
+                            className="p-1 rounded-full bg-white/10 text-white/50 hover:text-white transition"
+                        >
+                            <Icon name="info" className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
+                
+                {showInfo && info ? (
+                    <div className="absolute inset-x-0 top-12 bg-white/10 backdrop-blur-xl p-4 rounded-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200 z-20">
+                        <p className="text-[11px] font-bold text-white leading-relaxed">{info}</p>
+                    </div>
+                ) : (
+                    <>
+                        <h3 className="text-4xl font-extrabold text-white mb-1 tracking-tight">{value}</h3>
+                        <p className="text-white/90 font-medium text-sm mb-4">{subtext}</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.15em] text-white/60">{title}</p>
+                    </>
+                )}
             </div>
-            <h3 className="text-4xl font-extrabold text-white mb-1">{value}</h3>
-            <p className="text-white/90 font-medium text-sm mb-4">{subtext}</p>
-            <p className="text-xs font-bold uppercase tracking-wider text-white/70">{title}</p>
+            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-1000"></div>
         </div>
-        <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
-    </div>
-);
+    );
+};
 
 export const StudentsTab: React.FC = () => {
     const { students, classProfile, updateClassProfile } = useStudents();
@@ -169,19 +192,39 @@ export const StudentsTab: React.FC = () => {
                 </div>
 
                 <div className="md:col-span-8 lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <DashboardWidget title="Prioritized Tasks" value={`${stats.interventionCount} Alerts`} subtext="Students needing support" icon="alert" gradient="from-orange-400 to-pink-500" textColor="text-white" />
-                    <DashboardWidget title="Class Average" value={`${stats.classAvg}%`} subtext="Latest testing cycle" icon="analytics" gradient="from-cyan-400 to-blue-500" textColor="text-white" />
+                    <DashboardWidget 
+                        title="Actionable Alerts" 
+                        value={`${stats.interventionCount} Tasks`} 
+                        subtext="Critical support items" 
+                        icon="alert" 
+                        gradient="from-orange-400 to-pink-500" 
+                        textColor="text-white" 
+                        info="Number of students flagged for RTI support based on low scores or regression."
+                    />
+                    <DashboardWidget 
+                        title="Class Performance" 
+                        value={`${stats.classAvg}%`} 
+                        subtext="Average Proficiency" 
+                        icon="analytics" 
+                        gradient="from-cyan-400 to-blue-500" 
+                        textColor="text-white" 
+                        info="The weighted average of all student domain scores in the current testing cycle."
+                    />
                 </div>
 
                 <div className="md:col-span-12 lg:col-span-4 bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-bold text-slate-800">Growth Projection</h3>
+                        <h3 className="font-bold text-slate-800">Growth Velocity</h3>
                         <span className="text-xs font-bold text-emerald-500 bg-emerald-50 px-2 py-1 rounded-lg flex items-center gap-1">
                             <Icon name="trendUp" className="w-3 h-3"/> +{stats.growth}%
                         </span>
                     </div>
                     <div className="flex-1 min-h-[140px]">
                         <LongitudinalGrowthChart data={chartData} lines={[{ key: 'avg', color: '#6366f1' }]} type="area" />
+                    </div>
+                    <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 p-2 rounded-xl border border-slate-100">
+                        <Icon name="info" className="w-3 h-3 text-indigo-500" />
+                        <span>Tracks the speed of proficiency gains across periods.</span>
                     </div>
                 </div>
             </div>

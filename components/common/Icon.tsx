@@ -131,6 +131,19 @@ const icons: Record<string, (props: any) => React.ReactNode> = {
         <path d="M1 20v-6h6" {...props} />
         <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" {...props} />
     </>
+  ),
+  info: (props) => (
+    <>
+        <circle cx="12" cy="12" r="10" {...props} />
+        <line x1="12" y1="16" x2="12" y2="12" {...props} />
+        <line x1="12" y1="8" x2="12.01" y2="8" {...props} />
+    </>
+  ),
+  book: (props) => (
+    <>
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" {...props} />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" {...props} />
+    </>
   )
 };
 

@@ -58,7 +58,7 @@ export const ChatWidget: React.FC = () => {
     if (!user) return null;
 
     return (
-        <div className="fixed bottom-6 left-8 z-[100001] flex flex-col items-start pointer-events-none">
+        <div className="fixed bottom-6 left-8 z-[10000] flex flex-col items-start pointer-events-none">
             <div 
                 className={`
                     pointer-events-auto bg-white/95 backdrop-blur-2xl w-[90vw] md:w-[420px] rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.2)] border border-white/60 overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] origin-bottom-left mb-6 flex flex-col

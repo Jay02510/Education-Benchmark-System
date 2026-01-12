@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Student, ClassProfile, Assessment, Resource, Intervention, Trend, Domain, StudentLogEntry } from '../types';
+import { Student, ClassProfile, Assessment, Resource, Intervention, Trend, Domain, StudentLogEntry, TestPeriod } from '../types';
 import { mockStudents } from '../data/mockData';
 import { useToast } from './ToastContext';
 import { useAuth } from './AuthContext';
@@ -26,7 +26,7 @@ interface StudentContextType {
     addStudentsBulk: (names: string[]) => void;
     updateStudent: (updatedStudent: Student) => void;
     deleteStudent: (id: string) => void;
-    addAssessmentBulk: (assessments: { studentId: string, assessment: Assessment }[]) => void;
+    addAssessmentBulk: (assessments: { studentId: string, assessment: Assessment }[]) => Promise<void>;
     updateAssessmentForStudent: (studentId: string, assessment: Assessment) => Promise<void>;
     updateClassProfile: (updates: Partial<ClassProfile>) => Promise<void>;
     addLogEntry: (studentId: string, entry: Omit<StudentLogEntry, 'id'>) => Promise<void>;
@@ -39,6 +39,9 @@ interface StudentContextType {
 }
 
 const StudentContext = createContext<StudentContextType | undefined>(undefined);
+
+// Storage Key Helpers
+const getStorageKey = (userId: string, type: 'students' | 'profile') => `benchmark_${type}_${userId}`;
 
 const calculateVelocity = (assessments: Assessment[]): number => {
     if (assessments.length < 2) return 0;
@@ -61,14 +64,14 @@ const calculateRTIStatus = (assessments: Assessment[]): Intervention | null => {
     const avg = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
     const domainEntries = Object.entries(latest.scores) as [Domain, number][];
 
-    if (avg < 50) return { tier: 3, domain: "General", goal: "Critical intensive support.", trend: Trend.Down, triggerReason: `Critical Avg: ${Math.round(avg)}%`, dateIdentified: new Date().toISOString() };
+    if (avg < 50) return { tier: 3, domain: "General" as any, goal: "Critical intensive support.", trend: Trend.Down, triggerReason: `Critical Avg: ${Math.round(avg)}%`, dateIdentified: new Date().toISOString() };
     
     const weakDomain = domainEntries.find(([_, s]) => s < 65);
     if (weakDomain) return { tier: 2, domain: weakDomain[0], goal: `Remedial ${weakDomain[0]} focus.`, trend: Trend.Stable, triggerReason: `${weakDomain[0]} under 65%`, dateIdentified: new Date().toISOString() };
 
     if (previous) {
-        const prevAvg = Object.values(previous.scores).reduce((a: number, b: number) => a + b, 0) / Object.keys(previous.scores).length;
-        if (avg < prevAvg - 8) return { tier: 2, domain: "General", goal: "Address sudden regression.", trend: Trend.Down, triggerReason: `Regression: -${Math.round(prevAvg - avg)}%`, dateIdentified: new Date().toISOString() };
+        const prevAvg = Object.values(previous.scores).reduce((a, b) => a + b, 0) / Object.keys(previous.scores).length;
+        if (avg < prevAvg - 8) return { tier: 2, domain: "General" as any, goal: "Address sudden regression.", trend: Trend.Down, triggerReason: `Regression: -${Math.round(prevAvg - avg)}%`, dateIdentified: new Date().toISOString() };
     }
 
     return null;
@@ -88,9 +91,12 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     useEffect(() => {
         if (!user) { setStudents([]); setClassProfile(null); return; }
 
+        const sKey = getStorageKey(user.id, 'students');
+        const pKey = getStorageKey(user.id, 'profile');
+
         if (user.isDemo) {
-            const localStudents = localStorage.getItem('demo_students');
-            const localProfile = localStorage.getItem('demo_classProfile');
+            const localStudents = localStorage.getItem(sKey);
+            const localProfile = localStorage.getItem(pKey);
             if (localStudents) setStudents(JSON.parse(localStudents));
             if (localProfile) setClassProfile(JSON.parse(localProfile));
         } else {
@@ -108,7 +114,9 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const syncStudents = (newStudents: Student[]) => {
         setStudents(newStudents);
-        if (user?.isDemo) localStorage.setItem('demo_students', JSON.stringify(newStudents));
+        if (user) {
+            localStorage.setItem(getStorageKey(user.id, 'students'), JSON.stringify(newStudents));
+        }
     };
 
     const addLogEntry = async (studentId: string, entry: Omit<StudentLogEntry, 'id'>) => {
@@ -127,27 +135,27 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     const registerClass = async (profile: ClassProfile) => {
-        if (user?.isDemo) { setClassProfile(profile); localStorage.setItem('demo_classProfile', JSON.stringify(profile)); return; }
+        if (user?.isDemo) { 
+            setClassProfile(profile); 
+            localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(profile)); 
+            return; 
+        }
         await addDoc(collection(db, 'class_profiles'), { ...profile, userId: user?.id });
     };
 
     const updateClassProfile = async (updates: Partial<ClassProfile>) => {
-        if (!classProfile) return;
+        if (!classProfile || !user) return;
         const updatedProfile = { ...classProfile, ...updates };
         
-        // Optimistic local state update
         setClassProfile(updatedProfile);
 
-        // Propagate level change to all students in the roster
         if (updates.gradeLevel) {
             const updatedStudents = students.map(s => ({ ...s, level: updates.gradeLevel! }));
-            setStudents(updatedStudents); // Local update first
             
-            if (user?.isDemo) {
-                localStorage.setItem('demo_students', JSON.stringify(updatedStudents));
-                localStorage.setItem('demo_classProfile', JSON.stringify(updatedProfile));
+            if (user.isDemo) {
+                syncStudents(updatedStudents);
+                localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(updatedProfile));
             } else {
-                // Production: Use Firestore Batch to ensure all student levels are updated at once
                 try {
                     const batch = writeBatch(db);
                     students.forEach(s => {
@@ -157,14 +165,13 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     await batch.commit();
                 } catch (err) {
                     console.error("Batch update failed:", err);
-                    showToast("Sync error. Please refresh.", "error");
+                    showToast("Sync error.", "error");
                 }
             }
-            showToast(`Synchronized roster to Level ${updates.gradeLevel}`);
+            showToast(`Roster updated to Level ${updates.gradeLevel}`);
         } else {
-            // Standard update for name change etc.
-            if (user?.isDemo) {
-                localStorage.setItem('demo_classProfile', JSON.stringify(updatedProfile));
+            if (user.isDemo) {
+                localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(updatedProfile));
             } else {
                 await updateDoc(doc(db, 'class_profiles', classProfile.id), updates);
             }
@@ -221,9 +228,15 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const student = students.find(s => s.id === studentId);
         if (!student) return;
 
+        // Upsert Logic: Replace if same period exists
         let assessments = [...student.assessments];
-        const idx = assessments.findIndex(a => a.id === assessment.id);
-        if (idx !== -1) assessments[idx] = assessment; else assessments.push(assessment);
+        const existingIdx = assessments.findIndex(a => a.type === assessment.type);
+        if (existingIdx !== -1) {
+            assessments[existingIdx] = { ...assessment, id: assessments[existingIdx].id }; // Retain original ID if possible
+        } else {
+            assessments.push(assessment);
+        }
+        
         assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
         const velocity = calculateVelocity(assessments);
@@ -245,7 +258,17 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const sIdx = updatedStudents.findIndex(s => s.id === item.studentId);
             if (sIdx === -1) return;
             const s = updatedStudents[sIdx];
-            let assessments = [...s.assessments, item.assessment].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            
+            // Upsert for Bulk
+            let assessments = [...s.assessments];
+            const existingIdx = assessments.findIndex(a => a.type === item.assessment.type);
+            if (existingIdx !== -1) {
+                assessments[existingIdx] = { ...item.assessment, id: assessments[existingIdx].id };
+            } else {
+                assessments.push(item.assessment);
+            }
+            assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
             const vel = calculateVelocity(assessments);
             const rti = calculateRTIStatus(assessments);
             const payload = { assessments, growthVelocity: vel, interventionStatus: rti, hasAnomaly: !!rti };
@@ -254,17 +277,23 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             updatedStudents[sIdx] = { ...s, ...payload };
         });
 
-        if (batch) await batch.commit(); else syncStudents(updatedStudents);
+        try {
+            if (batch) await batch.commit(); else syncStudents(updatedStudents);
+            showToast(`Synchronized ${items.length} records successfully.`);
+        } catch (err) {
+            showToast("Bulk sync failed. Checking connection...", "error");
+        }
     };
 
     const loadDemoData = () => {
+        if (!user) return;
         const demoProfile = { id: 'demo-p', className: 'Class A (Demo)', gradeLevel: '5', academicYear: '2023-24' };
         const demoStudents = mockStudents.map(s => ({ ...s, id: `demo-${s.id}`, actionLog: [] }));
-        if (user?.isDemo) {
-            localStorage.setItem('demo_classProfile', JSON.stringify(demoProfile));
-            syncStudents(demoStudents);
-            setClassProfile(demoProfile);
-        }
+        
+        localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(demoProfile));
+        syncStudents(demoStudents);
+        setClassProfile(demoProfile);
+        showToast("Demo environment ready.");
     };
 
     return (

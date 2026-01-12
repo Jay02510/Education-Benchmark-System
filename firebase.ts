@@ -1,10 +1,8 @@
 
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 
-// TODO: Replace the following with your app's Firebase project configuration
-// You can find this in the Firebase Console -> Project Settings -> General -> Your Apps
 const firebaseConfig = {
   apiKey: "AIzaSyAEU4LcXgR4fby4-PgwYh_HRrucWkQ9S4I",
   authDomain: "benchmark-ai-app.firebaseapp.com",
@@ -20,3 +18,16 @@ const app = initializeApp(firebaseConfig);
 // Initialize Services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Enable Offline Persistence
+if (typeof window !== 'undefined') {
+    enableIndexedDbPersistence(db).catch((err) => {
+        if (err.code === 'failed-precondition') {
+            // Multiple tabs open, persistence can only be enabled in one tab at a time.
+            console.warn('Firestore persistence failed: Multiple tabs open');
+        } else if (err.code === 'unimplemented') {
+            // The current browser does not support all of the features required to enable persistence
+            console.warn('Firestore persistence failed: Browser not supported');
+        }
+    });
+}

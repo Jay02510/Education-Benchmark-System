@@ -133,15 +133,42 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const updateClassProfile = async (updates: Partial<ClassProfile>) => {
         if (!classProfile) return;
-        const updated = { ...classProfile, ...updates };
-        // Update local state immediately for responsive UI
-        setClassProfile(updated);
-        if (user?.isDemo) { 
-            localStorage.setItem('demo_classProfile', JSON.stringify(updated)); 
-            return; 
+        const updatedProfile = { ...classProfile, ...updates };
+        
+        // Optimistic local state update
+        setClassProfile(updatedProfile);
+
+        // Propagate level change to all students in the roster
+        if (updates.gradeLevel) {
+            const updatedStudents = students.map(s => ({ ...s, level: updates.gradeLevel! }));
+            setStudents(updatedStudents); // Local update first
+            
+            if (user?.isDemo) {
+                localStorage.setItem('demo_students', JSON.stringify(updatedStudents));
+                localStorage.setItem('demo_classProfile', JSON.stringify(updatedProfile));
+            } else {
+                // Production: Use Firestore Batch to ensure all student levels are updated at once
+                try {
+                    const batch = writeBatch(db);
+                    students.forEach(s => {
+                        batch.update(doc(db, 'students', s.id), { level: updates.gradeLevel });
+                    });
+                    batch.update(doc(db, 'class_profiles', classProfile.id), updates);
+                    await batch.commit();
+                } catch (err) {
+                    console.error("Batch update failed:", err);
+                    showToast("Sync error. Please refresh.", "error");
+                }
+            }
+            showToast(`Synchronized roster to Level ${updates.gradeLevel}`);
+        } else {
+            // Standard update for name change etc.
+            if (user?.isDemo) {
+                localStorage.setItem('demo_classProfile', JSON.stringify(updatedProfile));
+            } else {
+                await updateDoc(doc(db, 'class_profiles', classProfile.id), updates);
+            }
         }
-        await updateDoc(doc(db, 'class_profiles', classProfile.id), updates);
-        showToast("Class profile updated.");
     };
 
     const addStudent = async (student: Student) => {

@@ -95,23 +95,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, size, size);
 
-            // Calculation for drawing
             const displaySize = cropper.offsetWidth;
-            const ratio = img.width / displaySize;
-            
-            const drawWidth = img.width * zoom;
-            const drawHeight = img.height * zoom;
-            
-            // Map the display offset to actual image pixels
-            const renderScale = size / displaySize;
-            const drawX = (offset.x * renderScale) + (size / 2) - (drawWidth * renderScale / (img.width/displaySize) / 2);
-            const drawY = (offset.y * renderScale) + (size / 2) - (drawHeight * renderScale / (img.height/displaySize) / 2);
-
-            // Simplest way: Scale the context
-            ctx.clearRect(0,0,size,size);
-            
-            // Draw center-focused
-            const s = (size / displaySize) * zoom;
             const centerX = size / 2;
             const centerY = size / 2;
             
@@ -126,11 +110,14 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
             }
 
             const finalScale = (size / displaySize) * zoom;
+            ctx.clearRect(0,0,size,size);
+            ctx.save();
             ctx.translate(centerX + offset.x * (size/displaySize), centerY + offset.y * (size/displaySize));
             ctx.scale(finalScale, finalScale);
             ctx.drawImage(img, -iw/2, -ih/2, iw, ih);
+            ctx.restore();
 
-            setPhotoUrl(canvas.toDataURL('image/jpeg', 0.8));
+            setPhotoUrl(canvas.toDataURL('image/jpeg', 0.9));
             setShowCropper(false);
         };
         img.src = originalImage;
@@ -170,14 +157,14 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
             <div className="space-y-6">
                 {showCropper ? (
                     <div className="animate-in fade-in duration-300">
-                        <div className="mb-4 text-center">
-                            <h3 className="font-bold text-slate-800">Resize & Position</h3>
-                            <p className="text-xs text-slate-500">Drag to move, use slider to zoom</p>
+                        <div className="mb-6 text-center">
+                            <h3 className="font-black text-slate-800 text-lg">Portrait Alignment</h3>
+                            <p className="text-xs text-slate-500 font-medium">Position the face inside the white circle</p>
                         </div>
                         
                         <div 
                             ref={cropperRef}
-                            className="relative w-72 h-72 mx-auto rounded-[2.5rem] overflow-hidden bg-slate-900 cursor-move border-4 border-white shadow-2xl"
+                            className="relative w-72 h-72 mx-auto rounded-[3rem] overflow-hidden bg-slate-900 cursor-move border-4 border-white shadow-2xl group"
                             onMouseDown={handleMouseDown}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
@@ -195,8 +182,10 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
                                     maxHeight: '100%'
                                 }}
                             />
-                            {/* Overlay Vignette */}
-                            <div className="absolute inset-0 pointer-events-none ring-[40px] ring-black/40"></div>
+                            {/* Visual Safe Zone Circle */}
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="w-[90%] h-[90%] rounded-full border-2 border-white/40 ring-[200px] ring-black/40"></div>
+                            </div>
                         </div>
 
                         <div className="mt-8 px-10">
@@ -217,7 +206,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
 
                         <div className="flex justify-center gap-3 mt-8">
                             <button onClick={() => setShowCropper(false)} className="px-6 py-2.5 text-slate-500 font-bold hover:text-slate-700 transition">Cancel</button>
-                            <button onClick={applyCrop} className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition active:scale-95">Set Photo</button>
+                            <button onClick={applyCrop} className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition active:scale-95">Set Profile Photo</button>
                         </div>
                         <canvas ref={canvasRef} className="hidden" />
                     </div>
@@ -225,7 +214,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
                     <>
                         <div className="flex flex-col items-center">
                             <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                                <div className={`w-32 h-32 rounded-[2.5rem] bg-slate-100 border-4 border-white shadow-xl overflow-hidden flex items-center justify-center transition-all ${isUploading ? 'opacity-50' : 'group-hover:ring-4 group-hover:ring-indigo-100'}`}>
+                                <div className={`w-32 h-32 rounded-[2.8rem] bg-slate-50 border-4 border-white shadow-xl overflow-hidden flex items-center justify-center transition-all ${isUploading ? 'opacity-50' : 'group-hover:ring-4 group-hover:ring-indigo-100'}`}>
                                     {photoUrl ? (
                                         <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" />
                                     ) : (
@@ -239,12 +228,12 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
                             </div>
 
                             <div className="flex gap-2 mt-4">
-                                <button onClick={() => fileInputRef.current?.click()} className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-600 hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5">
-                                    <Icon name="admin" className="w-3 h-3" />
-                                    Upload Photo
+                                <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-600 hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5">
+                                    <Icon name="admin" className="w-3 h-3 text-indigo-500" />
+                                    Upload
                                 </button>
-                                <button onClick={generateRandomAvatar} className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-600 hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5">
-                                    <Icon name="refresh" className="w-3 h-3" />
+                                <button onClick={generateRandomAvatar} className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-600 hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5">
+                                    <Icon name="brain" className="w-3 h-3 text-purple-500" />
                                     AI Avatar
                                 </button>
                             </div>
@@ -252,18 +241,18 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5 ml-1">Student Full Name</label>
+                                <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5 ml-1">Full Name</label>
                                 <input 
                                     type="text" 
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder="e.g. Alexander Hamilton"
-                                    className="w-full px-5 py-3.5 border border-slate-200 bg-slate-50 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-800"
+                                    placeholder="e.g. Alice Chen"
+                                    className="w-full px-5 py-4 border border-slate-200 bg-slate-50 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-800"
                                 />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5 ml-1">Assigned Grade Level</label>
-                                <select value={level} onChange={(e) => setLevel(e.target.value)} className="w-full px-5 py-3.5 border border-slate-200 bg-slate-50 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-800">
+                                <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5 ml-1">Benchmark Level</label>
+                                <select value={level} onChange={(e) => setLevel(e.target.value)} className="w-full px-5 py-4 border border-slate-200 bg-slate-50 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-800">
                                     <option value="5">Level 5 (Pre-A1)</option>
                                     <option value="6-1">Level 6-1 (Starters)</option>
                                     <option value="6-2">Level 6-2 (Movers)</option>
@@ -275,7 +264,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
                         
                         <div className="pt-4 flex justify-end space-x-3 border-t border-slate-100">
                             <button onClick={onClose} className="px-6 py-3 text-slate-400 font-bold hover:text-slate-600 transition">Cancel</button>
-                            <button onClick={handleSubmit} disabled={!name.trim()} className="px-10 py-3 bg-slate-900 text-white rounded-2xl font-black shadow-xl hover:bg-indigo-600 transition-all disabled:opacity-50 active:scale-95 flex items-center space-x-2">
+                            <button onClick={handleSubmit} disabled={!name.trim()} className="px-10 py-3 bg-slate-900 text-white rounded-2xl font-black shadow-xl shadow-indigo-900/10 hover:bg-indigo-600 transition-all disabled:opacity-50 active:scale-95 flex items-center space-x-2">
                                 <Icon name={studentToEdit ? "check" : "plus"} className="w-4 h-4" />
                                 <span>{studentToEdit ? "Update Student" : "Add to Roster"}</span>
                             </button>

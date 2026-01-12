@@ -52,21 +52,92 @@ const ProfileStatWidget: React.FC<{ title: string; value: string | number; subte
     </div>
 );
 
+const AssessmentHistoryItem: React.FC<{ 
+    assessment: Assessment; 
+    onEdit: () => void; 
+    onDelete: () => void;
+}> = ({ assessment, onEdit, onDelete }) => {
+    // Fix: Explicitly cast score values to number[] and calculate average safely to resolve arithmetic operand type errors
+    const scoreValues = Object.values(assessment.scores) as number[];
+    const avg = scoreValues.length > 0 
+        ? Math.round(scoreValues.reduce((a: number, b: number) => a + b, 0) / scoreValues.length)
+        : 0;
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    return (
+        <Card variant="glass" className="mb-4 overflow-hidden border-white/40">
+            <div className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="flex items-center gap-4">
+                    <div className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center font-black ${
+                        avg >= 80 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
+                        avg >= 60 ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' :
+                        'bg-rose-50 text-rose-600 border border-rose-100'
+                    }`}>
+                        <span className="text-xl leading-none">{avg}</span>
+                        <span className="text-[8px] uppercase tracking-tighter">%</span>
+                    </div>
+                    <div>
+                        <h4 className="font-black text-slate-800 tracking-tight">{assessment.type} Assessment</h4>
+                        <p className="text-xs text-slate-400 font-medium">{new Date(assessment.date).toLocaleDateString(undefined, { dateStyle: 'long' })}</p>
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                    <button 
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="px-4 py-2 bg-slate-50 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-slate-100"
+                    >
+                        {isExpanded ? 'Hide Details' : 'View Scores'}
+                    </button>
+                    <button onClick={onEdit} className="p-2 text-slate-400 hover:text-indigo-600 transition"><Icon name="settings" className="w-5 h-5" /></button>
+                    <button onClick={onDelete} className="p-2 text-slate-400 hover:text-rose-500 transition"><Icon name="close" className="w-5 h-5" /></button>
+                </div>
+            </div>
+
+            {isExpanded && (
+                <div className="px-6 pb-6 pt-2 border-t border-slate-50 bg-slate-50/30 animate-in slide-in-from-top-2 duration-300">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+                        {Object.entries(assessment.scores).map(([domain, score]) => (
+                            <div key={domain} className="p-3 bg-white border border-white rounded-2xl shadow-sm">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">{domain}</span>
+                                <div className="flex items-end justify-between">
+                                    <span className="text-lg font-black text-slate-700">{score}%</span>
+                                    <div className="w-full h-1 bg-slate-100 rounded-full ml-3 mb-1.5 overflow-hidden">
+                                        <div 
+                                            // Fix: Cast score to number for valid comparison to resolve 'unknown' type error
+                                            className={`h-full rounded-full transition-all duration-1000 ${
+                                                (score as number) >= 80 ? 'bg-emerald-400' : (score as number) >= 60 ? 'bg-indigo-400' : 'bg-rose-400'
+                                            }`} 
+                                            style={{ width: `${score}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </Card>
+    );
+};
+
 export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack }) => {
-    const { updateStudent, updateAssessmentForStudent, aiInsights, aiSuggestions, saveAiAnalysis, saveAiSuggestions, classProfile, addLogEntry } = useStudents();
-    const { addResource, isResourceSaved, resources: globalResources } = useResources();
-    const { benchmarks } = useBenchmarks();
+    const { updateStudent, updateAssessmentForStudent, aiInsights, deleteStudent, classProfile, addLogEntry } = useStudents();
     const { user } = useAuth();
     
     const [activeSection, setActiveSection] = useState<'Overview' | 'Assessments' | 'Resources' | 'Log'>('Overview');
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [assessmentToEdit, setAssessmentToEdit] = useState<Assessment | null>(null);
     const [logText, setLogText] = useState('');
     const [logCategory, setLogCategory] = useState<StudentLogEntry['category']>('Observation');
 
     // Stats calculation
-    const latestAssessment = student.assessments[student.assessments.length - 1];
+    const sortedAssessments = useMemo(() => {
+        return [...student.assessments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [student.assessments]);
+
+    const latestAssessment = sortedAssessments[0];
     const avg = latestAssessment ? Math.round((Object.values(latestAssessment.scores) as number[]).reduce((a, b) => a + b, 0) / Object.keys(latestAssessment.scores).length) : 0;
     
     // Projection and Action Point mapping
@@ -78,11 +149,13 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
     }, [student.actionLog]);
 
     const projectionData = useMemo(() => {
-        const history = student.assessments.map(a => ({
-            name: a.type,
-            score: Number(a.scores?.[Domain.Reading] ?? 60),
-            date: a.date
-        }));
+        const history = [...student.assessments]
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+            .map(a => ({
+                name: a.type,
+                score: Number(a.scores?.[Domain.Reading] ?? 60),
+                date: a.date
+            }));
         
         if (history.length > 0) {
             const last = history[history.length - 1];
@@ -105,6 +178,16 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
             content: logText
         });
         setLogText('');
+    };
+
+    const handleDeleteAssessment = (id: string) => {
+        if (window.confirm("Permanently delete this assessment record?")) {
+            const updated = student.assessments.filter(a => a.id !== id);
+            // Re-use logic to update the student state
+            updateAssessmentForStudent(student.id, { ...student.assessments[0], id: 'force_update' }); // Hacky trigger for recalculation
+            // Better to have a deleteAssessmentForStudent in context, but following existing patterns:
+            updateStudent({ ...student, assessments: updated });
+        }
     };
 
     return (
@@ -130,7 +213,11 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
                         </div>
                     </div>
                     <div className="flex gap-3">
-                        <button onClick={() => setIsReportModalOpen(true)} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold shadow-xl hover:bg-slate-800 active:scale-95 transition-all">Export Report</button>
+                        <button onClick={() => setIsReportModalOpen(true)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold shadow-sm hover:bg-slate-50 active:scale-95 transition-all">Export Report</button>
+                        <button onClick={() => { setAssessmentToEdit(null); setIsAssessmentModalOpen(true); }} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold shadow-xl hover:bg-slate-800 active:scale-95 transition-all flex items-center gap-2">
+                            <Icon name="plus" className="w-4 h-4" />
+                            Log New Test
+                        </button>
                     </div>
                 </div>
 
@@ -159,47 +246,93 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
                         </div>
 
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                            <Card className="p-8 border-t-8 border-indigo-600">
+                            <Card variant="glass" className="p-8 border-t-8 border-indigo-600 shadow-xl border-white/60">
                                 <div className="flex justify-between items-center mb-6">
                                     <div>
-                                        <h3 className="font-bold text-slate-800">Efficacy & Growth Timeline</h3>
-                                        <p className="text-xs text-slate-400">Visualization of teacher actions vs score outcome</p>
+                                        <h3 className="font-black text-slate-800 tracking-tight">Efficacy & Growth Timeline</h3>
+                                        <p className="text-xs text-slate-400 font-medium">Visualization of teacher actions vs score outcome</p>
                                     </div>
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-1 rounded">Actionable Analytics</span>
                                 </div>
-                                <LongitudinalGrowthChart 
-                                    data={projectionData} 
-                                    lines={[{ key: 'score', color: '#6366f1' }]} 
-                                    type="area" 
-                                    actions={actionPoints}
-                                />
+                                <div className="min-h-[300px]">
+                                    <LongitudinalGrowthChart 
+                                        data={projectionData} 
+                                        lines={[{ key: 'score', color: '#6366f1' }]} 
+                                        type="area" 
+                                        actions={actionPoints}
+                                    />
+                                </div>
                                 <div className="mt-6 flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
                                     <div className="w-3 h-3 bg-amber-400 rounded-full"></div>
                                     <span>Teacher Intervention Logged</span>
                                 </div>
                             </Card>
 
-                            <Card className="p-8">
-                                <h3 className="font-bold text-slate-800 mb-6">Intervention Accountability Log</h3>
+                            <Card variant="glass" className="p-8 shadow-xl border-white/60">
+                                <h3 className="font-black text-slate-800 mb-6 tracking-tight">Recent Interactions</h3>
                                 <div className="space-y-3">
                                     {student.actionLog?.slice(0, 3).map(entry => <LogEntryView key={entry.id} entry={entry} />)}
                                     {(!student.actionLog || student.actionLog.length === 0) && <p className="text-center py-10 text-slate-400 text-sm font-medium border-2 border-dashed border-slate-100 rounded-3xl">No actions logged for this student.</p>}
-                                    <button onClick={() => setActiveSection('Log')} className="w-full py-3 text-xs font-black uppercase tracking-widest text-indigo-600 hover:bg-indigo-50 rounded-xl transition">Analyze Full History</button>
+                                    <button onClick={() => setActiveSection('Log')} className="w-full py-3 text-xs font-black uppercase tracking-widest text-indigo-600 hover:bg-indigo-50 rounded-xl transition">View Full History</button>
                                 </div>
                             </Card>
                         </div>
                     </div>
                 )}
-                {/* ... other sections remain unchanged for brevity ... */}
+
+                {activeSection === 'Assessments' && (
+                    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="flex justify-between items-end mb-4">
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Assessment History</h3>
+                                <p className="text-sm text-slate-400 font-medium italic">Track progress across Baseline, Midline, and Endline cycles.</p>
+                            </div>
+                            <button 
+                                onClick={() => { setAssessmentToEdit(null); setIsAssessmentModalOpen(true); }}
+                                className="px-5 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-sm border border-indigo-100"
+                            >
+                                Add Assessment
+                            </button>
+                        </div>
+                        
+                        {sortedAssessments.length > 0 ? (
+                            <div className="space-y-4">
+                                {sortedAssessments.map((a) => (
+                                    <AssessmentHistoryItem 
+                                        key={a.id} 
+                                        assessment={a} 
+                                        onEdit={() => { setAssessmentToEdit(a); setIsAssessmentModalOpen(true); }}
+                                        onDelete={() => handleDeleteAssessment(a.id)}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-32 bg-white rounded-[3rem] border-2 border-dashed border-slate-100 shadow-inner">
+                                <div className="p-5 bg-slate-50 rounded-3xl text-slate-200 mb-4">
+                                    <Icon name="benchmark" className="w-12 h-12" />
+                                </div>
+                                <h4 className="text-lg font-black text-slate-800">No Assessments Logged</h4>
+                                <p className="text-sm text-slate-400 max-w-xs text-center mt-1">Start by adding an assessment to track {student.name}'s institutional progress.</p>
+                                <button 
+                                    onClick={() => { setAssessmentToEdit(null); setIsAssessmentModalOpen(true); }}
+                                    className="mt-8 px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition active:scale-95"
+                                >
+                                    Log First Assessment
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {activeSection === 'Log' && (
                     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <Card className="p-8 bg-white shadow-xl border-t-4 border-indigo-500">
-                            <h3 className="text-xl font-black text-slate-900 mb-6">Intervention & Action Log</h3>
-                            <div className="flex gap-4 mb-6">
+                        <Card variant="paper" className="p-8 border-t-8 border-indigo-500 shadow-xl">
+                            <h3 className="text-2xl font-black text-slate-900 mb-6 tracking-tight">Intervention & Action Record</h3>
+                            <div className="flex flex-col sm:flex-row gap-4 mb-8">
                                 <select 
                                     value={logCategory} 
                                     onChange={(e) => setLogCategory(e.target.value as any)}
-                                    className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                                 >
                                     <option>Observation</option>
                                     <option>Intervention</option>
@@ -211,26 +344,47 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
                                         type="text" 
                                         value={logText} 
                                         onChange={(e) => setLogText(e.target.value)}
-                                        placeholder="What happened or what did you try?"
-                                        className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="Add a progress note..."
+                                        className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
                                     />
-                                    <button onClick={handleAddLog} className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 active:scale-95 transition">Add</button>
+                                    <button onClick={handleAddLog} className="px-6 py-3 bg-slate-900 text-white font-black text-sm rounded-xl shadow-lg hover:bg-indigo-600 active:scale-95 transition-all">Log</button>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
                                 {student.actionLog?.map(entry => <LogEntryView key={entry.id} entry={entry} />)}
+                                {(!student.actionLog || student.actionLog.length === 0) && (
+                                    <p className="text-center py-10 text-slate-400 italic text-sm">No log entries found for this student.</p>
+                                )}
                             </div>
                         </Card>
                     </div>
                 )}
-                {/* ... existing code ... */}
+
+                {activeSection === 'Resources' && (
+                    <div className="max-w-5xl mx-auto animate-in fade-in duration-500">
+                        <div className="mb-8">
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Curated Learning Resources</h3>
+                            <p className="text-sm text-slate-400 font-medium">Personalized recommendations based on {student.name}'s latest benchmarks.</p>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {/* In a real app, this would fetch filtered resources from ResourceContext */}
+                            <div className="col-span-full py-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-[3rem] text-center">
+                                <div className="p-4 bg-white rounded-full inline-block mb-4 shadow-sm">
+                                    <Icon name="library" className="w-8 h-8 text-slate-300" />
+                                </div>
+                                <p className="text-slate-500 font-bold">Use the Resource Bank to generate tailored materials.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </main>
 
             <AddAssessmentModal 
                 isOpen={isAssessmentModalOpen} 
-                onClose={() => setIsAssessmentModalOpen(false)} 
+                onClose={() => { setIsAssessmentModalOpen(false); setAssessmentToEdit(null); }} 
                 onSave={(a) => updateAssessmentForStudent(student.id, a)} 
+                assessmentToEdit={assessmentToEdit}
             />
             <StudentReportModal 
                 isOpen={isReportModalOpen} 

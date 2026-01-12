@@ -79,6 +79,9 @@ const calculateRTIStatus = (assessments: Assessment[]): Intervention | null => {
     return null;
 };
 
+// Alphabetical sort helper
+const sortByName = (list: Student[]) => [...list].sort((a, b) => a.name.localeCompare(b.name));
+
 export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user } = useAuth();
     const [students, setStudents] = useState<Student[]>([]);
@@ -98,12 +101,16 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (user.isDemo) {
             const localStudents = localStorage.getItem(sKey);
             const localProfile = localStorage.getItem(pKey);
-            if (localStudents) setStudents(JSON.parse(localStudents));
+            if (localStudents) {
+                const parsed = JSON.parse(localStudents);
+                setStudents(sortByName(parsed));
+            }
             if (localProfile) setClassProfile(JSON.parse(localProfile));
         } else {
             const qStudents = query(collection(db, 'students'), where('userId', '==', user.id));
             const unsubStudents = onSnapshot(qStudents, (snapshot) => {
-                setStudents(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Student[]);
+                const raw = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Student[];
+                setStudents(sortByName(raw));
             });
             const qProfile = query(collection(db, 'class_profiles'), where('userId', '==', user.id));
             const unsubProfile = onSnapshot(qProfile, (snapshot) => {
@@ -114,9 +121,10 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }, [user]);
 
     const syncStudents = (newStudents: Student[]) => {
-        setStudents(newStudents);
+        const sorted = sortByName(newStudents);
+        setStudents(sorted);
         if (user) {
-            localStorage.setItem(getStorageKey(user.id, 'students'), JSON.stringify(newStudents));
+            localStorage.setItem(getStorageKey(user.id, 'students'), JSON.stringify(sorted));
         }
     };
 
@@ -161,7 +169,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             name: name.trim(),
             level: classProfile?.gradeLevel || '5',
             class: classProfile?.className || 'General',
-            photoUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`,
+            photoUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name.trim()}`,
             overallGrowth: 0,
             growthVelocity: 0,
             hasAnomaly: false,
@@ -323,8 +331,12 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!user) return;
         const profile = { id: 'demo-p', className: 'Demo Class', gradeLevel: '5', academicYear: '2024' };
         localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(profile));
-        localStorage.setItem(getStorageKey(user.id, 'students'), JSON.stringify(mockStudents));
-        setStudents(mockStudents);
+        
+        // Ensure mock data is also sorted on load
+        const sortedMock = sortByName(mockStudents);
+        localStorage.setItem(getStorageKey(user.id, 'students'), JSON.stringify(sortedMock));
+        
+        setStudents(sortedMock);
         setClassProfile(profile);
         showToast("Demo environment loaded.");
     };

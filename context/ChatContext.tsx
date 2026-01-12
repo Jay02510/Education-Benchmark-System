@@ -21,6 +21,9 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
+// Always use process.env.API_KEY directly and use named parameter in constructor
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
 const TEACHER_INSTRUCTION = `
 You are the "Benchmark AI Assistant", a friendly, encouraging, and highly capable educational coach for teachers.
 Your goal is to help teachers understand their class data, identify student needs, find resources, and check benchmarks.
@@ -98,7 +101,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Initialize Chat Session with recommended model
     const getChatSession = () => {
         if (!chatSessionRef.current) {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const isTeacher = currentPersona === 'Teacher';
             chatSessionRef.current = ai.chats.create({
                 model: 'gemini-3-flash-preview',

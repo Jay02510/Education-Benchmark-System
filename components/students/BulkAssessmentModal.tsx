@@ -1,12 +1,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import * as XLSX from 'xlsx';
 import { Assessment, Domain, TestPeriod } from '../../types';
 import { DOMAINS } from '../../constants';
 import { useBenchmarks } from '../../context/BenchmarkContext';
 import { Icon } from '../common/Icon';
 import { useStudents } from '../../context/StudentContext';
 import { useToast } from '../../context/ToastContext';
+import * as XLSX from 'xlsx';
 
 interface BulkAssessmentModalProps {
     isOpen: boolean;
@@ -14,7 +14,7 @@ interface BulkAssessmentModalProps {
 }
 
 export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen, onClose }) => {
-    const { students, addAssessmentBulk, classProfile } = useStudents();
+    const { students, addAssessmentBulk } = useStudents();
     const { subdomains } = useBenchmarks();
     const { showToast } = useToast();
     
@@ -83,75 +83,75 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
         }));
     };
 
+    // --- EXCEL LOGIC ---
+    
     const downloadTemplate = () => {
-        const flatSubdomains: string[] = [];
+        const flatSubdomains: { domain: Domain, name: string, maxScore: number }[] = [];
         DOMAINS.forEach((d) => {
             (subdomains[d] || []).forEach((s) => {
-                flatSubdomains.push(`${d}: ${s.name} (Max ${s.maxScore})`);
+                flatSubdomains.push({ domain: d, name: s.name, maxScore: s.maxScore });
             });
         });
 
-        const headers = ["Student Name", ...flatSubdomains];
-        const rows = students.map(s => [s.name]);
+        const headers = ['Student Name', ...flatSubdomains.map(s => `${s.domain}:${s.name} (Max ${s.maxScore})`)];
+        const data = students.map(s => [s.name, ...flatSubdomains.map(() => '')]);
         
-        const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+        const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Scores");
-        
-        XLSX.writeFile(workbook, `Benchmark_Template_${classProfile?.className || 'Class'}.xlsx`);
-        showToast("Template downloaded.");
+        XLSX.writeFile(workbook, `Benchmark_Template_${testPeriod}.xlsx`);
+        showToast("Template downloaded. Fill it out and upload back.");
     };
 
-    const handleExcelUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = (evt) => {
             try {
-                const data = evt.target?.result;
-                const workbook = XLSX.read(data, { type: 'binary' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const rawData = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
 
+                if (rawData.length < 2) throw new Error("File is empty or invalid format");
+
+                const headers = rawData[0];
+                const rows = rawData.slice(1);
                 const newGridData: Record<string, Record<string, number>> = { ...gridData };
 
-                jsonData.forEach(row => {
-                    const studentName = row["Student Name"];
-                    if (!studentName) return;
-
-                    const student = students.find(s => s.name.toLowerCase().trim() === studentName.toLowerCase().trim());
-                    if (!student) return;
-
-                    if (!newGridData[student.id]) newGridData[student.id] = {};
-
-                    // Iterate through keys to find domain:subdomain patterns
-                    Object.keys(row).forEach(key => {
-                        if (key === "Student Name") return;
+                rows.forEach(row => {
+                    const excelStudentName = String(row[0] || '').trim().toLowerCase();
+                    const student = students.find(s => s.name.trim().toLowerCase() === excelStudentName);
+                    
+                    if (student) {
+                        const studentScores: Record<string, number> = newGridData[student.id] || {};
                         
-                        // Try to find matching subdomain in framework
-                        DOMAINS.forEach(domain => {
-                            (subdomains[domain] || []).forEach(sub => {
-                                const templateHeader = `${domain}: ${sub.name} (Max ${sub.maxScore})`;
-                                if (key === templateHeader || key === sub.name) {
-                                    const val = Number(row[key]);
-                                    if (!isNaN(val)) {
-                                        newGridData[student.id][makeKey(domain, sub.name)] = Math.min(sub.maxScore, Math.max(0, val));
-                                    }
-                                }
-                            });
+                        headers.forEach((header, colIdx) => {
+                            if (colIdx === 0) return; // Skip name column
+                            
+                            // Extract domain:subdomain from "Domain:Subdomain (Max X)"
+                            const cleanHeader = String(header).split(' (Max')[0].trim();
+                            const scoreVal = parseFloat(row[colIdx]);
+                            
+                            if (!isNaN(scoreVal)) {
+                                studentScores[cleanHeader] = scoreVal;
+                            }
                         });
-                    });
+                        
+                        newGridData[student.id] = studentScores;
+                    }
                 });
 
                 setGridData(newGridData);
-                showToast("Spreadsheet imported successfully!");
-                if (fileInputRef.current) fileInputRef.current.value = "";
+                showToast("Excel data imported successfully.", "success");
             } catch (err) {
                 console.error(err);
-                showToast("Error parsing Excel file.", "error");
+                showToast("Failed to parse Excel file. Check format.", "error");
             }
+            if (fileInputRef.current) fileInputRef.current.value = '';
         };
         reader.readAsBinaryString(file);
     };
@@ -262,20 +262,32 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                         />
                         <span className="text-[9px] font-black text-indigo-600 w-8">{Math.round(gridScale * 100)}%</span>
                     </div>
-                </div>
 
-                {/* Import/Export Toolbar */}
-                <div className="hidden lg:flex items-center gap-2 bg-indigo-50 px-4 py-1.5 rounded-2xl border border-indigo-100">
-                    <button onClick={downloadTemplate} className="flex items-center gap-2 text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-800 transition">
-                        <Icon name="arrowDown" className="w-3 h-3" />
-                        Template
-                    </button>
-                    <div className="w-px h-3 bg-indigo-200 mx-1"></div>
-                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 text-[10px] font-black uppercase text-indigo-600 hover:text-indigo-800 transition">
-                        <Icon name="plus" className="w-3 h-3" />
-                        Excel Import
-                    </button>
-                    <input type="file" ref={fileInputRef} onChange={handleExcelUpload} accept=".xlsx,.xls,.csv" className="hidden" />
+                    <div className="h-8 w-px bg-slate-100 mx-1 hidden md:block"></div>
+
+                    {/* Excel Tools */}
+                    <div className="hidden md:flex items-center gap-2">
+                         <button 
+                            onClick={downloadTemplate}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
+                            title="Download Excel Template"
+                        >
+                            <Icon name="arrowDown" className="w-4 h-4" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">Get Template</span>
+                        </button>
+                        <input 
+                            type="file" ref={fileInputRef} onChange={handleFileUpload} 
+                            accept=".xlsx, .xls, .csv" className="hidden" 
+                        />
+                        <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-all shadow-sm"
+                            title="Upload Filled Excel"
+                        >
+                            <Icon name="arrowUp" className="w-4 h-4" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">Import scores</span>
+                        </button>
+                    </div>
                 </div>
                 
                 <div className="flex items-center gap-3">

@@ -12,6 +12,7 @@ import { useBenchmarks } from '../../context/BenchmarkContext';
 import { useAuth } from '../../context/AuthContext';
 import { AddAssessmentModal } from './AddAssessmentModal';
 import { StudentReportModal } from './StudentReportModal';
+import { AddStudentModal } from './AddStudentModal';
 
 interface StudentProfileProps {
     student: Student;
@@ -128,6 +129,7 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
     const [activeSection, setActiveSection] = useState<'Overview' | 'Assessments' | 'Resources' | 'Log'>('Overview');
     const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
     const [assessmentToEdit, setAssessmentToEdit] = useState<Assessment | null>(null);
     const [logText, setLogText] = useState('');
     const [logCategory, setLogCategory] = useState<StudentLogEntry['category']>('Observation');
@@ -201,9 +203,27 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div className="flex items-center gap-6">
-                        <img src={student.photoUrl} className="w-20 h-20 rounded-3xl object-cover shadow-xl border-4 border-white" alt="" />
+                        <div className="relative group">
+                            <img src={student.photoUrl} className="w-20 h-20 rounded-3xl object-cover shadow-xl border-4 border-white transition-all group-hover:scale-105" alt="" />
+                            <button 
+                                onClick={() => setIsEditProfileModalOpen(true)}
+                                className="absolute -bottom-1 -right-1 p-1.5 bg-white border border-slate-100 rounded-xl shadow-lg text-slate-400 hover:text-indigo-600 transition-colors"
+                                title="Edit Photo"
+                            >
+                                <Icon name="settings" className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
                         <div>
-                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">{student.name}</h1>
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-3xl font-black text-slate-900 tracking-tight">{student.name}</h1>
+                                <button 
+                                    onClick={() => setIsEditProfileModalOpen(true)}
+                                    className="p-1.5 text-slate-300 hover:text-indigo-600 transition-colors"
+                                    title="Edit Student Info"
+                                >
+                                    <Icon name="settings" className="w-5 h-5" />
+                                </button>
+                            </div>
                             <div className="flex items-center gap-2 mt-1">
                                 <span className="text-xs font-black text-indigo-600 uppercase bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-100">Level {student.level}</span>
                                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${student.growthVelocity >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
@@ -213,6 +233,7 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
                         </div>
                     </div>
                     <div className="flex gap-3">
+                        <button onClick={() => setIsEditProfileModalOpen(true)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold shadow-sm hover:bg-slate-50 active:scale-95 transition-all">Edit Profile</button>
                         <button onClick={() => setIsReportModalOpen(true)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold shadow-sm hover:bg-slate-50 active:scale-95 transition-all">Export Report</button>
                         <button onClick={() => { setAssessmentToEdit(null); setIsAssessmentModalOpen(true); }} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold shadow-xl hover:bg-slate-800 active:scale-95 transition-all flex items-center gap-2">
                             <Icon name="plus" className="w-4 h-4" />
@@ -393,6 +414,11 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
                 insight={aiInsights[student.id]?.report_card || ''} 
                 teacherComment={student.actionLog?.[0]?.content || ''}
                 className={classProfile?.className}
+            />
+            <AddStudentModal 
+                isOpen={isEditProfileModalOpen} 
+                onClose={() => setIsEditProfileModalOpen(false)} 
+                studentToEdit={student} 
             />
         </div>
     );

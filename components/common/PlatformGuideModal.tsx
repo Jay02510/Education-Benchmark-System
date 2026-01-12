@@ -8,13 +8,13 @@ interface PlatformGuideModalProps {
     onClose: () => void;
 }
 
-const Term: React.FC<{ name: string; def: string; icon: string }> = ({ name, def, icon }) => (
+const Term: React.FC<{ name: string; subtitle: string; def: string; icon: string }> = ({ name, subtitle, def, icon }) => (
     <div className="flex gap-4 p-4 hover:bg-slate-50 rounded-2xl transition-colors group">
-        <div className="w-10 h-10 shrink-0 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-            <Icon name={icon} className="w-5 h-5" />
+        <div className="w-12 h-12 shrink-0 bg-white border border-slate-100 rounded-xl flex items-center justify-center text-indigo-500 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
+            <Icon name={icon} className="w-6 h-6" />
         </div>
         <div>
-            <h4 className="font-black text-slate-800 text-sm mb-0.5">{name}</h4>
+            <h4 className="font-black text-slate-800 text-sm mb-0.5">{name} <span className="text-slate-400 font-medium ml-1">({subtitle})</span></h4>
             <p className="text-xs text-slate-500 leading-relaxed">{def}</p>
         </div>
     </div>
@@ -22,68 +22,75 @@ const Term: React.FC<{ name: string; def: string; icon: string }> = ({ name, def
 
 export const PlatformGuideModal: React.FC<PlatformGuideModalProps> = ({ isOpen, onClose }) => {
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Platform Guide & Terms" size="lg">
+        <Modal isOpen={isOpen} onClose={onClose} title="Benchmark: Plain English Guide" size="lg">
             <div className="space-y-8 p-1">
                 <section>
-                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-4 border-b border-slate-50 pb-2">Data Intelligence</h3>
+                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-4 border-b border-slate-50 pb-2">Academic Success</h3>
                     <div className="space-y-1">
                         <Term 
                             icon="trendUp" 
                             name="Growth Velocity" 
-                            def="The speed of score improvement between cycles. A velocity of +5% means the student is gaining 5 points every testing period." 
+                            subtitle="Learning Speed"
+                            def="This tracks how fast a student is improving. A higher percentage means they are catching up or excelling quickly." 
                         />
                         <Term 
                             icon="alert" 
-                            name="Intervention Tiers (RTI)" 
-                            def="Tier 1: General support. Tier 2: Small group remedial. Tier 3: Critical 1-on-1 support needed. Flagged automatically when scores drop." 
+                            name="Intervention Tiers" 
+                            subtitle="Support Levels"
+                            def="Tier 1 is the whole class. Tier 2 is a small group. Tier 3 is 1-on-1 intensive care. We flag students automatically if they need more help." 
                         />
                          <Term 
                             icon="benchmark" 
-                            name="Anomaly Detection" 
-                            def="Flagged when a student's domain scores significantly diverge (e.g., high Reading but critical Speaking)." 
+                            name="Anomaly" 
+                            subtitle="Hidden Gaps"
+                            def="Flagged when a student is great at one thing (like reading) but struggling significantly at another (like speaking)." 
                         />
                     </div>
                 </section>
 
                 <section>
-                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-4 border-b border-slate-50 pb-2">Academic Standards</h3>
+                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-4 border-b border-slate-50 pb-2">Global Standards</h3>
                     <div className="space-y-1">
                         <Term 
                             icon="globe" 
                             name="CEFR Alignment" 
-                            def="Common European Framework of Reference. Automatically maps levels to Pre-A1 through B2 standards." 
+                            subtitle="World Ranking"
+                            def="The international standard for language ability. It ensures your school's scores are valid anywhere in the world." 
                         />
                          <Term 
                             icon="star" 
-                            name="Cambridge/YLE" 
-                            def="Young Learner English equivalents (Starters, Movers, Flyers) displayed for parent report clarity." 
+                            name="YLE Equivalents" 
+                            subtitle="Cambridge Levels"
+                            def="Standard levels used by Cambridge English (Starters, Movers, Flyers) to make reports easy for parents to understand." 
                         />
                     </div>
                 </section>
 
                 <section>
-                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-4 border-b border-slate-50 pb-2">The AI Co-Pilot</h3>
+                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-4 border-b border-slate-50 pb-2">AI Intelligence</h3>
                     <div className="space-y-1">
                         <Term 
                             icon="brain" 
-                            name="Contextual Chat" 
-                            def="Our AI Assistant knows your roster. You can ask 'Who is struggling in Phonics?' and it will query your actual database." 
+                            name="Executive Briefing" 
+                            subtitle="Owner Summary"
+                            def="A strategic overview designed for school leadership to see overall school health without getting bogged down in tiny details." 
                         />
                          <Term 
                             icon="library" 
-                            name="Actionable Resources" 
-                            def="AI doesn't just analyze; it generates worksheets, micro-lessons, and parent practice cards based on specific student needs." 
+                            name="Resource Efficacy" 
+                            subtitle="Material Success"
+                            def="A measure of how well the AI-generated worksheets and lessons are actually helping student scores go up." 
                         />
                     </div>
                 </section>
 
-                <div className="bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100 flex items-center gap-4">
-                     <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-sm">
-                        <Icon name="chat" className="w-6 h-6" />
+                <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 flex items-center gap-4">
+                     <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm">
+                        <Icon name="check" className="w-6 h-6" />
                      </div>
                      <div>
-                        <p className="text-sm font-bold text-indigo-900 mb-0.5">Need more help?</p>
-                        <p className="text-xs text-indigo-700">Ask the AI Assistant in the bottom right corner of any screen!</p>
+                        <p className="text-sm font-bold text-emerald-900 mb-0.5">Presentation Tip</p>
+                        <p className="text-xs text-emerald-700">Focus on 'Learning Speed' and 'Institutional Health' when talking to the school owner.</p>
                      </div>
                 </div>
             </div>

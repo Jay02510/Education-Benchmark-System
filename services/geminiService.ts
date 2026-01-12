@@ -20,7 +20,7 @@ export class GeminiService {
             intervention: student.interventionStatus ? { active: true, reason: student.interventionStatus.triggerReason, goal: student.interventionStatus.goal } : { active: false }
         };
 
-        const prompt = `Analyze this student's data and provide clear, actionable insights. Output JSON with report_card and trend_insights fields. Data: ${JSON.stringify(dataPayload)}`;
+        const prompt = `Analyze this student's data. Output JSON with report_card (for parents, warm tone) and trend_insights (for teachers). DO NOT use technical jargon like "velocity" or "longitudinal" in the report card. Data: ${JSON.stringify(dataPayload)}`;
 
         try {
             const response = await ai.models.generateContent({
@@ -47,28 +47,31 @@ export class GeminiService {
     ): Promise<string> {
         const model = 'gemini-3-flash-preview';
         const prompt = `
-        You are a Senior Academic Strategist presenting to the School Owner. 
-        Your goal is to provide a "Strategic Executive Briefing" on class performance.
+        You are a Senior Educational Business Consultant presenting to the School Owner. 
+        Your goal is to provide a "Class Health & Institutional Momentum Briefing."
 
-        **Class Metrics:**
-        - Grade Level: ${gradeLevel}
-        - Total Roster: ${studentCount}
-        - Students Requiring Intervention: ${atRiskCount}
+        **Metrics:**
+        - Grade: ${gradeLevel}
+        - Total Students: ${studentCount}
+        - High-Support Needs: ${atRiskCount}
 
-        **Instructions:**
-        1. **Executive Summary:** High-level overview of class health.
-        2. **Growth Analysis:** How is the "Growth Velocity" trending school-wide?
-        3. **Risk Management:** Strategic plan to address the ${atRiskCount} at-risk students.
-        4. **ROI / Efficiency:** How are teacher interventions impacting results?
+        **Instructions for Output:**
+        - **Speak like a CEO/Owner Advisor.** Focus on "Institutional Health," "Student Retention," and "Academic Excellence."
+        - **Banned Words:** DO NOT use "RTI," "Velocity," "Anomaly," or "Pedagogical." Use phrases like "Support Intensity," "Learning Speed," or "Teaching Impact."
+        - **Structure:**
+            1. **Institutional Snapshot:** High-level executive overview of how the class is helping school reputation.
+            2. **Academic Momentum:** How well are we accelerating student learning?
+            3. **Risk Mitigation:** How are we protecting the ${atRiskCount} students who are falling behind?
+            4. **Actionable Strategic Move:** One big-picture recommendation for the owner to support the teacher.
 
-        **Tone:** Professional, objective, strategic, and data-driven. 
-        **Formatting:** Use **Bold** for emphasis. NO markdown headers like # or ##.
+        **Tone:** Strategic, objective, reassuring, and high-level.
+        **Format:** Bold titles. No markdown headers (#).
         `;
 
         try {
             const response = await ai.models.generateContent({ model, contents: prompt });
             return response.text || "Briefing unavailable.";
-        } catch (error) { return "Unable to generate executive briefing."; }
+        } catch (error) { return "Unable to generate briefing."; }
     }
 
     static async generateResourceContent(domain: Domain, subdomain: string, type: ResourceType, level: string, prompt: string): Promise<{ title: string; description: string; content: string } | null> {

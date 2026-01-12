@@ -287,8 +287,20 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             
             let assessments = [...s.assessments];
             const idx = assessments.findIndex(a => a.type === item.assessment.type);
-            if (idx !== -1) assessments[idx] = { ...item.assessment, id: assessments[idx].id };
-            else assessments.push(item.assessment);
+            
+            if (idx !== -1) {
+                // Merge new scores with existing scores for this assessment type
+                const existing = assessments[idx];
+                assessments[idx] = {
+                    ...existing,
+                    ...item.assessment,
+                    id: existing.id, // keep original ID
+                    scores: { ...existing.scores, ...item.assessment.scores },
+                    subdomainScores: { ...existing.subdomainScores, ...item.assessment.subdomainScores }
+                };
+            } else {
+                assessments.push(item.assessment);
+            }
 
             assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             

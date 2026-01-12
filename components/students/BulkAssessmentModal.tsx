@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Assessment, Domain, TestPeriod } from '../../types';
 import { DOMAINS } from '../../constants';
@@ -80,26 +79,42 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
 
     const handleSave = async () => {
         if (isSaving) return;
+        
+        // Find students who actually have input data in the grid
+        const studentsToUpdate = students.filter(s => gridData[s.id] && Object.keys(gridData[s.id]).length > 0);
+        
+        if (studentsToUpdate.length === 0) {
+            onClose();
+            return;
+        }
+
         setIsSaving(true);
         try {
-            const bulkUpdateData = students.map(student => {
+            const bulkUpdateData = studentsToUpdate.map(student => {
                 const studentScores = gridData[student.id] || {};
                 const aggregateScores: Record<Domain, number> = {} as any;
+                
                 DOMAINS.forEach(domain => {
                     const subs = subdomains[domain] || [];
                     let totalScore = 0;
                     let totalMax = 0;
-                    let hasEntry = false;
+                    let hasEntryForDomain = false;
+                    
                     subs.forEach(sub => {
                         const val = studentScores[makeKey(domain, sub.name)];
                         if (val !== undefined) {
                             totalScore += val;
                             totalMax += sub.maxScore;
-                            hasEntry = true;
+                            hasEntryForDomain = true;
                         }
                     });
-                    aggregateScores[domain] = (hasEntry && totalMax > 0) ? Math.round((totalScore / totalMax) * 100) : 0;
+
+                    // Only include domains that were actually modified in the grid
+                    if (hasEntryForDomain && totalMax > 0) {
+                        aggregateScores[domain] = Math.round((totalScore / totalMax) * 100);
+                    }
                 });
+
                 return {
                     studentId: student.id,
                     assessment: {
@@ -111,6 +126,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                     } as Assessment
                 };
             });
+
             await addAssessmentBulk(bulkUpdateData);
             onClose();
             setGridData({});

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Student } from '../../types';
 import { Card } from '../common/Card';
@@ -26,7 +25,7 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) =>
       statusColor = 'text-rose-600 bg-rose-50 border-rose-100';
       glowColor = 'group-hover:shadow-rose-200/50';
   } else if (latestAvg >= 85) {
-      statusText = 'Mastery';
+      statusText = 'Outstanding';
       statusColor = 'text-indigo-600 bg-indigo-50 border-indigo-100';
       glowColor = 'group-hover:shadow-indigo-200/50';
   } else if (student.overallGrowth <= -5) {

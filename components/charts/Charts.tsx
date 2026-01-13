@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
@@ -123,7 +122,7 @@ export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = (
                         <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} tickMargin={10} />
                         <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                         <Tooltip content={<CustomTooltip />} />
-                        <ReferenceLine y={80} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'right', value: 'Mastery', fill: '#10b981', fontSize: 10, fontWeight: 'bold' }} />
+                        <ReferenceLine y={80} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'right', value: 'Excellent', fill: '#10b981', fontSize: 10, fontWeight: 'bold' }} />
                         {actions.map((action, idx) => (
                             <ReferenceLine key={idx} x={action.date} stroke="#f59e0b" label={{ position: 'top', value: 'Action', fill: '#f59e0b', fontSize: 9, fontWeight: 'bold' }} />
                         ))}

@@ -20,17 +20,20 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
     const { saveAiAnalysis } = useStudents();
     const [teacherComment, setTeacherComment] = useState(initialTeacherComment);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const latestAssessment = student.assessments[student.assessments.length - 1];
     const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
     const handleGenerateInsight = async () => {
         if (!latestAssessment) return;
         setIsGenerating(true);
+        setError(null);
         try {
             const result = await GeminiService.generateComprehensiveStudentAnalysis(student);
             saveAiAnalysis(student.id, result);
         } catch (e) {
-            console.error(e);
+            console.error("Report generation error:", e);
+            setError("The AI service is currently unavailable or your credentials have expired. Please verify your connection.");
         } finally {
             setIsGenerating(false);
         }
@@ -109,7 +112,7 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
 
                                     let statusColor = 'text-gray-900';
                                     let statusText = 'Developing';
-                                    if (score >= 80) { statusColor = 'text-green-600'; statusText = 'Mastery'; }
+                                    if (score >= 80) { statusColor = 'text-green-600'; statusText = 'Excellent'; }
                                     else if (score >= 60) { statusColor = 'text-blue-600'; statusText = 'Proficient'; }
                                     else if (score < 40) { statusColor = 'text-red-600'; statusText = 'Needs Support'; }
 
@@ -143,21 +146,26 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                             <span className="w-2 h-6 bg-purple-600 mr-2 rounded-full"></span>
                             AI Performance Analysis
                         </div>
-                        {!insight && !isGenerating && (
+                        {(!insight || error) && !isGenerating && (
                             <button 
                                 onClick={handleGenerateInsight} 
                                 className="px-3 py-1 bg-purple-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg hover:bg-purple-700 transition print:hidden"
                             >
-                                Generate with AI
+                                {error ? 'Try Again' : 'Generate with AI'}
                             </button>
                         )}
                     </h3>
-                    <div className="bg-purple-50 p-6 rounded-lg border border-purple-100 text-gray-800 text-sm leading-relaxed print:bg-white print:border-gray-300">
+                    <div className={`p-6 rounded-lg border text-sm leading-relaxed print:bg-white print:border-gray-300 ${error ? 'bg-rose-50 border-rose-100 text-rose-800' : 'bg-purple-50 border-purple-100 text-gray-800'}`}>
                         {isGenerating ? (
                             <div className="space-y-3 animate-pulse">
                                 <div className="h-4 bg-purple-200 rounded w-full"></div>
                                 <div className="h-4 bg-purple-200 rounded w-[90%]"></div>
                                 <div className="h-4 bg-purple-200 rounded w-[95%]"></div>
+                            </div>
+                        ) : error ? (
+                            <div className="flex items-center gap-3">
+                                <Icon name="alert" className="w-5 h-5 text-rose-500" />
+                                <p className="font-medium">{error}</p>
                             </div>
                         ) : insight ? (
                             <div className="prose prose-sm max-w-none">

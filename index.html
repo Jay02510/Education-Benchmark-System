@@ -23,6 +23,10 @@
         letter-spacing: -0.025em;
       }
     </style>
+    <script>
+      // Prevent boot-time ReferenceErrors if process.env is accessed before injection
+      window.process = window.process || { env: {} };
+    </script>
     <script type="importmap">
 {
   "imports": {

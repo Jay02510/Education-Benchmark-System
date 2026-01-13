@@ -1,12 +1,15 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Domain, Resource, ResourceType } from '../types.ts';
 
-// Strictly follow standard initialization pattern from instructions
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper to ensure we always have a valid instance using the injected API_KEY
+const getAI = () => {
+    return new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+};
 
 export class GeminiService {
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
         try {
+            const ai = getAI();
             const model = 'gemini-3-flash-preview';
             const sortedAssessments = [...student.assessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             const latest = sortedAssessments[sortedAssessments.length - 1];
@@ -48,9 +51,7 @@ export class GeminiService {
                 }
             });
             
-            // Access .text property directly (not a method)
-            const text = response.text;
-            return JSON.parse(text || '{}');
+            return JSON.parse(response.text || '{}');
         } catch (error) { 
             console.error("AI Analysis failed:", error);
             return { report_card: "Steady progress observed.", trend_insights: "System fallback active." }; 
@@ -65,6 +66,7 @@ export class GeminiService {
         atRiskCount: number
     ): Promise<string> {
         try {
+            const ai = getAI();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: `Generate a professional executive briefing for a school administrator about Level ${gradeLevel} classes. 
@@ -75,7 +77,6 @@ export class GeminiService {
                 Please highlight institutional health, overall proficiency levels, and mention the efficacy of current resources. Keep the tone strategic and encouraging.`,
             });
             
-            // Access .text property directly
             return response.text || "Briefing unavailable.";
         } catch (error) { 
             console.error("Insight generation failed:", error);
@@ -85,6 +86,7 @@ export class GeminiService {
 
     static async generateResourceContent(domain: Domain, subdomain: string, type: ResourceType, level: string, promptText: string): Promise<{ title: string; description: string; content: string } | null> {
         try {
+            const ai = getAI();
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
                 contents: `Create high-quality classroom material (${type}) for Level ${level} students in ${domain}. 
@@ -113,6 +115,7 @@ export class GeminiService {
 
     static async generateRemedialPrompt(domain: Domain, avgScore: number, level: string): Promise<string> {
         try {
+            const ai = getAI();
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
                 contents: `Level: ${level}, Subject: ${domain}, Average Class Score: ${avgScore}%. 

@@ -21,7 +21,7 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 const getAI = () => {
-    const key = (typeof process !== 'undefined' && process.env?.API_KEY) || (window as any).process?.env?.API_KEY || '';
+    const key = process.env.API_KEY || '';
     return new GoogleGenAI({ apiKey: key });
 };
 
@@ -56,7 +56,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 timestamp: Date.now()
             }]);
         }
-    }, [activeTab]);
+    }, [activeTab, currentPersona]);
 
     const getChatSession = () => {
         if (!chatSessionRef.current) {
@@ -151,7 +151,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const chat = getChatSession();
             let result: GenerateContentResponse = await chat.sendMessage({ message: text });
             
-            // Handle recursive tool calls
             while (result.functionCalls && result.functionCalls.length > 0) {
                 const functionResponseParts = await Promise.all(
                     result.functionCalls.map(async (call) => {
@@ -171,7 +170,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: result.text || "I've processed your request but have no further text output.", 
+                text: result.text || "I've processed your request.", 
                 timestamp: Date.now() 
             }]);
         } catch (error) {
@@ -179,7 +178,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: "I encountered a processing error. This might be due to a network interruption or context limit.", 
+                text: "I encountered an error processing your request.", 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

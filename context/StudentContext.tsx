@@ -44,32 +44,35 @@ const StudentContext = createContext<StudentContextType | undefined>(undefined);
 const getStorageKey = (userId: string, type: 'students' | 'profile') => `benchmark_${type}_${userId}`;
 
 /**
- * Accuracy Fix: Calculates the true weighted proficiency based on points.
- * If raw points are missing, it falls back to averaging domain percentages.
+ * Accuracy Fix: Calculates true weighted proficiency against the FULL framework.
+ * This ensures that Baseline (all domains) and Midline (perhaps only some) 
+ * are calculated on a consistent mathematical scale.
  */
 const getTrueProficiency = (assessment: Assessment | undefined, frameworkSubdomains: Record<string, SubdomainMetadata[]>): number => {
     if (!assessment) return 0;
     
     let totalEarned = 0;
     let totalPossible = 0;
-    let hasPointData = false;
 
-    // Try to calculate based on raw subdomain points for 100% accuracy
+    // Calculate total possible points in the ENTIRE framework for this level
+    Object.values(frameworkSubdomains).forEach(subs => {
+        subs.forEach(s => {
+            totalPossible += s.maxScore;
+        });
+    });
+
+    // Sum up what the student actually earned
     Object.entries(assessment.subdomainScores || {}).forEach(([key, earned]) => {
-        const [domain, subName] = key.split(':');
-        const metadata = frameworkSubdomains[domain]?.find(s => s.name === subName);
-        if (metadata && typeof earned === 'number') {
+        if (typeof earned === 'number') {
             totalEarned += earned;
-            totalPossible += metadata.maxScore;
-            hasPointData = true;
         }
     });
 
-    if (hasPointData && totalPossible > 0) {
+    if (totalPossible > 0) {
         return Math.round((totalEarned / totalPossible) * 100);
     }
 
-    // Fallback: Average of domain percentages if raw data is unavailable
+    // Fallback: Simple average of percentages if framework metadata is missing
     const scores = Object.values(assessment.scores).filter(s => typeof s === 'number');
     if (scores.length === 0) return 0;
     return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
@@ -77,11 +80,14 @@ const getTrueProficiency = (assessment: Assessment | undefined, frameworkSubdoma
 
 const calculateVelocity = (assessments: Assessment[], frameworkSubdomains: Record<string, SubdomainMetadata[]>): number => {
     if (assessments.length < 2) return 0;
+    // Ensure we are comparing chronologically
     const sorted = [...assessments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const latest = sorted[sorted.length - 1];
     const previous = sorted[sorted.length - 2];
+    
     const latestAvg = getTrueProficiency(latest, frameworkSubdomains);
     const prevAvg = getTrueProficiency(previous, frameworkSubdomains);
+    
     return latestAvg - prevAvg;
 };
 

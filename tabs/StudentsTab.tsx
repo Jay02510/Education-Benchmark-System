@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Student } from '../types';
+import { Student, TestPeriod } from '../types';
 import { StudentCard } from '../components/students/StudentCard';
 import { StudentProfile } from '../components/students/StudentProfile';
 import { useStudents } from '../context/StudentContext';
@@ -93,15 +93,17 @@ export const StudentsTab: React.FC = () => {
     }, [classProfile]);
 
     const stats = useMemo(() => {
-        if (!students.length) return { classAvg: 0, interventionCount: 0, growth: 0, atRiskList: [] };
+        if (!students.length) return { classAvg: 0, interventionCount: 0, growth: 0, avgVelocity: 0, atRiskList: [] };
         
         let totalScore = 0;
         let count = 0;
         let totalGrowth = 0;
+        let totalVelocity = 0;
         const atRiskList = students.filter(s => s.interventionStatus !== null || s.hasAnomaly);
 
         students.forEach(s => {
             totalGrowth += s.overallGrowth;
+            totalVelocity += s.growthVelocity;
             const last = s.assessments[s.assessments.length - 1];
             if (last) {
                 const vals = Object.values(last.scores) as number[];
@@ -114,17 +116,31 @@ export const StudentsTab: React.FC = () => {
             classAvg: count ? Math.round(totalScore / count) : 0,
             interventionCount: atRiskList.length,
             growth: count ? Math.round(totalGrowth / count) : 0,
+            avgVelocity: Math.round(totalVelocity / students.length),
             atRiskList
         };
     }, [students]);
 
-    const chartData = useMemo(() => {
-        return [
-            { name: 'Baseline', avg: 60 },
-            { name: 'Midpoint', avg: 68 },
-            { name: 'Current', avg: stats.classAvg || 75 },
-        ];
-    }, [stats.classAvg]);
+    const velocityChartData = useMemo(() => {
+        // Calculate class average for each period
+        const periods = [TestPeriod.Baseline, TestPeriod.Midline, TestPeriod.Endline];
+        return periods.map(p => {
+            let total = 0;
+            let count = 0;
+            students.forEach(s => {
+                const a = s.assessments.find(as => as.type === p);
+                if (a) {
+                    const vals = Object.values(a.scores) as number[];
+                    total += vals.reduce((sum, val) => sum + val, 0) / vals.length;
+                    count++;
+                }
+            });
+            return {
+                name: p,
+                avg: count > 0 ? Math.round(total / count) : null
+            };
+        }).filter(d => d.avg !== null);
+    }, [students]);
 
     useEffect(() => {
         const timer = setTimeout(() => setIsLoading(false), 500);
@@ -205,7 +221,7 @@ export const StudentsTab: React.FC = () => {
                         icon="alert" 
                         gradient="from-orange-400 to-pink-500" 
                         textColor="text-white" 
-                        info="Add students to see intervention alerts."
+                        info="Click to see students flagged for intervention based on recent regression or low scores."
                         onClick={() => setIsAtRiskModalOpen(true)}
                     />
                     <DashboardWidget 
@@ -215,7 +231,7 @@ export const StudentsTab: React.FC = () => {
                         icon="analytics" 
                         gradient="from-indigo-500 to-blue-600" 
                         textColor="text-white" 
-                        info="Performance maps will appear after testing students."
+                        info="The current average proficiency of all students across all domains."
                         onClick={() => setActiveTab(TABS.ANALYTICS)}
                     />
                 </div>
@@ -223,12 +239,22 @@ export const StudentsTab: React.FC = () => {
                 <div className="md:col-span-12 lg:col-span-4 bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="font-black text-slate-800 tracking-tight">Growth Velocity</h3>
-                        <span className="text-xs font-black text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-lg flex items-center gap-1">
-                            Awaiting Data
+                        <span className={`text-xs font-black px-2.5 py-1 rounded-lg flex items-center gap-1 ${stats.avgVelocity >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                             {stats.avgVelocity >= 0 ? '+' : ''}{stats.avgVelocity}% / Cycle
                         </span>
                     </div>
-                    <div className="flex-1 min-h-[140px] flex items-center justify-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold text-xs">
-                         Chart will populate after second cycle
+                    <div className="flex-1 min-h-[140px]">
+                        {velocityChartData.length > 1 ? (
+                            <LongitudinalGrowthChart 
+                                data={velocityChartData} 
+                                lines={[{ key: 'avg', color: '#6366f1' }]} 
+                                type="area"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold text-xs text-center px-4">
+                                Longitudinal trend will activate after Midline data is synced
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

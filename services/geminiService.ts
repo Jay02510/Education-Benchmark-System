@@ -24,10 +24,10 @@ export class GeminiService {
                 history: sortedAssessments.map(a => ({ period: a.type, date: a.date, scores: a.scores }))
             };
 
-            const prompt = `Perform a deep pedagogical analysis for an ESL student. 
+            const prompt = `Perform a technical pedagogical analysis for an ESL student. 
             Data: ${JSON.stringify(dataPayload)}
-            Task: Provide a "report_card" (encouraging for parents) and "trend_insights" (diagnostic for teachers). 
-            Terminologies: NEVER use the word 'mastery'. Instead use 'Excellent' or 'Outstanding' for scores above 80%.`;
+            Task: Provide a "report_card" (parent-facing, professional) and "trend_insights" (teacher-facing, technical). 
+            Terminologies: NEVER use the word 'mastery'. Instead use 'Excellent' (for scores 80-89%) or 'Outstanding' (for scores 90%+). Focus on learning progression.`;
             
             const response = await ai.models.generateContent({
                 model,
@@ -45,10 +45,11 @@ export class GeminiService {
                 }
             });
             
-            return JSON.parse(response.text || '{}');
+            if (!response.text) throw new Error("Empty response from AI engine.");
+            return JSON.parse(response.text);
         } catch (error) { 
             console.error("AI Analysis failed:", error);
-            throw new Error("Unable to reach the analysis engine. Please verify your data and try again.");
+            throw error;
         }
     }
 
@@ -63,7 +64,7 @@ export class GeminiService {
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Write an executive briefing for a level ${gradeLevel} class of ${studentCount} students. ${atRiskCount} need support. Highlight proficiency but avoid the term 'mastery'.`,
+                contents: `Write an executive briefing for a level ${gradeLevel} class. Highlight proficiency levels but avoid the term 'mastery'. Focus on 'Institutional Health'.`,
             });
             return response.text || "Briefing unavailable.";
         } catch (error) { 
@@ -76,7 +77,7 @@ export class GeminiService {
         try {
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
-                contents: `Create high-quality classroom material (${type}) for Level ${level} in ${domain}. Focus: ${subdomain}. Prompt: ${promptText}.`,
+                contents: `Create high-quality material (${type}) for Level ${level} in ${domain}. Prompt: ${promptText}.`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: { 
@@ -97,7 +98,7 @@ export class GeminiService {
         try {
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Create a practice activity prompt for Level ${level} students struggling in ${domain} (Avg ${avgScore}%).`
+                contents: `Create a practice prompt for Level ${level} students struggling in ${domain} (Avg ${avgScore}%).`
             });
             return response.text?.trim() || `Support activity for ${domain}`;
         } catch (error) { 

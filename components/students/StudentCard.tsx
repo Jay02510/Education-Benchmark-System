@@ -16,46 +16,32 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) =>
       : 0;
 
   // Determine Status Logic
-  let statusText = 'On Track';
-  let statusColor = 'text-emerald-600 bg-emerald-50 border-emerald-100';
-  let glowColor = 'group-hover:shadow-emerald-200/50';
+  let statusText = '';
+  let statusColor = '';
 
-  if (student.hasAnomaly) {
-      statusText = 'Intervention';
-      statusColor = 'text-rose-600 bg-rose-50 border-rose-100';
-      glowColor = 'group-hover:shadow-rose-200/50';
-  } else if (latestAvg >= 85) {
+  if (latestAvg >= 90) {
       statusText = 'Outstanding';
       statusColor = 'text-indigo-600 bg-indigo-50 border-indigo-100';
-      glowColor = 'group-hover:shadow-indigo-200/50';
-  } else if (student.overallGrowth <= -5) {
-      statusText = 'Monitor'; 
-      statusColor = 'text-amber-600 bg-amber-50 border-amber-100';
-      glowColor = 'group-hover:shadow-amber-200/50';
+  } else if (latestAvg >= 80) {
+      statusText = 'Excellent';
+      statusColor = 'text-emerald-600 bg-emerald-50 border-emerald-100';
   }
 
   return (
     <Card 
         variant="glass"
-        className={`group p-6 flex flex-col items-center text-center border-white/60 hover:border-white ${glowColor}`} 
+        className="group p-6 flex flex-col items-center text-center border-white/60 hover:border-white transition-all duration-300" 
         onClick={onClick}
     >
-      {/* Dynamic Status Indicator */}
-      <div className={`absolute top-4 right-4 px-2.5 py-1 rounded-full border text-[10px] font-black uppercase tracking-tighter transition-all duration-500 z-20 ${statusColor}`}>
-        {statusText}
-      </div>
+      {/* Subtle Status Integrated into Header */}
+      {statusText && (
+        <div className={`absolute top-4 right-4 px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-tighter transition-all duration-500 z-20 ${statusColor}`}>
+          {statusText}
+        </div>
+      )}
       
-      {/* Avatar with dynamic ring and intervention badge */}
+      {/* Avatar Section */}
       <div className="relative mb-6 mt-2">
-          <div className={`absolute -inset-2 rounded-full blur-lg opacity-0 group-hover:opacity-40 transition-opacity duration-700 ${student.hasAnomaly ? 'bg-rose-400' : 'bg-indigo-400'}`}></div>
-          
-          {/* Status Badge Over Image */}
-          {student.hasAnomaly && (
-            <div className="absolute -top-1 -left-1 w-6 h-6 bg-rose-500 rounded-full border-2 border-white shadow-lg z-30 flex items-center justify-center animate-bounce">
-                <Icon name="alert" className="w-3.5 h-3.5 text-white" strokeWidth={3} />
-            </div>
-          )}
-
           <div className="relative w-24 h-24 rounded-[2.5rem] bg-white p-1 shadow-lg group-hover:scale-105 transition-transform duration-500 overflow-hidden z-10">
             <img 
                 src={student.photoUrl} 

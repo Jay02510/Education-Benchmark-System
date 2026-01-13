@@ -21,19 +21,34 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
     const [teacherComment, setTeacherComment] = useState(initialTeacherComment);
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const latestAssessment = student.assessments[student.assessments.length - 1];
+    
+    const latestAssessment = student.assessments.length > 0 
+        ? [...student.assessments].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] 
+        : null;
+        
     const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
     const handleGenerateInsight = async () => {
-        if (!latestAssessment) return;
+        if (!latestAssessment) {
+            setError("You must record at least one assessment to generate an AI report.");
+            return;
+        }
+        
         setIsGenerating(true);
         setError(null);
         try {
             const result = await GeminiService.generateComprehensiveStudentAnalysis(student);
-            saveAiAnalysis(student.id, result);
+            if (result && (result.report_card || result.trend_insights)) {
+                saveAiAnalysis(student.id, result);
+            } else {
+                throw new Error("Received an empty response from AI.");
+            }
         } catch (e: any) {
-            console.error("Report generation error:", e);
-            setError(e.message || "Credential error: Please ensure you have an active internet connection and valid permissions.");
+            console.error("Report generation error details:", e);
+            const msg = e.message?.toLowerCase().includes("api_key") 
+                ? "API Configuration Error: Please ensure your environment credentials are valid."
+                : "The analysis engine is currently busy. Please try again in a few seconds.";
+            setError(msg);
         } finally {
             setIsGenerating(false);
         }
@@ -42,7 +57,7 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
     const renderMarkdownBold = (text: string) => {
          const parts = text.split(/\*\*(.*?)\*\*/g);
          return parts.map((part, index) =>
-             index % 2 === 1 ? <strong key={index}>{part}</strong> : part
+             index % 2 === 1 ? <strong key={index} className="text-slate-900">{part}</strong> : part
          );
      };
 
@@ -53,188 +68,192 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                 {/* Header */}
                 <div className="flex justify-between items-end border-b-2 border-gray-800 pb-4 mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Student Progress Report</h1>
-                        <p className="text-gray-600 mt-1">Periodic Performance Review</p>
+                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Student Progress Report</h1>
+                        <p className="text-gray-600 mt-1 font-medium">Academic Performance Summary</p>
                     </div>
                     <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-900">Benchmark AI</div>
-                        <p className="text-sm text-gray-500">{date}</p>
+                        <div className="text-2xl font-black text-indigo-900 tracking-tighter italic">Benchmark AI</div>
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{date}</p>
                     </div>
                 </div>
 
                 {/* Student Info Grid */}
-                <div className="grid grid-cols-2 gap-8 mb-8 bg-gray-50 p-6 rounded-lg border border-gray-100 print:bg-white print:border-gray-300">
-                    <div className="flex items-center space-x-4">
-                        <img src={student.photoUrl} alt={student.name} className="w-16 h-16 rounded-full border-2 border-white shadow-sm" />
+                <div className="grid grid-cols-2 gap-8 mb-8 bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100 print:bg-white print:border-gray-300">
+                    <div className="flex items-center space-x-5">
+                        <div className="w-16 h-16 rounded-3xl overflow-hidden shadow-lg border-2 border-white">
+                            <img src={student.photoUrl} alt={student.name} className="w-full h-full object-cover" />
+                        </div>
                         <div>
-                            <p className="text-sm text-gray-500 uppercase tracking-wide font-semibold">Student Name</p>
-                            <p className="text-xl font-bold text-gray-900">{student.name}</p>
+                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-0.5">Student Identity</p>
+                            <p className="text-xl font-black text-slate-900 leading-none">{student.name}</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <p className="text-sm text-gray-500 uppercase tracking-wide font-semibold">Class</p>
-                            <p className="text-lg font-medium text-gray-900">{student.class || className || 'N/A'}</p>
+                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-0.5">Target Level</p>
+                            <p className="text-lg font-bold text-slate-800">Lvl {student.level}</p>
                         </div>
                         <div>
-                            <p className="text-sm text-gray-500 uppercase tracking-wide font-semibold">Current Level</p>
-                            <p className="text-lg font-medium text-gray-900">{student.level}</p>
+                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-0.5">Velocity</p>
+                            <p className={`text-lg font-bold ${student.growthVelocity >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {student.growthVelocity > 0 ? '+' : ''}{student.growthVelocity}%
+                            </p>
                         </div>
                     </div>
                 </div>
 
                 {/* Scores Section */}
                 <div className="mb-8">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                        <span className="w-2 h-6 bg-blue-600 mr-2 rounded-full print:bg-blue-600"></span>
-                        Latest Assessment Data ({latestAssessment?.type || 'No Data'})
+                    <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center">
+                        <div className="w-1.5 h-6 bg-indigo-600 mr-3 rounded-full"></div>
+                        Latest Quantitative Data ({latestAssessment?.type || 'Baseline'})
                     </h3>
                     {latestAssessment ? (
-                        <table className="w-full border-collapse">
-                            <thead>
-                                <tr className="border-b border-gray-300 text-left">
-                                    <th className="py-2 text-sm font-semibold text-gray-600 w-1/3">Domain</th>
-                                    <th className="py-2 text-sm font-semibold text-gray-600 w-1/6">Score</th>
-                                    <th className="py-2 text-sm font-semibold text-gray-600 w-1/4">Target Standard</th>
-                                    <th className="py-2 text-sm font-semibold text-gray-600 w-1/4 text-right">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {domains.map((domain, idx) => {
-                                    const score = (latestAssessment.scores as any)[domain];
-                                    if (score === undefined) return null;
+                        <div className="border border-slate-100 rounded-3xl overflow-hidden">
+                            <table className="w-full border-collapse">
+                                <thead className="bg-slate-50 border-b border-slate-100">
+                                    <tr className="text-left">
+                                        <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/3">Learning Domain</th>
+                                        <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/6">Score</th>
+                                        <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/4">Alignment</th>
+                                        <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/4 text-right">Standard</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {domains.map((domain, idx) => {
+                                        const score = (latestAssessment.scores as any)[domain];
+                                        if (score === undefined) return null;
 
-                                    const bench = benchmarks.find(b => 
-                                        b.domain === domain && 
-                                        b.period === latestAssessment.type && 
-                                        b.level_name === student.level
-                                    );
+                                        const bench = benchmarks.find(b => 
+                                            b.domain === domain && 
+                                            b.period === latestAssessment.type && 
+                                            b.level_name === student.level
+                                        );
 
-                                    let statusColor = 'text-gray-900';
-                                    let statusText = 'Developing';
-                                    if (score >= 80) { statusColor = 'text-green-600'; statusText = 'Excellent'; }
-                                    else if (score >= 60) { statusColor = 'text-blue-600'; statusText = 'Proficient'; }
-                                    else if (score < 40) { statusColor = 'text-red-600'; statusText = 'Needs Support'; }
+                                        let statusColor = 'text-slate-600';
+                                        let statusText = 'Developing';
+                                        if (score >= 90) { statusColor = 'text-indigo-600'; statusText = 'Outstanding'; }
+                                        else if (score >= 80) { statusColor = 'text-emerald-600'; statusText = 'Excellent'; }
+                                        else if (score >= 60) { statusColor = 'text-blue-600'; statusText = 'Proficient'; }
+                                        else if (score < 40) { statusColor = 'text-rose-600'; statusText = 'Needs Support'; }
 
-                                    return (
-                                        <tr key={domain} className={`border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
-                                            <td className="py-3 pl-2 text-gray-800 font-medium">{domain}</td>
-                                            <td className="py-3 font-bold">{score}%</td>
-                                            <td className="py-3 text-sm text-gray-500">
-                                                {bench?.cefr_alignment && bench.cefr_alignment !== "N/A" ? (
-                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-50 text-indigo-700 mr-1">
-                                                        {bench.cefr_alignment}
-                                                    </span>
-                                                ) : '-'}
-                                                {bench?.target_percent ? <span className="text-xs">Goal: {bench.target_percent}%</span> : ''}
-                                            </td>
-                                            <td className={`py-3 font-semibold text-right pr-2 ${statusColor}`}>{statusText}</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                                        return (
+                                            <tr key={domain} className={`border-b border-slate-50 last:border-0 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/20'}`}>
+                                                <td className="py-4 px-6 text-sm text-slate-800 font-bold">{domain}</td>
+                                                <td className="py-4 px-6 font-black text-slate-900">{score}%</td>
+                                                <td className="py-4 px-6">
+                                                    {bench?.cefr_alignment && bench.cefr_alignment !== "N/A" ? (
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[9px] font-black bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase tracking-widest">
+                                                            {bench.cefr_alignment}
+                                                        </span>
+                                                    ) : <span className="text-slate-300">—</span>}
+                                                </td>
+                                                <td className={`py-4 px-6 font-black text-[10px] uppercase tracking-tighter text-right ${statusColor}`}>{statusText}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     ) : (
-                        <div className="p-10 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                             <Icon name="benchmark" className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                             <p className="text-gray-500 text-sm font-medium italic">No assessment data recorded for this student yet.</p>
+                        <div className="p-12 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
+                             <Icon name="benchmark" className="w-10 h-10 text-slate-300 mx-auto mb-4" />
+                             <p className="text-slate-500 text-sm font-bold">Awaiting assessment entry to calculate standards.</p>
                         </div>
                     )}
                 </div>
 
-                {/* Specific Intervention Section */}
-                {student.interventionStatus && (
-                    <div className="mb-8 p-4 bg-rose-50 rounded-xl border border-rose-100 flex items-start gap-3">
-                         <Icon name="alert" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
-                         <div>
-                             <p className="text-xs font-black uppercase text-rose-800 tracking-widest mb-1">Targeted Intervention Alert</p>
-                             <p className="text-sm text-rose-700 font-medium">{student.interventionStatus.triggerReason}</p>
-                             <p className="text-xs text-rose-600/80 mt-1">Goal: {student.interventionStatus.goal}</p>
-                         </div>
-                    </div>
-                )}
-
                 {/* AI Insight Section */}
                 <div className="mb-8 break-inside-avoid">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex justify-between items-center">
+                    <h3 className="text-lg font-black text-slate-900 mb-4 flex justify-between items-center">
                         <div className="flex items-center">
-                            <span className="w-2 h-6 bg-purple-600 mr-2 rounded-full"></span>
-                            AI Performance Analysis
+                            <div className="w-1.5 h-6 bg-purple-600 mr-3 rounded-full"></div>
+                            Pedagogical Intelligence (AI)
                         </div>
                         {(!insight || error) && !isGenerating && latestAssessment && (
                             <button 
                                 onClick={handleGenerateInsight} 
-                                className="px-3 py-1 bg-purple-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg hover:bg-purple-700 transition print:hidden"
+                                className="px-4 py-1.5 bg-purple-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:bg-purple-700 transition active:scale-95 print:hidden"
                             >
-                                {error ? 'Try Again' : 'Generate with AI'}
+                                {error ? 'Try Again' : 'Analyze with AI'}
                             </button>
                         )}
                     </h3>
-                    <div className={`p-6 rounded-lg border text-sm leading-relaxed print:bg-white print:border-gray-300 ${error ? 'bg-rose-50 border-rose-100 text-rose-800' : 'bg-purple-50 border-purple-100 text-gray-800'}`}>
+                    <div className={`p-6 rounded-[2rem] border text-sm leading-relaxed print:bg-white print:border-gray-300 ${error ? 'bg-rose-50 border-rose-100 text-rose-800' : 'bg-purple-50/50 border-purple-100 text-slate-700'}`}>
                         {isGenerating ? (
-                            <div className="space-y-3 animate-pulse">
-                                <div className="h-4 bg-purple-200 rounded w-full"></div>
-                                <div className="h-4 bg-purple-200 rounded w-[90%]"></div>
-                                <div className="h-4 bg-purple-200 rounded w-[95%]"></div>
+                            <div className="space-y-3 py-2">
+                                <div className="h-3 bg-purple-200 rounded-full w-full animate-pulse"></div>
+                                <div className="h-3 bg-purple-200 rounded-full w-[90%] animate-pulse delay-75"></div>
+                                <div className="h-3 bg-purple-200 rounded-full w-[95%] animate-pulse delay-150"></div>
+                                <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest text-center mt-4">Consulting LLM Engine...</p>
                             </div>
                         ) : error ? (
-                            <div className="flex items-center gap-3">
-                                <Icon name="alert" className="w-5 h-5 text-rose-500" />
-                                <p className="font-medium">{error}</p>
+                            <div className="flex items-start gap-4">
+                                <div className="p-2 bg-rose-100 rounded-xl text-rose-600 shrink-0">
+                                    <Icon name="alert" className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="font-black text-sm uppercase tracking-tight mb-1">Analysis Suspended</p>
+                                    <p className="text-xs font-medium opacity-80 leading-relaxed">{error}</p>
+                                </div>
                             </div>
                         ) : insight ? (
-                            <div className="prose prose-sm max-w-none">
-                                {insight.split('\n\n').map((para, i) => <p key={i} className="mb-2">{renderMarkdownBold(para)}</p>)}
+                            <div className="prose prose-slate prose-sm max-w-none font-medium">
+                                {insight.split('\n\n').map((para, i) => (
+                                    <p key={i} className="mb-4 last:mb-0 text-slate-700">{renderMarkdownBold(para)}</p>
+                                ))}
                             </div>
                         ) : (
-                            <p className="text-gray-500 italic">
-                                {latestAssessment 
-                                    ? "Pedagogical analysis ready for generation. Click 'Generate' to begin." 
-                                    : "Please record at least one assessment to unlock AI insights."}
-                            </p>
+                            <div className="text-center py-4">
+                                <p className="text-slate-400 text-xs italic">
+                                    {latestAssessment 
+                                        ? "Detailed pedagogical breakdown is ready. Press 'Analyze' to generate insights." 
+                                        : "Record at least one test result to activate AI analysis features."}
+                                </p>
+                            </div>
                         )}
                     </div>
                 </div>
 
                 {/* Teacher Comment Section - EDITABLE */}
                 <div className="mb-8 break-inside-avoid">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                        <span className="w-2 h-6 bg-green-600 mr-2 rounded-full"></span>
-                        Pedagogical Feedback
+                    <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center">
+                        <div className="w-1.5 h-6 bg-emerald-600 mr-3 rounded-full"></div>
+                        Teacher's Observation
                     </h3>
-                    <div className="border border-gray-300 rounded-lg overflow-hidden min-h-[120px] bg-white print:border-gray-300">
+                    <div className="border border-slate-200 rounded-[2rem] overflow-hidden bg-white print:border-gray-300">
                         <textarea 
                             value={teacherComment}
                             onChange={(e) => setTeacherComment(e.target.value)}
-                            placeholder="Type additional teacher observations or parent advice here..."
-                            className="w-full h-full p-6 text-gray-700 font-serif italic outline-none resize-none print:hidden"
+                            placeholder="Add personalized context or advice for parents..."
+                            className="w-full h-full p-6 text-slate-700 font-serif italic outline-none resize-none min-h-[140px] focus:ring-2 focus:ring-indigo-500 transition-all print:hidden"
                         />
-                        <p className="hidden print:block p-6 text-gray-700 font-serif italic whitespace-pre-wrap">
+                        <p className="hidden print:block p-6 text-slate-800 font-serif italic whitespace-pre-wrap leading-relaxed">
                             {teacherComment || "No additional comments provided."}
                         </p>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-gray-200 pt-6 flex justify-between items-center text-xs text-gray-400 print:text-gray-600">
-                    <p>Generated by Benchmark AI Platform</p>
-                    <p>Page 1 of 1</p>
+                <div className="border-t border-slate-100 pt-6 flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-slate-300 print:text-slate-400">
+                    <p>Verified Benchmark AI Assessment System • 2025</p>
+                    <p>Doc ID: {student.id.slice(0, 8)} • Page 1 of 1</p>
                 </div>
             </div>
 
-            <div className="mt-6 flex justify-end space-x-4 print:hidden">
+            <div className="mt-8 flex justify-end space-x-4 px-4 print:hidden">
                 <button 
                     onClick={onClose} 
-                    className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-xl font-semibold hover:bg-gray-50 transition"
+                    className="px-8 py-3 border border-slate-200 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition active:scale-95"
                 >
                     Close
                 </button>
                 <button 
                     onClick={() => window.print()} 
-                    className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition flex items-center space-x-2 shadow-lg active:scale-95"
+                    className="px-10 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition flex items-center space-x-3 shadow-xl shadow-indigo-900/10 active:scale-95"
                 >
-                    <Icon name="check" className="w-5 h-5" />
-                    <span>Print Report</span>
+                    <Icon name="check" className="w-4 h-4 text-emerald-300" />
+                    <span>Print Formal Report</span>
                 </button>
             </div>
         </Modal>

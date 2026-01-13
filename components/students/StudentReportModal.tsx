@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Student, Domain } from '../../types';
 import { useBenchmarks } from '../../context/BenchmarkContext';
@@ -10,12 +9,13 @@ interface StudentReportModalProps {
     onClose: () => void;
     student: Student;
     insight: string;
-    teacherComment: string;
+    initialTeacherComment: string;
     className?: string;
 }
 
-export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, onClose, student, insight, teacherComment, className }) => {
+export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, onClose, student, insight, initialTeacherComment, className }) => {
     const { benchmarks, domains } = useBenchmarks();
+    const [teacherComment, setTeacherComment] = useState(initialTeacherComment);
     const latestAssessment = student.assessments[student.assessments.length - 1];
     const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -28,12 +28,6 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Student Progress Report" size="xl">
-             {/* Top Right Close Button (Redundant but helpful for UX) */}
-             <div className="absolute top-4 right-4">
-                {/* Handled by Modal component, but adding explicit close within content if needed for print view handling */}
-            </div>
-
-            {/* Print Preview Container */}
             <div className="bg-white p-8 border border-gray-200 shadow-sm mx-auto max-w-3xl print:border-0 print:shadow-none print:p-0">
                 
                 {/* Header */}
@@ -87,11 +81,9 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                             </thead>
                             <tbody>
                                 {domains.map((domain, idx) => {
-                                    // @ts-ignore
-                                    const score = latestAssessment.scores[domain];
+                                    const score = (latestAssessment.scores as any)[domain];
                                     if (score === undefined) return null;
 
-                                    // Find corresponding benchmark to get the target/CEFR
                                     const bench = benchmarks.find(b => 
                                         b.domain === domain && 
                                         b.period === latestAssessment.type && 
@@ -144,17 +136,27 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                     </div>
                 </div>
 
-                {/* Teacher Comment Section */}
+                {/* Teacher Comment Section - EDITABLE */}
                 <div className="mb-8 break-inside-avoid">
                     <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
                         <span className="w-2 h-6 bg-green-600 mr-2 rounded-full"></span>
-                        Teacher's Comments
+                        Pedagogical Feedback
                     </h3>
-                    <div className="border border-gray-300 rounded-lg p-6 min-h-[100px] bg-white">
-                        <p className="text-gray-700 whitespace-pre-wrap font-serif italic">
+                    <div className="border border-gray-300 rounded-lg overflow-hidden min-h-[120px] bg-white print:border-gray-300">
+                        <textarea 
+                            value={teacherComment}
+                            onChange={(e) => setTeacherComment(e.target.value)}
+                            placeholder="Type additional teacher observations or parent advice here..."
+                            className="w-full h-full p-6 text-gray-700 font-serif italic outline-none resize-none print:hidden"
+                        />
+                        <p className="hidden print:block p-6 text-gray-700 font-serif italic whitespace-pre-wrap">
                             {teacherComment || "No additional comments provided."}
                         </p>
                     </div>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2 print:hidden flex items-center gap-1">
+                        <Icon name="info" className="w-3 h-3" />
+                        This section is editable. Your typing appears instantly on the printed report.
+                    </p>
                 </div>
 
                 {/* Footer */}
@@ -173,7 +175,7 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                 </button>
                 <button 
                     onClick={() => window.print()} 
-                    className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition flex items-center space-x-2 shadow-lg"
+                    className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition flex items-center space-x-2 shadow-lg active:scale-95"
                 >
                     <Icon name="check" className="w-5 h-5" />
                     <span>Print Report</span>

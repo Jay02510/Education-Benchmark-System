@@ -138,20 +138,23 @@ export const BenchmarkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             return;
         }
         if (!configDocId || !user) return;
+        
+        // Optimistic local state update for snappy UI
+        setDomains(newDomains);
+        setSubdomains(newSubdomains);
+        setThresholds(newThresholds);
+
         await updateDoc(doc(db, 'framework_configs', configDocId), {
             domains: newDomains,
             subdomains: newSubdomains,
             thresholds: newThresholds
         });
-        setDomains(newDomains);
-        setSubdomains(newSubdomains);
-        setThresholds(newThresholds);
     };
 
     const updateThreshold = async (period: TestPeriod, value: number) => {
         const newThresholds = { ...thresholds, [period]: value };
+        // We removed the toast notification here as it was overwhelming during slider movement.
         await updateConfig(domains, subdomains, newThresholds);
-        showToast(`${period} threshold set to ${value}%`);
     };
 
     const updateBenchmark = async (id: string, updates: Partial<Benchmark>) => {

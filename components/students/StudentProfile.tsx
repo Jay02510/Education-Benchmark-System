@@ -1,15 +1,15 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Student, Resource, Domain, Assessment, StudentLogEntry } from '../../types';
 import { GeminiService } from '../../services/geminiService';
 import { Card } from '../common/Card';
 import { Icon } from '../common/Icon';
 import { LongitudinalGrowthChart, RadarPerformanceChart } from '../charts/Charts';
-import { DOMAINS } from '../../constants';
+import { DOMAINS, TABS } from '../../constants';
 import { useStudents } from '../../context/StudentContext';
 import { useResources } from '../../context/ResourceContext';
 import { useBenchmarks } from '../../context/BenchmarkContext';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigation } from '../../context/NavigationContext';
 import { AddAssessmentModal } from './AddAssessmentModal';
 import { StudentReportModal } from './StudentReportModal';
 import { AddStudentModal } from './AddStudentModal';
@@ -125,7 +125,9 @@ const AssessmentHistoryItem: React.FC<{
 
 export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack }) => {
     const { updateAssessmentForStudent, deleteAssessmentForStudent, aiInsights, classProfile, addLogEntry } = useStudents();
+    const { resources } = useResources();
     const { user } = useAuth();
+    const { setActiveTab } = useNavigation();
     
     const [activeSection, setActiveSection] = useState<'Overview' | 'Assessments' | 'Resources' | 'Log'>('Overview');
     const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
@@ -191,6 +193,17 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
         setAssessmentToEdit(a);
         setIsAssessmentModalOpen(true);
     };
+
+    const recommendedResources = useMemo(() => {
+        if (!latestAssessment) return [];
+        const weakDomains = Object.entries(latestAssessment.scores)
+            .filter(([_, score]) => (score as number) < 70)
+            .map(([domain]) => domain);
+            
+        return resources.filter(r => 
+            weakDomains.includes(r.domain) && r.level === student.level
+        ).slice(0, 3);
+    }, [resources, latestAssessment, student.level]);
 
     return (
         <div className="flex flex-col h-full bg-[#F8FAFC] overflow-hidden">
@@ -283,6 +296,43 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
                     </div>
                 )}
 
+                {activeSection === 'Resources' && (
+                    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                         <div className="flex justify-between items-center">
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight">Personalized Pathways</h3>
+                                <p className="text-slate-400 text-sm font-medium">Auto-curated materials based on weak domains</p>
+                            </div>
+                            <button onClick={() => setActiveTab(TABS.RESOURCE_BANK)} className="px-4 py-2 text-indigo-600 font-bold text-xs uppercase tracking-widest hover:bg-indigo-50 rounded-xl transition-all">Browse Full Bank</button>
+                        </div>
+
+                        {recommendedResources.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {recommendedResources.map(res => (
+                                    <Card key={res.id} variant="paper" className="p-6 hover:border-indigo-200 transition-colors">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="px-2 py-1 bg-indigo-50 text-indigo-600 rounded text-[9px] font-black uppercase tracking-widest">{res.type}</div>
+                                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{res.domain}</span>
+                                        </div>
+                                        <h4 className="font-black text-slate-800 mb-2">{res.title}</h4>
+                                        <p className="text-xs text-slate-500 line-clamp-2 mb-4 leading-relaxed">{res.description}</p>
+                                        <button onClick={() => setActiveTab(TABS.RESOURCE_BANK)} className="text-[10px] font-black text-indigo-600 hover:text-indigo-800 transition-colors uppercase tracking-widest">View Material &rarr;</button>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-20 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200">
+                                <div className="p-4 bg-white rounded-2xl shadow-sm mb-4">
+                                    <Icon name="library" className="w-8 h-8 text-slate-300" />
+                                </div>
+                                <p className="font-bold text-slate-500">No specific recommendations found.</p>
+                                <p className="text-xs text-slate-400 mt-1">Complete more assessments to see targeted resources.</p>
+                                <button onClick={() => setActiveTab(TABS.RESOURCE_BANK)} className="mt-6 px-6 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">Visit Resource Bank</button>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 {activeSection === 'Log' && (
                     <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <Card variant="paper" className="p-8 border-t-8 border-indigo-500 shadow-xl">
@@ -303,7 +353,7 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
             </main>
 
             <AddAssessmentModal isOpen={isAssessmentModalOpen} onClose={() => { setIsAssessmentModalOpen(false); setAssessmentToEdit(null); }} onSave={(a) => updateAssessmentForStudent(student.id, a)} assessmentToEdit={assessmentToEdit} />
-            <StudentReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} student={student} insight={aiInsights[student.id]?.report_card || ''} teacherComment={student.actionLog?.[0]?.content || ''} className={classProfile?.className} />
+            <StudentReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} student={student} insight={aiInsights[student.id]?.report_card || ''} initialTeacherComment={student.actionLog?.[0]?.content || ''} className={classProfile?.className} />
             <AddStudentModal isOpen={isEditProfileModalOpen} onClose={() => setIsEditProfileModalOpen(false)} studentToEdit={student} />
         </div>
     );

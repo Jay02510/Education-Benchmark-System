@@ -60,7 +60,6 @@ const calculateVelocity = (assessments: Assessment[]): number => {
     return Math.round(latestAvg - prevAvg);
 };
 
-// RTI Calculation now requires thresholds to be dynamic
 const calculateRTIStatus = (assessments: Assessment[], thresholds: Record<TestPeriod, number>): Intervention | null => {
     if (assessments.length === 0) return null;
     const sorted = [...assessments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -69,10 +68,8 @@ const calculateRTIStatus = (assessments: Assessment[], thresholds: Record<TestPe
     const avg = getAvgScore(latest);
     const domainEntries = Object.entries(latest.scores) as [Domain, number][];
     
-    // Period-specific dynamic threshold check
     const currentPeriodThreshold = thresholds[latest.type] || 65;
 
-    // 1. Critical Tier (Well below threshold)
     if (avg < currentPeriodThreshold - 20) {
         return { 
             tier: 3, 
@@ -84,7 +81,6 @@ const calculateRTIStatus = (assessments: Assessment[], thresholds: Record<TestPe
         };
     }
     
-    // 2. Performance Tier (Just below threshold)
     if (avg < currentPeriodThreshold) {
         return { 
             tier: 2, 
@@ -96,7 +92,6 @@ const calculateRTIStatus = (assessments: Assessment[], thresholds: Record<TestPe
         };
     }
 
-    // 3. Weak Domain Check (even if overall avg is okay)
     const weakDomain = domainEntries.find(([_, s]) => s < currentPeriodThreshold - 10);
     if (weakDomain) {
         return { 
@@ -109,7 +104,6 @@ const calculateRTIStatus = (assessments: Assessment[], thresholds: Record<TestPe
         };
     }
 
-    // 4. Regression Check
     if (previous) {
         const prevAvg = getAvgScore(previous);
         if (avg < prevAvg - 10) {
@@ -131,7 +125,7 @@ const sortByName = (list: Student[]) => [...list].sort((a, b) => a.name.localeCo
 
 export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user } = useAuth();
-    const { thresholds } = useBenchmarks(); // Thresholds are now consumed here
+    const { thresholds } = useBenchmarks(); 
     const [students, setStudents] = useState<Student[]>([]);
     const [classProfile, setClassProfile] = useState<ClassProfile | null>(null);
     const { showToast } = useToast();
@@ -149,9 +143,11 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (user.isDemo) {
             const localStudents = localStorage.getItem(sKey);
             const localProfile = localStorage.getItem(pKey);
+            // In Demo mode, we ONLY load from localStorage. If empty, it stays empty until loadDemoData is called.
             if (localStudents) setStudents(sortByName(JSON.parse(localStudents)));
             if (localProfile) setClassProfile(JSON.parse(localProfile));
         } else {
+            // Live Firestore subscription
             const qStudents = query(collection(db, 'students'), where('userId', '==', user.id));
             const unsubStudents = onSnapshot(qStudents, (snapshot) => {
                 const raw = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Student[];
@@ -168,7 +164,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const syncStudents = (newStudents: Student[]) => {
         const sorted = sortByName(newStudents);
         setStudents(sorted);
-        if (user) localStorage.setItem(getStorageKey(user.id, 'students'), JSON.stringify(sorted));
+        if (user?.isDemo) localStorage.setItem(getStorageKey(user.id, 'students'), JSON.stringify(sorted));
     };
 
     const registerClass = async (profile: ClassProfile) => {

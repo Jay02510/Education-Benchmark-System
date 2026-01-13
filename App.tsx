@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { StudentsTab } from './tabs/StudentsTab.tsx';
 import { BenchmarkFrameworkTab } from './tabs/BenchmarkFrameworkTab.tsx';
 import { AnalyticsTab } from './tabs/AnalyticsTab.tsx';
+import { ResourceBankTab } from './tabs/ResourceBankTab.tsx';
 import { SettingsTab } from './tabs/SettingsTab.tsx';
 import { AdminPanel } from './tabs/AdminPanel.tsx';
 import { TABS } from './constants.ts';
@@ -92,13 +92,13 @@ const MainAppLayout: React.FC = () => {
             case TABS.STUDENTS: return <StudentsTab />;
             case TABS.BENCHMARK: return <BenchmarkFrameworkTab />;
             case TABS.ANALYTICS: return <AnalyticsTab />;
+            case TABS.RESOURCE_BANK: return <ResourceBankTab />;
             case TABS.SETTINGS: return <SettingsTab />;
             case TABS.ADMIN: return <AdminPanel />;
             default: return <StudentsTab />;
         }
     };
     
-    // Ensure LoginScreen is shown if user is not authenticated
     if (!user) {
         return <LoginScreen />;
     }
@@ -139,6 +139,7 @@ const MainAppLayout: React.FC = () => {
                                 <NavItem label={TABS.STUDENTS} iconName="students" isActive={activeTab === TABS.STUDENTS} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.STUDENTS)} />
                                 <NavItem label={TABS.BENCHMARK} iconName="benchmark" isActive={activeTab === TABS.BENCHMARK} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.BENCHMARK)} />
                                 <NavItem label={TABS.ANALYTICS} iconName="analytics" isActive={activeTab === TABS.ANALYTICS} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.ANALYTICS)} />
+                                <NavItem label={TABS.RESOURCE_BANK} iconName="library" isActive={activeTab === TABS.RESOURCE_BANK} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.RESOURCE_BANK)} />
                             </ul>
                         </div>
                         
@@ -237,7 +238,6 @@ const MainAppLayout: React.FC = () => {
                      <ChatWidget />
                      <PlatformGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
                      
-                     {/* Global Root Modals */}
                      <BulkAssessmentModal isOpen={isBulkEntryOpen} onClose={() => setBulkEntryOpen(false)} />
                 </main>
             </div>
@@ -245,7 +245,6 @@ const MainAppLayout: React.FC = () => {
     );
 };
 
-// Root App component providing necessary context and wrapping the layout
 const App: React.FC = () => {
     return (
         <ToastProvider>

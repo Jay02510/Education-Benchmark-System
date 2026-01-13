@@ -126,4 +126,28 @@ export const mockResources: Resource[] = [
         content: 'Character: "Maria slammed the door."\nQuestion: Which word tells you Maria might be angry? Why?',
         aiGenerated: true,
     },
+    {
+        id: 'r2',
+        domain: Domain.Phonics,
+        subdomain: 'Blending',
+        level: '5',
+        period: TestPeriod.Baseline,
+        type: ResourceType.QuickPractice,
+        title: 'Sound Slider',
+        description: 'Practice blending CVC words by sliding sounds together.',
+        content: 'C-A-T... CAT! Practice with: M-A-P, D-O-G, S-I-T.',
+        aiGenerated: true,
+    },
+    {
+        id: 'r3',
+        domain: Domain.Grammar,
+        subdomain: 'Tenses',
+        level: '6-1',
+        period: TestPeriod.Baseline,
+        type: ResourceType.MiniReading,
+        title: 'Daily Routines',
+        description: 'A short passage using present simple tense.',
+        content: 'Every morning, I wake up at 7:00. I eat breakfast and then I go to school.',
+        aiGenerated: true,
+    }
 ];

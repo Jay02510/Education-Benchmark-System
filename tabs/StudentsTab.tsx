@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Student } from '../types';
 import { StudentCard } from '../components/students/StudentCard';
@@ -83,7 +82,6 @@ export const StudentsTab: React.FC = () => {
     const [isAtRiskModalOpen, setIsAtRiskModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Class Edit State
     const [editClassName, setEditClassName] = useState(classProfile?.className || '');
     const [editGradeLevel, setEditGradeLevel] = useState(classProfile?.gradeLevel || '5');
 
@@ -129,12 +127,8 @@ export const StudentsTab: React.FC = () => {
     }, [stats.classAvg]);
 
     useEffect(() => {
-        if (students.length > 0 || classProfile) {
-            const timer = setTimeout(() => setIsLoading(false), 800);
-            return () => clearTimeout(timer);
-        } else {
-            setIsLoading(false);
-        }
+        const timer = setTimeout(() => setIsLoading(false), 500);
+        return () => clearTimeout(timer);
     }, [students.length, classProfile]);
 
     const handleSaveClass = async () => {
@@ -189,7 +183,7 @@ export const StudentsTab: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                    <h2 className="text-2xl font-black text-slate-900 relative z-10 truncate w-full px-2 tracking-tight">{classProfile?.className || 'Class Name'}</h2>
+                    <h2 className="text-2xl font-black text-slate-900 relative z-10 truncate w-full px-2 tracking-tight">{classProfile?.className || 'Setup Required'}</h2>
                     <p className="text-sm font-bold text-slate-400 mb-6 relative z-10">Level {classProfile?.gradeLevel || '-'}</p>
                     <div className="flex gap-4 w-full relative z-10">
                         <div className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl p-4">
@@ -197,7 +191,7 @@ export const StudentsTab: React.FC = () => {
                             <p className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Students</p>
                         </div>
                         <div className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                            <p className="text-2xl font-black text-slate-800 leading-none mb-1">100%</p>
+                            <p className="text-2xl font-black text-slate-800 leading-none mb-1">0%</p>
                             <p className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Activity</p>
                         </div>
                     </div>
@@ -211,7 +205,7 @@ export const StudentsTab: React.FC = () => {
                         icon="alert" 
                         gradient="from-orange-400 to-pink-500" 
                         textColor="text-white" 
-                        info="Students flagged for immediate RTI intervention based on score regression or critical low average."
+                        info="Add students to see intervention alerts."
                         onClick={() => setIsAtRiskModalOpen(true)}
                     />
                     <DashboardWidget 
@@ -221,7 +215,7 @@ export const StudentsTab: React.FC = () => {
                         icon="analytics" 
                         gradient="from-indigo-500 to-blue-600" 
                         textColor="text-white" 
-                        info="Weighted class average across all testing domains in the current cycle."
+                        info="Performance maps will appear after testing students."
                         onClick={() => setActiveTab(TABS.ANALYTICS)}
                     />
                 </div>
@@ -229,16 +223,12 @@ export const StudentsTab: React.FC = () => {
                 <div className="md:col-span-12 lg:col-span-4 bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="font-black text-slate-800 tracking-tight">Growth Velocity</h3>
-                        <span className="text-xs font-black text-emerald-500 bg-emerald-50 px-2.5 py-1 rounded-lg flex items-center gap-1">
-                            <Icon name="trendUp" className="w-3 h-3"/> +{stats.growth}%
+                        <span className="text-xs font-black text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                            Awaiting Data
                         </span>
                     </div>
-                    <div className="flex-1 min-h-[140px]">
-                        <LongitudinalGrowthChart data={chartData} lines={[{ key: 'avg', color: '#6366f1' }]} type="area" />
-                    </div>
-                    <div className="mt-4 flex items-center gap-2 text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                        <Icon name="info" className="w-3 h-3 text-indigo-500" />
-                        <span>Tracking proficiency speed across periods.</span>
+                    <div className="flex-1 min-h-[140px] flex items-center justify-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold text-xs">
+                         Chart will populate after second cycle
                     </div>
                 </div>
             </div>
@@ -271,13 +261,16 @@ export const StudentsTab: React.FC = () => {
                     ))}
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center h-80 text-center border-4 border-dashed border-slate-100 rounded-[3rem] bg-slate-50/30">
-                    <div className="p-6 bg-white rounded-3xl mb-4 text-slate-300 shadow-sm">
-                        <Icon name="search" className="w-12 h-12" />
+                <div className="flex flex-col items-center justify-center py-20 text-center border-4 border-dashed border-slate-200 rounded-[3rem] bg-slate-50/50">
+                    <div className="p-6 bg-white rounded-3xl mb-6 text-slate-200 shadow-xl ring-1 ring-black/5">
+                        <Icon name="students" className="w-16 h-16" />
                     </div>
-                    <p className="text-slate-500 font-black text-xl">No matching students</p>
-                    <p className="text-slate-400 text-sm mt-1">Try adjusting your search criteria</p>
-                    <button onClick={() => setSearchTerm('')} className="mt-4 text-indigo-600 text-xs font-black uppercase tracking-widest hover:underline">Clear search</button>
+                    <h3 className="text-2xl font-black text-slate-800 mb-2">No Students Found</h3>
+                    <p className="text-slate-400 text-sm max-w-sm mx-auto mb-10 font-medium">Your roster is currently empty. Start by adding students manually or using the Batch Entry tool.</p>
+                    <div className="flex gap-4">
+                        <button onClick={() => setBulkEntryOpen(true)} className="px-8 py-4 bg-white border border-slate-200 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition shadow-sm">Batch Import</button>
+                        <button onClick={() => setIsAddStudentModalOpen(true)} className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition shadow-xl">Add Student</button>
+                    </div>
                 </div>
             )}
 
@@ -296,9 +289,6 @@ export const StudentsTab: React.FC = () => {
                             <option value="7-2">Level 7-2 (Flyers)</option>
                             <option value="7-3">Level 7-3 (KET/PET)</option>
                         </select>
-                        <p className="text-[10px] text-indigo-400 font-bold mt-2 ml-1 leading-relaxed">
-                             Changing this will update all students in this roster to Level {editGradeLevel}.
-                        </p>
                     </div>
                     <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                         <button onClick={() => setIsEditClassModalOpen(false)} className="px-5 py-2.5 text-slate-500 font-bold hover:text-slate-700">Cancel</button>
@@ -312,7 +302,7 @@ export const StudentsTab: React.FC = () => {
                 isOpen={isAtRiskModalOpen} 
                 onClose={() => setIsAtRiskModalOpen(false)} 
                 atRiskStudents={stats.atRiskList} 
-                domainCount={domains.length}
+                domainCount={domains.length || 8}
             />
         </div>
     );

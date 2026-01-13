@@ -31,9 +31,9 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
         try {
             const result = await GeminiService.generateComprehensiveStudentAnalysis(student);
             saveAiAnalysis(student.id, result);
-        } catch (e) {
+        } catch (e: any) {
             console.error("Report generation error:", e);
-            setError("The AI service is currently unavailable or your credentials have expired. Please verify your connection.");
+            setError(e.message || "Credential error: Please ensure you have an active internet connection and valid permissions.");
         } finally {
             setIsGenerating(false);
         }
@@ -135,9 +135,24 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                             </tbody>
                         </table>
                     ) : (
-                        <p className="text-gray-500 italic">No assessment data recorded.</p>
+                        <div className="p-10 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                             <Icon name="benchmark" className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                             <p className="text-gray-500 text-sm font-medium italic">No assessment data recorded for this student yet.</p>
+                        </div>
                     )}
                 </div>
+
+                {/* Specific Intervention Section */}
+                {student.interventionStatus && (
+                    <div className="mb-8 p-4 bg-rose-50 rounded-xl border border-rose-100 flex items-start gap-3">
+                         <Icon name="alert" className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                         <div>
+                             <p className="text-xs font-black uppercase text-rose-800 tracking-widest mb-1">Targeted Intervention Alert</p>
+                             <p className="text-sm text-rose-700 font-medium">{student.interventionStatus.triggerReason}</p>
+                             <p className="text-xs text-rose-600/80 mt-1">Goal: {student.interventionStatus.goal}</p>
+                         </div>
+                    </div>
+                )}
 
                 {/* AI Insight Section */}
                 <div className="mb-8 break-inside-avoid">
@@ -146,7 +161,7 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                             <span className="w-2 h-6 bg-purple-600 mr-2 rounded-full"></span>
                             AI Performance Analysis
                         </div>
-                        {(!insight || error) && !isGenerating && (
+                        {(!insight || error) && !isGenerating && latestAssessment && (
                             <button 
                                 onClick={handleGenerateInsight} 
                                 className="px-3 py-1 bg-purple-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg hover:bg-purple-700 transition print:hidden"
@@ -172,7 +187,11 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                                 {insight.split('\n\n').map((para, i) => <p key={i} className="mb-2">{renderMarkdownBold(para)}</p>)}
                             </div>
                         ) : (
-                            <p className="text-gray-500 italic">No analysis generated. Click 'Generate with AI' to build this section.</p>
+                            <p className="text-gray-500 italic">
+                                {latestAssessment 
+                                    ? "Pedagogical analysis ready for generation. Click 'Generate' to begin." 
+                                    : "Please record at least one assessment to unlock AI insights."}
+                            </p>
                         )}
                     </div>
                 </div>

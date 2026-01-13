@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { ChatMessage, Student, Domain, Resource } from '../types.ts';
+import { ChatMessage, Domain } from '../types.ts';
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { teacherTools, adminTools } from '../services/agentTools.ts';
 import { useStudents } from './StudentContext.tsx';
@@ -20,11 +20,6 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-const getAI = () => {
-    const key = process.env.API_KEY || '';
-    return new GoogleGenAI({ apiKey: key });
-};
-
 const TEACHER_INSTRUCTION = `You are the Benchmark AI Assistant. You have access to real-time classroom data through tools. 
 When asked about students, use the 'get_student_details' tool. 
 When asked about class performance, use 'get_class_summary'. 
@@ -35,7 +30,6 @@ const ADMIN_INSTRUCTION = `You are the Benchmark System Administrator. Assist wi
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { students, classProfile } = useStudents();
     const { activeTab } = useNavigation();
-    const { benchmarks } = useBenchmarks();
     const { resources } = useResources();
 
     const [isOpen, setIsOpen] = useState(false);
@@ -60,7 +54,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const getChatSession = () => {
         if (!chatSessionRef.current) {
-            const ai = getAI();
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const isTeacher = currentPersona === 'Teacher';
             chatSessionRef.current = ai.chats.create({
                 model: 'gemini-3-flash-preview',

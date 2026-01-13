@@ -6,8 +6,7 @@ import { Icon } from '../components/common/Icon';
 import { useStudents } from '../context/StudentContext';
 import { useBenchmarks } from '../context/BenchmarkContext';
 import { useNavigation } from '../context/NavigationContext';
-import { Domain, Student, Resource, ResourceType, TestPeriod } from '../types';
-import { ResourceBankTab } from './ResourceBankTab'; 
+import { Domain, TestPeriod } from '../types';
 
 const KPICard: React.FC<{ 
     title: string; 
@@ -63,7 +62,6 @@ export const AnalyticsTab: React.FC = () => {
     const { domains, benchmarks } = useBenchmarks();
     const { navigateToStudent } = useNavigation();
     
-    const [viewMode, setViewMode] = useState<'Analytics' | 'Resources'>('Analytics');
     const [chartType, setChartType] = useState<'radar' | 'bar'>('radar');
     const [executiveBriefing, setExecutiveBriefing] = useState<string>('');
     const [isGenerating, setIsGenerating] = useState(false);
@@ -118,26 +116,12 @@ export const AnalyticsTab: React.FC = () => {
                 stats.atRisk.length
             );
             setExecutiveBriefing(result);
-        } catch (e) { setExecutiveBriefing('Briefing generation failed.'); } finally { setIsGenerating(false); }
+        } catch (e) { 
+            setExecutiveBriefing('Briefing generation failed. Please check your connection and try again.'); 
+        } finally { 
+            setIsGenerating(false); 
+        }
     };
-
-    if (viewMode === 'Resources') {
-        return (
-            <div className="flex flex-col h-full">
-                <div className="bg-white px-6 py-4 border-b border-slate-100 flex items-center gap-4 shrink-0">
-                    <button onClick={() => setViewMode('Analytics')} className="flex items-center gap-2 text-indigo-600 font-bold text-xs uppercase tracking-widest hover:bg-indigo-50 px-3 py-2 rounded-xl transition-all">
-                        <Icon name="chevronLeft" className="w-4 h-4" />
-                        Back to Executive Dashboard
-                    </button>
-                    <div className="w-px h-6 bg-slate-100"></div>
-                    <span className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Library View</span>
-                </div>
-                <div className="flex-1 overflow-y-auto">
-                    <ResourceBankTab />
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="p-6 md:p-10 space-y-10 max-w-[1600px] mx-auto pb-20">
@@ -145,10 +129,6 @@ export const AnalyticsTab: React.FC = () => {
                 <div>
                     <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Executive Dashboard</h1>
                     <p className="text-slate-500 font-medium italic mt-1">High-level institutional health for {classProfile?.className || 'Awaiting Setup'}</p>
-                </div>
-                <div className="flex gap-2 bg-white/80 backdrop-blur-md p-2 rounded-[2rem] shadow-sm border border-slate-100 shrink-0 ring-1 ring-black/5">
-                    <button onClick={() => setViewMode('Analytics')} className={`px-8 py-3 rounded-[1.5rem] text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'Analytics' ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-500 hover:text-slate-900'}`}>Institutional Insights</button>
-                    <button onClick={() => setViewMode('Resources')} className={`px-8 py-3 rounded-[1.5rem] text-xs font-black uppercase tracking-widest transition-all ${viewMode === 'Resources' ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-500 hover:text-slate-900'}`}>Resource Bank</button>
                 </div>
             </div>
 
@@ -287,7 +267,7 @@ export const AnalyticsTab: React.FC = () => {
                                     </div>
                                     
                                     <div className="space-y-3">
-                                        {stats?.velocityLeaderboard.slice(0, 3).map((s, i) => (
+                                        {stats?.velocityLeaderboard.slice(0, 3).map((s) => (
                                             <div key={s.id} onClick={() => navigateToStudent(s.id)} className="flex items-center justify-between p-3 bg-slate-50/50 hover:bg-indigo-50/50 rounded-2xl cursor-pointer transition-all border border-slate-100 group/item">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-10 h-10 rounded-xl bg-white p-0.5 overflow-hidden shadow-sm">

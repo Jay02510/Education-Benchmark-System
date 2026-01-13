@@ -1,15 +1,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Student, Domain, Resource, ResourceType } from '../types.ts';
-
-// Helper to ensure we always have a valid instance using the injected API_KEY
-const getAI = () => {
-    return new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-};
+import { Student, Domain, ResourceType } from '../types.ts';
 
 export class GeminiService {
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
         try {
-            const ai = getAI();
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const model = 'gemini-3-flash-preview';
             const sortedAssessments = [...student.assessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             const latest = sortedAssessments[sortedAssessments.length - 1];
@@ -66,7 +61,7 @@ export class GeminiService {
         atRiskCount: number
     ): Promise<string> {
         try {
-            const ai = getAI();
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: `Generate a professional executive briefing for a school administrator about Level ${gradeLevel} classes. 
@@ -80,13 +75,13 @@ export class GeminiService {
             return response.text || "Briefing unavailable.";
         } catch (error) { 
             console.error("Insight generation failed:", error);
-            return "Unable to generate briefing. Please ensure API credentials are valid and try again."; 
+            throw error;
         }
     }
 
     static async generateResourceContent(domain: Domain, subdomain: string, type: ResourceType, level: string, promptText: string): Promise<{ title: string; description: string; content: string } | null> {
         try {
-            const ai = getAI();
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
                 contents: `Create high-quality classroom material (${type}) for Level ${level} students in ${domain}. 
@@ -115,7 +110,7 @@ export class GeminiService {
 
     static async generateRemedialPrompt(domain: Domain, avgScore: number, level: string): Promise<string> {
         try {
-            const ai = getAI();
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
                 contents: `Level: ${level}, Subject: ${domain}, Average Class Score: ${avgScore}%. 

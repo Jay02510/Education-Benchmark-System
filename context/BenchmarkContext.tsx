@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Benchmark, SubdomainMetadata } from '../types';
+import { Benchmark, SubdomainMetadata, TestPeriod } from '../types';
 import { mockBenchmarkFramework } from '../data/mockData';
 import { DOMAINS as INITIAL_DOMAINS, SUBDOMAINS as INITIAL_SUBDOMAINS } from '../constants';
 import { FrameworkPreset } from '../data/frameworkPresets';
@@ -9,10 +8,17 @@ import { useAuth } from './AuthContext';
 import { db } from '../firebase';
 import { collection, addDoc, doc, updateDoc, deleteDoc, query, where, onSnapshot, writeBatch, getDocs } from 'firebase/firestore';
 
+const DEFAULT_THRESHOLDS: Record<TestPeriod, number> = {
+    [TestPeriod.Baseline]: 80,
+    [TestPeriod.Midline]: 85,
+    [TestPeriod.Endline]: 90
+};
+
 interface BenchmarkContextType {
     benchmarks: Benchmark[];
     domains: string[];
     subdomains: Record<string, SubdomainMetadata[]>;
+    thresholds: Record<TestPeriod, number>;
     updateBenchmark: (id: string, updates: Partial<Benchmark>) => void;
     addBenchmark: (benchmark: Benchmark) => void;
     deleteBenchmark: (id: string) => void;
@@ -23,6 +29,7 @@ interface BenchmarkContextType {
     updateSubdomain: (domain: string, oldName: string, newName: string, newMaxScore: number) => void;
     deleteSubdomain: (domain: string, subdomainName: string) => void;
     
+    updateThreshold: (period: TestPeriod, value: number) => void;
     resetBenchmarks: () => void;
     applyPreset: (preset: FrameworkPreset) => void;
 }
@@ -34,6 +41,7 @@ export const BenchmarkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const [benchmarks, setBenchmarks] = useState<Benchmark[]>([]);
     const [domains, setDomains] = useState<string[]>([]);
     const [subdomains, setSubdomains] = useState<Record<string, SubdomainMetadata[]>>({});
+    const [thresholds, setThresholds] = useState<Record<TestPeriod, number>>(DEFAULT_THRESHOLDS);
     const [configDocId, setConfigDocId] = useState<string | null>(null);
     const { showToast } = useToast();
 
@@ -43,11 +51,13 @@ export const BenchmarkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         localStorage.setItem('demo_benchmarks', JSON.stringify(newBenchmarks));
     };
 
-    const saveDemoConfig = (newDomains: string[], newSubdomains: any) => {
+    const saveDemoConfig = (newDomains: string[], newSubdomains: any, newThresholds: any) => {
         setDomains(newDomains);
         setSubdomains(newSubdomains);
+        setThresholds(newThresholds);
         localStorage.setItem('demo_config_domains', JSON.stringify(newDomains));
         localStorage.setItem('demo_config_subdomains', JSON.stringify(newSubdomains));
+        localStorage.setItem('demo_config_thresholds', JSON.stringify(newThresholds));
     };
 
     // --- Load Data ---
@@ -56,45 +66,41 @@ export const BenchmarkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setBenchmarks([]);
             setDomains([]);
             setSubdomains({});
+            setThresholds(DEFAULT_THRESHOLDS);
             return;
         }
 
         if (user.isDemo) {
-            // Load Demo Data
             const localBench = localStorage.getItem('demo_benchmarks');
-            if (localBench) {
-                setBenchmarks(JSON.parse(localBench));
-            } else {
-                // Seed if empty
+            if (localBench) setBenchmarks(JSON.parse(localBench));
+            else {
                 setBenchmarks(mockBenchmarkFramework);
                 localStorage.setItem('demo_benchmarks', JSON.stringify(mockBenchmarkFramework));
             }
 
             const localDomains = localStorage.getItem('demo_config_domains');
             const localSub = localStorage.getItem('demo_config_subdomains');
+            const localThresholds = localStorage.getItem('demo_config_thresholds');
             
             if (localDomains && localSub) {
                 setDomains(JSON.parse(localDomains));
                 setSubdomains(JSON.parse(localSub));
+                if (localThresholds) setThresholds(JSON.parse(localThresholds));
             } else {
                 setDomains([...INITIAL_DOMAINS]);
                 setSubdomains(INITIAL_SUBDOMAINS);
+                setThresholds(DEFAULT_THRESHOLDS);
                 localStorage.setItem('demo_config_domains', JSON.stringify([...INITIAL_DOMAINS]));
                 localStorage.setItem('demo_config_subdomains', JSON.stringify(INITIAL_SUBDOMAINS));
+                localStorage.setItem('demo_config_thresholds', JSON.stringify(DEFAULT_THRESHOLDS));
             }
-
         } else {
-            // Firestore: Benchmarks
             const q = query(collection(db, 'benchmarks'), where('userId', '==', user.id));
             const unsubBench = onSnapshot(q, (snapshot) => {
-                const loaded = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as Benchmark[];
+                const loaded = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Benchmark[];
                 setBenchmarks(loaded);
             });
 
-            // Firestore: Config
             const loadConfig = async () => {
                 try {
                     const qConfig = query(collection(db, 'framework_configs'), where('userId', '==', user.id));
@@ -105,53 +111,47 @@ export const BenchmarkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                         setConfigDocId(docSnap.id);
                         setDomains(docSnap.data().domains);
                         setSubdomains(docSnap.data().subdomains);
+                        setThresholds(docSnap.data().thresholds || DEFAULT_THRESHOLDS);
                     } else {
-                        // Init Default
                         const defaultConfig = {
                             domains: [...INITIAL_DOMAINS],
                             subdomains: INITIAL_SUBDOMAINS,
+                            thresholds: DEFAULT_THRESHOLDS,
                             userId: user.id
                         };
                         const docRef = await addDoc(collection(db, 'framework_configs'), defaultConfig);
                         setConfigDocId(docRef.id);
                         setDomains(defaultConfig.domains);
                         setSubdomains(defaultConfig.subdomains);
-                        
-                        // Seed Benchmarks if empty
-                        if (benchmarks.length === 0) {
-                             const batch = writeBatch(db);
-                             mockBenchmarkFramework.forEach(b => {
-                                 const ref = doc(collection(db, 'benchmarks'));
-                                 const { id, ...data } = b;
-                                 batch.set(ref, { ...data, userId: user.id });
-                             });
-                             await batch.commit();
-                        }
+                        setThresholds(defaultConfig.thresholds);
                     }
-                } catch (error) {
-                    console.error("Error loading framework config:", error);
-                }
+                } catch (error) { console.error("Error loading config:", error); }
             };
             loadConfig();
-
             return () => unsubBench();
         }
     }, [user]);
 
-    // --- Actions ---
-
-    const updateConfig = async (newDomains: string[], newSubdomains: any) => {
+    const updateConfig = async (newDomains: string[], newSubdomains: any, newThresholds: any) => {
         if (user?.isDemo) {
-            saveDemoConfig(newDomains, newSubdomains);
+            saveDemoConfig(newDomains, newSubdomains, newThresholds);
             return;
         }
         if (!configDocId || !user) return;
         await updateDoc(doc(db, 'framework_configs', configDocId), {
             domains: newDomains,
-            subdomains: newSubdomains
+            subdomains: newSubdomains,
+            thresholds: newThresholds
         });
         setDomains(newDomains);
         setSubdomains(newSubdomains);
+        setThresholds(newThresholds);
+    };
+
+    const updateThreshold = async (period: TestPeriod, value: number) => {
+        const newThresholds = { ...thresholds, [period]: value };
+        await updateConfig(domains, subdomains, newThresholds);
+        showToast(`${period} threshold set to ${value}%`);
     };
 
     const updateBenchmark = async (id: string, updates: Partial<Benchmark>) => {
@@ -189,7 +189,7 @@ export const BenchmarkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         if (!domains.includes(domain)) {
             const newDomains = [...domains, domain];
             const newSubs = { ...subdomains, [domain]: [] };
-            await updateConfig(newDomains, newSubs);
+            await updateConfig(newDomains, newSubs, thresholds);
             showToast(`Domain "${domain}" added.`);
         }
     };
@@ -198,19 +198,15 @@ export const BenchmarkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         const newDomains = domains.filter(d => d !== domain);
         const newSubs = { ...subdomains };
         delete newSubs[domain];
-        await updateConfig(newDomains, newSubs);
+        await updateConfig(newDomains, newSubs, thresholds);
         showToast(`Domain "${domain}" removed.`, "info");
     };
 
     const addSubdomain = async (domain: string, subdomainName: string, maxScore: number) => {
         if (subdomains[domain]) {
             if (subdomains[domain].some(s => s.name === subdomainName)) return;
-            
-            const newSubs = { 
-                ...subdomains, 
-                [domain]: [...subdomains[domain], { name: subdomainName, maxScore }] 
-            };
-            await updateConfig(domains, newSubs);
+            const newSubs = { ...subdomains, [domain]: [...subdomains[domain], { name: subdomainName, maxScore }] };
+            await updateConfig(domains, newSubs, thresholds);
             showToast(`Subdomain "${subdomainName}" added.`);
         }
     };
@@ -219,87 +215,67 @@ export const BenchmarkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
          if (subdomains[domain]) {
             const newSubs = {
                 ...subdomains,
-                [domain]: subdomains[domain].map(sub => 
-                    sub.name === oldName ? { name: newName, maxScore: newMaxScore } : sub
-                )
+                [domain]: subdomains[domain].map(sub => sub.name === oldName ? { name: newName, maxScore: newMaxScore } : sub)
             };
-            await updateConfig(domains, newSubs);
+            await updateConfig(domains, newSubs, thresholds);
             showToast("Subdomain updated.");
         }
     };
 
     const deleteSubdomain = async (domain: string, subdomainName: string) => {
         if (subdomains[domain]) {
-            const newSubs = {
-                ...subdomains,
-                [domain]: subdomains[domain].filter(s => s.name !== subdomainName)
-            };
-            await updateConfig(domains, newSubs);
+            const newSubs = { ...subdomains, [domain]: subdomains[domain].filter(s => s.name !== subdomainName) };
+            await updateConfig(domains, newSubs, thresholds);
             showToast(`Subdomain deleted.`, "info");
         }
     };
 
     const resetBenchmarks = async () => {
         if (!user) return;
-
         if (user.isDemo) {
-            saveDemoConfig([...INITIAL_DOMAINS], { ...INITIAL_SUBDOMAINS });
+            saveDemoConfig([...INITIAL_DOMAINS], { ...INITIAL_SUBDOMAINS }, DEFAULT_THRESHOLDS);
             saveDemoBenchmarks(mockBenchmarkFramework);
-            showToast("Restored Master Benchmark Framework.", "success");
+            showToast("Restored Master Framework.", "success");
             return;
         }
-
         if (!configDocId) return;
-        
-        await updateConfig([...INITIAL_DOMAINS], { ...INITIAL_SUBDOMAINS });
-        
+        await updateConfig([...INITIAL_DOMAINS], { ...INITIAL_SUBDOMAINS }, DEFAULT_THRESHOLDS);
         const q = query(collection(db, 'benchmarks'), where('userId', '==', user.id));
         const snapshot = await getDocs(q);
         const batch = writeBatch(db);
-        snapshot.docs.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
         mockBenchmarkFramework.forEach(b => {
              const ref = doc(collection(db, 'benchmarks'));
              const { id, ...data } = b;
              batch.set(ref, { ...data, userId: user.id });
         });
-        
         await batch.commit();
-        showToast("Restored Master Benchmark Framework.", "success");
+        showToast("Restored Master Framework.", "success");
     }
 
     const applyPreset = async (preset: FrameworkPreset) => {
-        // Map preset strings to weighted objects
         const weightedSubdomains: Record<string, SubdomainMetadata[]> = {};
         Object.entries(preset.subdomains).forEach(([d, subs]) => {
-             // @ts-ignore
              weightedSubdomains[d] = subs.map((s: any) => typeof s === 'string' ? { name: s, maxScore: 10 } : s);
         });
-
-        await updateConfig(preset.domains, weightedSubdomains);
-        
-        // Also clear benchmarks
-        if (user?.isDemo) {
-            saveDemoBenchmarks([]);
-        } else {
+        await updateConfig(preset.domains, weightedSubdomains, thresholds);
+        if (user?.isDemo) saveDemoBenchmarks([]);
+        else {
             const q = query(collection(db, 'benchmarks'), where('userId', '==', user!.id));
             const snapshot = await getDocs(q);
             const batch = writeBatch(db);
             snapshot.docs.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
         }
-
         showToast(`Applied preset: ${preset.name}`, "success");
     };
 
     return (
         <BenchmarkContext.Provider value={{ 
-            benchmarks, domains, subdomains, 
+            benchmarks, domains, subdomains, thresholds,
             updateBenchmark, addBenchmark, deleteBenchmark,
             addDomain, deleteDomain, addSubdomain, updateSubdomain, deleteSubdomain,
-            resetBenchmarks, applyPreset
+            updateThreshold, resetBenchmarks, applyPreset
         }}>
             {children}
         </BenchmarkContext.Provider>
@@ -308,8 +284,6 @@ export const BenchmarkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
 export const useBenchmarks = () => {
     const context = useContext(BenchmarkContext);
-    if (context === undefined) {
-        throw new Error('useBenchmarks must be used within a BenchmarkProvider');
-    }
+    if (context === undefined) throw new Error('useBenchmarks must be used within a BenchmarkProvider');
     return context;
 };

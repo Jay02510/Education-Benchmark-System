@@ -3,7 +3,6 @@ import { Student, Domain, ResourceType } from '../types.ts';
 
 export class GeminiService {
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
-        // Direct instantiation ensures the latest key is used from the environment
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const model = 'gemini-3-pro-preview';
         
@@ -27,7 +26,7 @@ export class GeminiService {
             const prompt = `Perform a technical pedagogical analysis for an ESL student. 
             Data: ${JSON.stringify(dataPayload)}
             Task: Provide a "report_card" (parent-facing, professional) and "trend_insights" (teacher-facing, technical). 
-            Terminologies: NEVER use the word 'mastery'. Instead use 'Excellent' (for scores 80-89%) or 'Outstanding' (for scores 90%+). Focus on learning progression.`;
+            Terminologies: NEVER use 'mastery'. Use 'Excellent' (80-89%) or 'Outstanding' (90%+). Focus on learning progression.`;
             
             const response = await ai.models.generateContent({
                 model,
@@ -56,18 +55,35 @@ export class GeminiService {
     static async generateClassInsight(
         gradeLevel: string,
         studentCount: number,
-        focusAreas: string,
-        growthAssets: string,
-        atRiskCount: number
+        stats: any
     ): Promise<string> {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        // Use Pro for complex strategic summary
+        const model = 'gemini-3-pro-preview';
+
         try {
+            const prompt = `Write an Executive Performance Briefing for school leadership regarding Level ${gradeLevel} class.
+            Class Size: ${studentCount}
+            Avg Proficiency: ${stats.classAvg}%
+            Avg Velocity: ${stats.avgVelocity}% improvement per cycle
+            Risk Profile: ${stats.interventionCount} students requiring Tier 2/3 support.
+            
+            Instructions:
+            1. Summarize "Institutional Health".
+            2. Identify the strongest and weakest academic domains.
+            3. Provide a "Growth Forecast" for the next cycle.
+            4. Use professional, analytical language. 
+            5. NEVER use the term 'mastery'. Use 'Outstanding' (90%+) and 'Excellent' (80%+).
+            6. Format in professional sections with bold headers.`;
+
             const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
-                contents: `Write an executive briefing for a level ${gradeLevel} class. Highlight proficiency levels but avoid the term 'mastery'. Focus on 'Institutional Health'.`,
+                model,
+                contents: prompt,
             });
-            return response.text || "Briefing unavailable.";
+            
+            return response.text || "Briefing engine could not compile data. Please check input parameters.";
         } catch (error) { 
+            console.error("Class Briefing Error:", error);
             throw error;
         }
     }
@@ -77,7 +93,7 @@ export class GeminiService {
         try {
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
-                contents: `Create high-quality material (${type}) for Level ${level} in ${domain}. Prompt: ${promptText}.`,
+                contents: `Create material (${type}) for Level ${level} in ${domain}. Prompt: ${promptText}.`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: { 
@@ -98,7 +114,7 @@ export class GeminiService {
         try {
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Create a practice prompt for Level ${level} students struggling in ${domain} (Avg ${avgScore}%).`
+                contents: `Create a remedial practice prompt for Level ${level} in ${domain} (Avg ${avgScore}%).`
             });
             return response.text?.trim() || `Support activity for ${domain}`;
         } catch (error) { 

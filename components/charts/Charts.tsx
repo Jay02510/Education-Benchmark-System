@@ -2,7 +2,7 @@ import React from 'react';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
     LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-    AreaChart, Area, ReferenceLine, ReferenceArea
+    AreaChart, Area, ReferenceLine, ReferenceArea, PieChart, Pie, Cell
 } from 'recharts';
 import { Domain } from '../../types';
 
@@ -13,10 +13,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                 <p className="font-bold text-slate-800 mb-2">{label}</p>
                 {payload.map((p: any, i: number) => (
                     <div key={i} className="flex items-center gap-2 text-sm mb-1 last:mb-0">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }}></div>
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill }}></div>
                         <span className="text-slate-500">{p.name}:</span>
                         <span className="font-semibold text-slate-700">
-                            {typeof p.value === 'number' ? `${p.value}%` : p.value}
+                            {typeof p.value === 'number' ? (p.unit === '%' ? `${p.value}%` : p.value) : p.value}
+                            {p.name.includes('Tier') && ' Students'}
                         </span>
                     </div>
                 ))}
@@ -62,8 +63,8 @@ export const DomainPerformanceChart: React.FC<DomainPerformanceChartProps> = ({ 
                 <Tooltip content={<CustomTooltip />} cursor={{fill: '#f8fafc'}} />
                 <ReferenceArea y1={80} y2={100} fill="#10b981" fillOpacity={0.05} />
                 <Legend iconType="circle" iconSize={8} wrapperStyle={{fontSize: "12px", paddingTop: "20px"}}/>
-                <Bar dataKey="score" fill="url(#colorScore)" name="Current Score" radius={[6, 6, 0, 0]} barSize={32} />
-                <Bar dataKey="target" fill="url(#colorTarget)" name="Target Benchmark" radius={[6, 6, 0, 0]} barSize={32} />
+                <Bar dataKey="score" fill="url(#colorScore)" name="Current Score" unit="%" radius={[6, 6, 0, 0]} barSize={32} />
+                <Bar dataKey="target" fill="url(#colorTarget)" name="Target Benchmark" unit="%" radius={[6, 6, 0, 0]} barSize={32} />
             </BarChart>
         </ResponsiveContainer>
     );
@@ -92,11 +93,55 @@ export const RadarPerformanceChart: React.FC<DomainPerformanceChartProps> = ({ d
     );
 };
 
+export const ProficiencyDistributionChart: React.FC<{ data: { name: string, count: number, color: string }[] }> = ({ data }) => (
+    <ResponsiveContainer width="100%" height={280}>
+        <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+            <XAxis type="number" hide />
+            <YAxis 
+                dataKey="name" 
+                type="category" 
+                tick={{ fontSize: 10, fontWeight: 'bold', fill: '#64748b' }} 
+                axisLine={false}
+                tickLine={false}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(99, 102, 241, 0.05)'}} />
+            <Bar dataKey="count" name="Students" radius={[0, 10, 10, 0]} barSize={24}>
+                {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+            </Bar>
+        </BarChart>
+    </ResponsiveContainer>
+);
+
+export const SupportTierChart: React.FC<{ data: { name: string, value: number, color: string }[] }> = ({ data }) => (
+    <ResponsiveContainer width="100%" height={280}>
+        <PieChart>
+            <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={85}
+                paddingAngle={5}
+                dataKey="value"
+            >
+                {data.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+            <Legend verticalAlign="bottom" align="center" iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px' }} />
+        </PieChart>
+    </ResponsiveContainer>
+);
+
 interface LongitudinalGrowthChartProps {
-    data: { name: string, [key: string]: number | string }[];
+    data: { name: string, [key: string]: number | string | null }[];
     lines: { key: string, color: string }[];
     type?: 'line' | 'area' | 'bar';
-    actions?: { date: string, type: string }[]; // New: Action point markers
+    actions?: { date: string, type: string }[];
 }
 
 export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = ({ data, lines, type = 'line', actions = [] }) => {
@@ -122,7 +167,8 @@ export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = (
                         <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} tickMargin={10} />
                         <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                         <Tooltip content={<CustomTooltip />} />
-                        <ReferenceLine y={80} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'right', value: 'Excellent', fill: '#10b981', fontSize: 10, fontWeight: 'bold' }} />
+                        <ReferenceLine y={90} stroke="#4f46e5" strokeDasharray="3 3" label={{ position: 'right', value: 'Outstanding', fill: '#4f46e5', fontSize: 9, fontWeight: 'bold' }} />
+                        <ReferenceLine y={80} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'right', value: 'Excellent', fill: '#10b981', fontSize: 9, fontWeight: 'bold' }} />
                         {actions.map((action, idx) => (
                             <ReferenceLine key={idx} x={action.date} stroke="#f59e0b" label={{ position: 'top', value: 'Action', fill: '#f59e0b', fontSize: 9, fontWeight: 'bold' }} />
                         ))}
@@ -135,6 +181,7 @@ export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = (
                                 stroke={line.color} 
                                 fillOpacity={1}
                                 fill={`url(#color-${line.key})`}
+                                unit="%"
                                 strokeWidth={3}
                             />
                         ))}
@@ -147,7 +194,7 @@ export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = (
                         <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} tickMargin={10} />
                         <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                         <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey={lines[0].key} fill={lines[0].color} radius={[4, 4, 0, 0]} barSize={40} />
+                        <Bar dataKey={lines[0].key} fill={lines[0].color} radius={[4, 4, 0, 0]} barSize={40} unit="%" />
                     </BarChart>
                 );
             case 'line':
@@ -168,6 +215,7 @@ export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = (
                                 strokeWidth={3} 
                                 dot={{ r: 4, strokeWidth: 2, fill: '#fff' }} 
                                 activeDot={{ r: 6, strokeWidth: 0 }} 
+                                unit="%"
                             />
                         ))}
                     </LineChart>

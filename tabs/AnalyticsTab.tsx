@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card } from '../components/common/Card';
 import { DomainPerformanceChart, RadarPerformanceChart, ProficiencyDistributionChart, SupportTierChart } from '../components/charts/Charts';
@@ -6,7 +7,7 @@ import { Icon } from '../components/common/Icon';
 import { useStudents } from '../context/StudentContext';
 import { useBenchmarks } from '../context/BenchmarkContext';
 import { useNavigation } from '../context/NavigationContext';
-import { Domain, TestPeriod } from '../types';
+import { Domain, TestPeriod, SubdomainMetadata, Student } from '../types';
 
 const KPICard: React.FC<{ 
     title: string; 
@@ -58,7 +59,7 @@ const KPICard: React.FC<{
 
 export const AnalyticsTab: React.FC = () => {
     const { students, classProfile } = useStudents();
-    const { domains, benchmarks } = useBenchmarks();
+    const { domains, benchmarks, subdomains: frameworkSubdomains } = useBenchmarks();
     const { navigateToStudent } = useNavigation();
     
     const [chartType, setChartType] = useState<'radar' | 'bar'>('radar');
@@ -66,6 +67,27 @@ export const AnalyticsTab: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
 
     const hasData = useMemo(() => students.some(s => s.assessments.length > 0), [students]);
+
+    // Internal Helper for Proficiency Calculation to ensure parity with Context
+    const getStudentProficiency = (student: Student, subdomains: Record<string, SubdomainMetadata[]>) => {
+        const latest = student.assessments[student.assessments.length - 1];
+        if (!latest) return 0;
+        
+        const domainPercentages: number[] = [];
+        Object.entries(subdomains).forEach(([domain, subs]) => {
+            let earned = 0, possible = 0, hasData = false;
+            subs.forEach(s => {
+                const val = latest.subdomainScores?.[`${domain}:${s.name}`];
+                if (typeof val === 'number') { earned += val; possible += s.maxScore; hasData = true; }
+            });
+            if (hasData && possible > 0) domainPercentages.push((earned / possible) * 100);
+        });
+
+        // Use explicit number types in reduce to fix arithmetic operation on unknown types
+        if (domainPercentages.length > 0) return Math.round(domainPercentages.reduce((a: number, b: number) => a + b, 0) / domainPercentages.length);
+        const fallback = Object.values(latest.scores).filter(s => typeof s === 'number' && s > 0) as number[];
+        return fallback.length ? Math.round(fallback.reduce((a: number, b: number) => a + b, 0) / fallback.length) : 0;
+    };
 
     // Calculation Engine
     const analytics = useMemo(() => {
@@ -79,8 +101,8 @@ export const AnalyticsTab: React.FC = () => {
             const bench = benchmarks.find(b => b.domain === domain && b.period === period && b.level_name === levelToUse);
             let total = 0, count = 0;
             students.forEach(s => {
-                const latest = s.assessments.find(a => a.type === period);
-                if (latest?.scores[domain as Domain] !== undefined) {
+                const latest = s.assessments[s.assessments.length - 1];
+                if (latest?.scores[domain as Domain] !== undefined && latest?.scores[domain as Domain] > 0) {
                     total += latest.scores[domain as Domain];
                     count++;
                 }
@@ -92,42 +114,45 @@ export const AnalyticsTab: React.FC = () => {
             };
         });
 
-        // Distribution Data
+        const sortedDomainPerformance = [...domainData].sort((a,b) => b.score - a.score);
+
+        // Distribution Data (Now Tracking Names)
         const distribution = [
-            { name: 'Outstanding (90%+)', count: 0, color: '#4f46e5' },
-            { name: 'Excellent (80-89%)', count: 0, color: '#10b981' },
-            { name: 'Proficient (60-79%)', count: 0, color: '#6366f1' },
-            { name: 'Developing (<60%)', count: 0, color: '#f43f5e' }
+            { name: 'Outstanding (90%+)', count: 0, color: '#4f46e5', students: [] as string[] },
+            { name: 'Excellent (80-89%)', count: 0, color: '#10b981', students: [] as string[] },
+            { name: 'Proficient (60-79%)', count: 0, color: '#6366f1', students: [] as string[] },
+            { name: 'Developing (<60%)', count: 0, color: '#f43f5e', students: [] as string[] }
         ];
 
-        // Tier Data
+        // Tier Data (Now Tracking Names)
         const tiers = [
-            { name: 'Tier 1 (Universal)', value: 0, color: '#10b981' },
-            { name: 'Tier 2 (Targeted)', value: 0, color: '#f59e0b' },
-            { name: 'Tier 3 (Intensive)', value: 0, color: '#f43f5e' }
+            { name: 'Tier 1 (Universal)', value: 0, color: '#10b981', students: [] as string[] },
+            { name: 'Tier 2 (Targeted)', value: 0, color: '#f59e0b', students: [] as string[] },
+            { name: 'Tier 3 (Intensive)', value: 0, color: '#f43f5e', students: [] as string[] }
         ];
 
         let totalProficiency = 0;
         let studentsWithScores = 0;
 
         students.forEach(s => {
+            const avg = getStudentProficiency(s, frameworkSubdomains);
             const latest = s.assessments[s.assessments.length - 1];
+            
             if (latest) {
-                const scores = Object.values(latest.scores) as number[];
-                const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
                 totalProficiency += avg;
                 studentsWithScores++;
 
-                if (avg >= 90) distribution[0].count++;
-                else if (avg >= 80) distribution[1].count++;
-                else if (avg >= 60) distribution[2].count++;
-                else distribution[3].count++;
+                if (avg >= 90) { distribution[0].count++; distribution[0].students.push(s.name); }
+                else if (avg >= 80) { distribution[1].count++; distribution[1].students.push(s.name); }
+                else if (avg >= 60) { distribution[2].count++; distribution[2].students.push(s.name); }
+                else { distribution[3].count++; distribution[3].students.push(s.name); }
 
-                if (s.interventionStatus?.tier === 3) tiers[2].value++;
-                else if (s.interventionStatus?.tier === 2) tiers[1].value++;
-                else tiers[0].value++;
+                if (s.interventionStatus?.tier === 3) { tiers[2].value++; tiers[2].students.push(s.name); }
+                else if (s.interventionStatus?.tier === 2) { tiers[1].value++; tiers[1].students.push(s.name); }
+                else { tiers[0].value++; tiers[0].students.push(s.name); }
             } else {
-                tiers[0].value++; // Default to tier 1
+                tiers[0].value++;
+                tiers[0].students.push(s.name);
             }
         });
 
@@ -141,10 +166,12 @@ export const AnalyticsTab: React.FC = () => {
             tiers, 
             classAvg, 
             avgVelocity, 
-            atRiskCount, 
+            atRiskCount,
+            strongest: sortedDomainPerformance[0]?.domain,
+            weakest: sortedDomainPerformance[sortedDomainPerformance.length - 1]?.domain,
             totalActions: students.reduce((acc, s) => acc + (s.actionLog?.length || 0), 0) 
         };
-    }, [students, domains, benchmarks, classProfile]);
+    }, [students, domains, benchmarks, classProfile, frameworkSubdomains]);
 
     const handleGenerateBriefing = async () => {
         if (!analytics || !hasData) return;
@@ -156,12 +183,14 @@ export const AnalyticsTab: React.FC = () => {
                 { 
                     classAvg: analytics.classAvg, 
                     avgVelocity: analytics.avgVelocity, 
-                    interventionCount: analytics.atRiskCount 
+                    interventionCount: analytics.atRiskCount,
+                    strongest: analytics.strongest,
+                    weakest: analytics.weakest
                 }
             );
             setExecutiveBriefing(briefing);
         } catch (e) { 
-            setExecutiveBriefing('Briefing generation failed. Please ensure all student scores are synced and try again.'); 
+            setExecutiveBriefing('Briefing generation failed. The analysis engine encountered an unexpected formatting error. Please try again.'); 
         } finally { 
             setIsGenerating(false); 
         }
@@ -202,7 +231,7 @@ export const AnalyticsTab: React.FC = () => {
                         <Card variant="default" className="p-8 shadow-xl bg-white flex flex-col h-full">
                             <div className="flex items-center gap-3 mb-8">
                                 <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl"><Icon name="trendUp" className="w-5 h-5" /></div>
-                                <div><h3 className="font-black text-slate-800">Proficiency Spread</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Class Distribution</p></div>
+                                <div><h3 className="font-black text-slate-800">Proficiency Spread</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hover to see names</p></div>
                             </div>
                             <div className="flex-1 min-h-[280px]">
                                 <ProficiencyDistributionChart data={analytics?.distribution || []} />
@@ -232,7 +261,7 @@ export const AnalyticsTab: React.FC = () => {
                          <Card variant="default" className="p-8 shadow-xl bg-white flex flex-col h-full lg:col-span-1">
                             <div className="flex items-center gap-3 mb-8">
                                 <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl"><Icon name="shield" className="w-5 h-5" /></div>
-                                <div><h3 className="font-black text-slate-800">Support Tiers</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Intervention Mix</p></div>
+                                <div><h3 className="font-black text-slate-800">Support Tiers</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hover to see names</p></div>
                             </div>
                             <div className="flex-1 min-h-[280px]">
                                 <SupportTierChart data={analytics?.tiers || []} />
@@ -249,7 +278,7 @@ export const AnalyticsTab: React.FC = () => {
                                         <div className="p-4 bg-indigo-600 rounded-[1.8rem] text-white shadow-xl shadow-indigo-200"><Icon name="robot" className="w-8 h-8" /></div>
                                         <div>
                                             <h3 className="text-2xl font-black text-slate-900 tracking-tight">Institutional Performance Briefing</h3>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mt-1">AI-Grounded Strategic Summary • v11.2</p>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mt-1">AI-Grounded Strategic Summary</p>
                                         </div>
                                     </div>
                                     <button onClick={handleGenerateBriefing} disabled={isGenerating} className="px-8 py-4 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-indigo-600 transition-all flex items-center gap-3 shadow-xl disabled:opacity-50 active:scale-95">
@@ -262,10 +291,11 @@ export const AnalyticsTab: React.FC = () => {
                                     <div className="prose prose-slate max-w-none animate-in fade-in slide-in-from-bottom-6 duration-700">
                                         <div className="space-y-6">
                                             {executiveBriefing.split('\n').map((p, i) => {
-                                                const isHeader = p.trim().startsWith('##') || p.trim().startsWith('**') && p.trim().endsWith('**');
+                                                const trimmed = p.trim();
+                                                const isHeader = trimmed.startsWith('##') || (trimmed.startsWith('**') && trimmed.endsWith('**'));
                                                 return (
                                                     <p key={i} className={`${isHeader ? 'text-indigo-900 font-black text-xl border-l-4 border-indigo-200 pl-4 py-1' : 'text-slate-700 text-lg leading-relaxed'}`}>
-                                                        {p.replace(/#/g, '').replace(/\*\*/g, '')}
+                                                        {trimmed.replace(/#/g, '').replace(/\*\*/g, '')}
                                                     </p>
                                                 );
                                             })}
@@ -279,7 +309,7 @@ export const AnalyticsTab: React.FC = () => {
                                     <div className="flex flex-col items-center justify-center py-24 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-200">
                                         <div className="w-20 h-20 bg-white rounded-[2rem] flex items-center justify-center text-slate-300 mb-6 shadow-sm ring-1 ring-black/5"><Icon name="robot" className="w-10 h-10" /></div>
                                         <h4 className="text-xl font-black text-slate-900 mb-2">Generate Strategic Insight?</h4>
-                                        <p className="text-sm text-slate-400 mb-10 max-w-md text-center font-medium px-4">Our AI co-pilot will analyze all student assessment history, distribution patterns, and support tiers to write a briefing for your leadership team.</p>
+                                        <p className="text-sm text-slate-400 mb-10 max-w-md text-center font-medium px-4">Our AI co-pilot will analyze student assessments, distribution patterns, and support tiers to write a briefing for your leadership team.</p>
                                         <button onClick={handleGenerateBriefing} className="px-12 py-5 bg-white border border-slate-200 rounded-[1.8rem] font-black text-sm text-indigo-600 shadow-xl hover:shadow-2xl hover:bg-indigo-50 transition-all active:scale-95 flex items-center gap-3">
                                             <Icon name="brain" className="w-5 h-5" />
                                             Compile Briefing Now

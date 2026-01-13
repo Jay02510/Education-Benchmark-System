@@ -1,26 +1,42 @@
+
 import React from 'react';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
-    LineChart, Line, Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-    AreaChart, Area, ReferenceLine, ReferenceArea, PieChart, Pie, Cell
+    Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+    AreaChart, Area, ReferenceLine, ReferenceArea, PieChart, Pie, Cell,
+    LineChart, Line
 } from 'recharts';
 import { Domain } from '../../types';
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+        const studentNames = payload[0].payload.students as string[] | undefined;
+        
         return (
-            <div className="bg-white p-4 rounded-xl shadow-xl border border-slate-100 ring-1 ring-black/5">
-                <p className="font-bold text-slate-800 mb-2">{label}</p>
+            <div className="bg-white p-4 rounded-xl shadow-xl border border-slate-100 ring-1 ring-black/5 max-w-[200px]">
+                <p className="font-bold text-slate-800 mb-2">{label || payload[0].name}</p>
                 {payload.map((p: any, i: number) => (
-                    <div key={i} className="flex items-center gap-2 text-sm mb-1 last:mb-0">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color || p.fill }}></div>
+                    <div key={i} className="flex items-center gap-2 text-sm mb-2">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color || p.fill }}></div>
                         <span className="text-slate-500">{p.name}:</span>
-                        <span className="font-semibold text-slate-700">
+                        <span className="font-black text-slate-700">
                             {typeof p.value === 'number' ? (p.unit === '%' ? `${p.value}%` : p.value) : p.value}
-                            {p.name.includes('Tier') && ' Students'}
                         </span>
                     </div>
                 ))}
+                
+                {studentNames && studentNames.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-slate-50">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Students</p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {studentNames.map((name, idx) => (
+                                <span key={idx} className="text-[10px] bg-slate-50 text-slate-600 px-2 py-0.5 rounded-md font-bold border border-slate-100">
+                                    {name}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }
@@ -93,7 +109,7 @@ export const RadarPerformanceChart: React.FC<DomainPerformanceChartProps> = ({ d
     );
 };
 
-export const ProficiencyDistributionChart: React.FC<{ data: { name: string, count: number, color: string }[] }> = ({ data }) => (
+export const ProficiencyDistributionChart: React.FC<{ data: { name: string, count: number, color: string, students: string[] }[] }> = ({ data }) => (
     <ResponsiveContainer width="100%" height={280}>
         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
@@ -106,7 +122,7 @@ export const ProficiencyDistributionChart: React.FC<{ data: { name: string, coun
                 tickLine={false}
             />
             <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(99, 102, 241, 0.05)'}} />
-            <Bar dataKey="count" name="Students" radius={[0, 10, 10, 0]} barSize={24}>
+            <Bar dataKey="count" name="Count" radius={[0, 10, 10, 0]} barSize={24}>
                 {data.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
@@ -115,7 +131,7 @@ export const ProficiencyDistributionChart: React.FC<{ data: { name: string, coun
     </ResponsiveContainer>
 );
 
-export const SupportTierChart: React.FC<{ data: { name: string, value: number, color: string }[] }> = ({ data }) => (
+export const SupportTierChart: React.FC<{ data: { name: string, value: number, color: string, students: string[] }[] }> = ({ data }) => (
     <ResponsiveContainer width="100%" height={280}>
         <PieChart>
             <Pie

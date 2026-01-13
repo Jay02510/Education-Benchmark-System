@@ -44,43 +44,46 @@ const StudentContext = createContext<StudentContextType | undefined>(undefined);
 const getStorageKey = (userId: string, type: 'students' | 'profile') => `benchmark_${type}_${userId}`;
 
 /**
- * Accuracy Fix: Calculates true weighted proficiency against the FULL framework.
- * This ensures that Baseline (all domains) and Midline (perhaps only some) 
- * are calculated on a consistent mathematical scale.
+ * Accuracy Fix: Calculates the intuitive average of TESTED domains.
+ * This ensures that if only one domain is tested, the score reflects that domain's performance.
  */
 const getTrueProficiency = (assessment: Assessment | undefined, frameworkSubdomains: Record<string, SubdomainMetadata[]>): number => {
     if (!assessment) return 0;
     
-    let totalEarned = 0;
-    let totalPossible = 0;
+    const domainPercentages: number[] = [];
 
-    // Calculate total possible points in the ENTIRE framework for this level
-    Object.values(frameworkSubdomains).forEach(subs => {
+    // Calculate actual percentage for each domain that has at least one subdomain score
+    Object.entries(frameworkSubdomains).forEach(([domain, subs]) => {
+        let earned = 0;
+        let possible = 0;
+        let hasData = false;
+
         subs.forEach(s => {
-            totalPossible += s.maxScore;
+            const val = assessment.subdomainScores?.[`${domain}:${s.name}`];
+            if (typeof val === 'number') {
+                earned += val;
+                possible += s.maxScore;
+                hasData = true;
+            }
         });
-    });
 
-    // Sum up what the student actually earned
-    Object.entries(assessment.subdomainScores || {}).forEach(([key, earned]) => {
-        if (typeof earned === 'number') {
-            totalEarned += earned;
+        if (hasData && possible > 0) {
+            domainPercentages.push((earned / possible) * 100);
         }
     });
 
-    if (totalPossible > 0) {
-        return Math.round((totalEarned / totalPossible) * 100);
+    if (domainPercentages.length > 0) {
+        return Math.round(domainPercentages.reduce((a, b) => a + b, 0) / domainPercentages.length);
     }
 
-    // Fallback: Simple average of percentages if framework metadata is missing
-    const scores = Object.values(assessment.scores).filter(s => typeof s === 'number');
+    // Fallback: Average of the 'scores' object if subdomain metadata is somehow unavailable
+    const scores = Object.values(assessment.scores).filter(s => typeof s === 'number' && s > 0);
     if (scores.length === 0) return 0;
     return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 };
 
 const calculateVelocity = (assessments: Assessment[], frameworkSubdomains: Record<string, SubdomainMetadata[]>): number => {
     if (assessments.length < 2) return 0;
-    // Ensure we are comparing chronologically
     const sorted = [...assessments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const latest = sorted[sorted.length - 1];
     const previous = sorted[sorted.length - 2];
@@ -102,7 +105,7 @@ const calculateRTIStatus = (assessments: Assessment[], thresholds: Record<TestPe
     const currentPeriodThreshold = thresholds[latest.type] || 70;
 
     const weakDomains = domainEntries
-        .filter(([_, s]) => s < currentPeriodThreshold)
+        .filter(([_, s]) => s < currentPeriodThreshold && s > 0)
         .map(([d]) => d);
 
     if (avg < currentPeriodThreshold - 15) {
@@ -285,7 +288,9 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         const velocity = calculateVelocity(assessments, frameworkSubdomains);
         const rti = calculateRTIStatus(assessments, thresholds, frameworkSubdomains);
-        const growth = assessments.length >= 2 ? getTrueProficiency(assessments[assessments.length-1], frameworkSubdomains) - getTrueProficiency(assessments[0], frameworkSubdomains) : 0;
+        const latestAvg = getTrueProficiency(assessments[assessments.length-1], frameworkSubdomains);
+        const firstAvg = getTrueProficiency(assessments[0], frameworkSubdomains);
+        const growth = assessments.length >= 2 ? latestAvg - firstAvg : 0;
 
         const payload = { 
             assessments, 
@@ -344,7 +349,9 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             
             const vel = calculateVelocity(assessments, frameworkSubdomains);
-            const growth = assessments.length >= 2 ? getTrueProficiency(assessments[assessments.length-1], frameworkSubdomains) - getTrueProficiency(assessments[0], frameworkSubdomains) : 0;
+            const latestAvg = getTrueProficiency(assessments[assessments.length-1], frameworkSubdomains);
+            const firstAvg = getTrueProficiency(assessments[0], frameworkSubdomains);
+            const growth = assessments.length >= 2 ? latestAvg - firstAvg : 0;
             const rti = calculateRTIStatus(assessments, thresholds, frameworkSubdomains);
             
             const payload = { assessments, overallGrowth: Math.round(growth), growthVelocity: vel, interventionStatus: rti, hasAnomaly: !!rti };

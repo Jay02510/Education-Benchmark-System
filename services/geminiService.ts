@@ -1,6 +1,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Domain, ResourceType } from '../types.ts';
 
+/**
+ * Utility to strip Markdown JSON wrappers that AI often adds
+ */
+const sanitizeJson = (text: string) => {
+    return text.replace(/```json/g, '').replace(/```/g, '').trim();
+};
+
 export class GeminiService {
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -45,7 +52,7 @@ export class GeminiService {
             });
             
             if (!response.text) throw new Error("Empty response from AI engine.");
-            return JSON.parse(response.text);
+            return JSON.parse(sanitizeJson(response.text));
         } catch (error) { 
             console.error("AI Analysis failed:", error);
             throw error;
@@ -58,30 +65,33 @@ export class GeminiService {
         stats: any
     ): Promise<string> {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        // Use Pro for complex strategic summary
-        const model = 'gemini-3-pro-preview';
+        // Use Flash for standard briefing summarization (higher reliability)
+        const model = 'gemini-3-flash-preview';
 
         try {
-            const prompt = `Write an Executive Performance Briefing for school leadership regarding Level ${gradeLevel} class.
+            const prompt = `Write an Executive Performance Briefing for Level ${gradeLevel} class.
             Class Size: ${studentCount}
             Avg Proficiency: ${stats.classAvg}%
             Avg Velocity: ${stats.avgVelocity}% improvement per cycle
-            Risk Profile: ${stats.interventionCount} students requiring Tier 2/3 support.
+            Risk Profile: ${stats.interventionCount} students in Tier 2/3.
             
+            Strongest Domain: ${stats.strongest || 'Various'}
+            Weakest Domain: ${stats.weakest || 'Various'}
+
             Instructions:
             1. Summarize "Institutional Health".
-            2. Identify the strongest and weakest academic domains.
-            3. Provide a "Growth Forecast" for the next cycle.
-            4. Use professional, analytical language. 
-            5. NEVER use the term 'mastery'. Use 'Outstanding' (90%+) and 'Excellent' (80%+).
-            6. Format in professional sections with bold headers.`;
+            2. High-level analysis of domain performance.
+            3. Professional "Growth Forecast".
+            4. Use pedagogical language. 
+            5. Use 'Outstanding' (90%+) and 'Excellent' (80%+).
+            6. Format in professional sections.`;
 
             const response = await ai.models.generateContent({
                 model,
                 contents: prompt,
             });
             
-            return response.text || "Briefing engine could not compile data. Please check input parameters.";
+            return response.text || "Briefing engine could not compile data. Please check connection.";
         } catch (error) { 
             console.error("Class Briefing Error:", error);
             throw error;
@@ -103,7 +113,7 @@ export class GeminiService {
                     }
                 }
             });
-            return JSON.parse(response.text || '{}');
+            return JSON.parse(sanitizeJson(response.text || '{}'));
         } catch (error) { 
             return null; 
         }

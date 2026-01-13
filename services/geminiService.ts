@@ -9,8 +9,35 @@ const sanitizeJson = (text: string) => {
 };
 
 export class GeminiService {
+    /**
+     * Safely retrieves the API key with validation
+     */
+    private static getApiKey(): string {
+        const key = process.env.API_KEY;
+        if (!key || key === 'undefined' || key.length < 5) {
+            throw new Error("Missing or Invalid API Key. Please ensure you have added a variable named 'API_KEY' in your Vercel project settings.");
+        }
+        return key;
+    }
+
+    private static handleAiError(error: any): never {
+        console.error("Gemini API Error Detail:", error);
+        const msg = error.message || "";
+        
+        if (msg.includes("API_KEY") || msg.includes("key") || msg.includes("unauthorized")) {
+             throw new Error("API Authentication Failed. Check your Vercel 'API_KEY' variable and redeploy.");
+        }
+        
+        if (msg.includes("Quota") || msg.includes("limit")) {
+             throw new Error("AI capacity reached. Please try again in 60 seconds.");
+        }
+
+        throw error;
+    }
+
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const apiKey = this.getApiKey();
+        const ai = new GoogleGenAI({ apiKey });
         const model = 'gemini-3-pro-preview';
         
         try {
@@ -30,10 +57,10 @@ export class GeminiService {
                 history: sortedAssessments.map(a => ({ period: a.type, date: a.date, scores: a.scores }))
             };
 
-            const prompt = `Perform a technical pedagogical analysis for an ESL student. 
+            const prompt = `Perform a technical ESL analysis for student ${student.name}. 
             Data: ${JSON.stringify(dataPayload)}
-            Task: Provide a "report_card" (parent-facing, professional) and "trend_insights" (teacher-facing, technical). 
-            Terminologies: NEVER use 'mastery'. Use 'Excellent' (80-89%) or 'Outstanding' (90%+). Focus on learning progression.`;
+            Task: Provide a "report_card" (parent-facing) and "trend_insights" (teacher-facing). 
+            Terminologies: Never use 'mastery'. Use 'Outstanding' (90%+) or 'Excellent' (80-89%).`;
             
             const response = await ai.models.generateContent({
                 model,
@@ -51,11 +78,10 @@ export class GeminiService {
                 }
             });
             
-            if (!response.text) throw new Error("Empty response from AI engine.");
+            if (!response.text) throw new Error("Empty response from AI.");
             return JSON.parse(sanitizeJson(response.text));
         } catch (error) { 
-            console.error("AI Analysis failed:", error);
-            throw error;
+            return this.handleAiError(error);
         }
     }
 
@@ -64,43 +90,37 @@ export class GeminiService {
         studentCount: number,
         stats: any
     ): Promise<string> {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        // Use Flash for standard briefing summarization (higher reliability)
+        const apiKey = this.getApiKey();
+        const ai = new GoogleGenAI({ apiKey });
         const model = 'gemini-3-flash-preview';
 
         try {
             const prompt = `Write an Executive Performance Briefing for Level ${gradeLevel} class.
             Class Size: ${studentCount}
             Avg Proficiency: ${stats.classAvg}%
-            Avg Velocity: ${stats.avgVelocity}% improvement per cycle
+            Avg Velocity: ${stats.avgVelocity}% 
             Risk Profile: ${stats.interventionCount} students in Tier 2/3.
             
-            Strongest Domain: ${stats.strongest || 'Various'}
-            Weakest Domain: ${stats.weakest || 'Various'}
+            Strongest: ${stats.strongest || 'Various'}
+            Weakest: ${stats.weakest || 'Various'}
 
-            Instructions:
-            1. Summarize "Institutional Health".
-            2. High-level analysis of domain performance.
-            3. Professional "Growth Forecast".
-            4. Use pedagogical language. 
-            5. Use 'Outstanding' (90%+) and 'Excellent' (80%+).
-            6. Format in professional sections.`;
+            Instructions: Format in professional sections with bold headers. Summarize institutional health and growth forecast.`;
 
             const response = await ai.models.generateContent({
                 model,
                 contents: prompt,
             });
             
-            return response.text || "Briefing engine could not compile data. Please check connection.";
+            return response.text || "Briefing engine could not compile data.";
         } catch (error) { 
-            console.error("Class Briefing Error:", error);
-            throw error;
+            return this.handleAiError(error);
         }
     }
 
     static async generateResourceContent(domain: Domain, subdomain: string, type: ResourceType, level: string, promptText: string): Promise<{ title: string; description: string; content: string } | null> {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         try {
+            const apiKey = this.getApiKey();
+            const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
                 contents: `Create material (${type}) for Level ${level} in ${domain}. Prompt: ${promptText}.`,
@@ -115,13 +135,15 @@ export class GeminiService {
             });
             return JSON.parse(sanitizeJson(response.text || '{}'));
         } catch (error) { 
+            console.error("Resource error:", error);
             return null; 
         }
     }
 
     static async generateRemedialPrompt(domain: Domain, avgScore: number, level: string): Promise<string> {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         try {
+            const apiKey = this.getApiKey();
+            const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
                 contents: `Create a remedial practice prompt for Level ${level} in ${domain} (Avg ${avgScore}%).`

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
@@ -13,24 +12,24 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         const studentNames = payload[0].payload.students as string[] | undefined;
         
         return (
-            <div className="bg-white p-4 rounded-xl shadow-xl border border-slate-100 ring-1 ring-black/5 max-w-[200px]">
-                <p className="font-bold text-slate-800 mb-2">{label || payload[0].name}</p>
+            <div className="bg-white p-5 rounded-[1.5rem] shadow-2xl border border-slate-100 ring-1 ring-black/5 min-w-[220px] max-w-[280px]">
+                <p className="font-black text-slate-900 mb-3 border-b border-slate-50 pb-2 tracking-tight">{label || payload[0].name}</p>
                 {payload.map((p: any, i: number) => (
-                    <div key={i} className="flex items-center gap-2 text-sm mb-2">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: p.color || p.fill }}></div>
-                        <span className="text-slate-500">{p.name}:</span>
-                        <span className="font-black text-slate-700">
+                    <div key={i} className="flex items-center gap-3 text-sm mb-3 last:mb-0">
+                        <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: p.color || p.fill }}></div>
+                        <span className="text-slate-500 font-bold">{p.name}:</span>
+                        <span className="font-black text-slate-800">
                             {typeof p.value === 'number' ? (p.unit === '%' ? `${p.value}%` : p.value) : p.value}
                         </span>
                     </div>
                 ))}
                 
                 {studentNames && studentNames.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-slate-50">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Students</p>
+                    <div className="mt-4 pt-4 border-t border-slate-100">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Student Roster</p>
                         <div className="flex flex-wrap gap-1.5">
                             {studentNames.map((name, idx) => (
-                                <span key={idx} className="text-[10px] bg-slate-50 text-slate-600 px-2 py-0.5 rounded-md font-bold border border-slate-100">
+                                <span key={idx} className="text-[10px] bg-slate-50 text-slate-700 px-2.5 py-1 rounded-lg font-black border border-slate-100 shadow-sm">
                                     {name}
                                 </span>
                             ))}

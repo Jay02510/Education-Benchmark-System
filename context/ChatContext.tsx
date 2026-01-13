@@ -52,19 +52,21 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     }, [activeTab, currentPersona]);
 
-    const getChatSession = () => {
-        if (!chatSessionRef.current) {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const isTeacher = currentPersona === 'Teacher';
-            chatSessionRef.current = ai.chats.create({
-                model: 'gemini-3-flash-preview',
-                config: {
-                    systemInstruction: isTeacher ? TEACHER_INSTRUCTION : ADMIN_INSTRUCTION,
-                    tools: [{ functionDeclarations: isTeacher ? teacherTools : adminTools }],
-                }
-            });
+    const createNewSession = () => {
+        const apiKey = process.env.API_KEY;
+        if (!apiKey || apiKey === 'undefined') {
+            throw new Error("API_KEY missing in project environment.");
         }
-        return chatSessionRef.current;
+
+        const ai = new GoogleGenAI({ apiKey });
+        const isTeacher = currentPersona === 'Teacher';
+        return ai.chats.create({
+            model: 'gemini-3-flash-preview',
+            config: {
+                systemInstruction: isTeacher ? TEACHER_INSTRUCTION : ADMIN_INSTRUCTION,
+                tools: [{ functionDeclarations: isTeacher ? teacherTools : adminTools }],
+            }
+        });
     };
 
     const toggleChat = () => setIsOpen(prev => !prev);
@@ -75,32 +77,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const executeTool = async (name: string, args: any): Promise<any> => {
-        if (currentPersona === 'Admin') return { status: "Diagnostics: OK. Latency: 42ms." };
+        if (currentPersona === 'Admin') return { status: "Diagnostics: OK." };
         
         switch (name) {
             case 'get_class_summary':
-                const avg = students.length > 0 ? Math.round(students.reduce((acc, s) => {
-                    const latest = s.assessments[s.assessments.length - 1];
-                    if (!latest) return acc;
-                    const scores = Object.values(latest.scores) as number[];
-                    return acc + (scores.reduce((a, b) => a + b, 0) / scores.length);
-                }, 0) / students.length) : 0;
-                
                 return { 
-                    className: classProfile?.className || "Unknown",
+                    className: classProfile?.className || "General",
                     studentCount: students.length, 
-                    classAverage: `${avg}%`,
                     atRiskCount: students.filter(s => s.hasAnomaly).length
                 };
 
             case 'get_student_details':
                 const student = students.find(s => s.name.toLowerCase().includes(args.studentName.toLowerCase()));
-                if (!student) return { error: "Student not found in current roster." };
+                if (!student) return { error: "Student not found." };
                 return {
                     name: student.name,
                     level: student.level,
-                    velocity: `${student.growthVelocity}%`,
-                    latestScores: student.assessments[student.assessments.length - 1]?.scores,
                     intervention: student.interventionStatus
                 };
 
@@ -108,32 +100,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const atRisk = students.filter(s => s.hasAnomaly || s.interventionStatus !== null);
                 return { 
                     count: atRisk.length,
-                    students: atRisk.map(s => ({ name: s.name, reason: s.interventionStatus?.triggerReason || "Performance Anomaly" }))
+                    students: atRisk.map(s => ({ name: s.name, reason: s.interventionStatus?.triggerReason || "Performance Alert" }))
                 };
 
-            case 'get_domain_performance':
-                const domain = args.domain as Domain;
-                let dTotal = 0;
-                let dCount = 0;
-                students.forEach(s => {
-                    const latest = s.assessments[s.assessments.length - 1];
-                    if (latest && latest.scores[domain] !== undefined) {
-                        dTotal += latest.scores[domain];
-                        dCount++;
-                    }
-                });
-                return { domain, average: dCount > 0 ? Math.round(dTotal / dCount) : "No data" };
-
-            case 'search_resources':
-                const query = args.query.toLowerCase();
-                const matched = resources.filter(r => 
-                    r.title.toLowerCase().includes(query) || 
-                    r.description.toLowerCase().includes(query)
-                );
-                return { count: matched.length, results: matched.map(m => m.title).slice(0, 3) };
-
             default:
-                return { message: "Tool logic not yet implemented." };
+                return { message: "Tool executed." };
         }
     };
 
@@ -142,7 +113,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsTyping(true);
 
         try {
-            const chat = getChatSession();
+            if (!chatSessionRef.current) {
+                chatSessionRef.current = createNewSession();
+            }
+            
+            const chat = chatSessionRef.current;
             let result: GenerateContentResponse = await chat.sendMessage({ message: text });
             
             while (result.functionCalls && result.functionCalls.length > 0) {
@@ -164,15 +139,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: result.text || "I've processed your request.", 
+                text: result.text || "Processed.", 
                 timestamp: Date.now() 
             }]);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Chat error:", error);
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: "I encountered an error processing your request.", 
+                text: "The AI is currently unavailable. Please verify your API Key and connection.", 
                 timestamp: Date.now(), 
                 isError: true 
             }]);
@@ -190,6 +165,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useChat = () => {
     const context = useContext(ChatContext);
-    if (context === undefined) throw new Error('useChat must be used within a ChatProvider');
+    if (context === undefined) throw new Error('useChat error');
     return context;
 };

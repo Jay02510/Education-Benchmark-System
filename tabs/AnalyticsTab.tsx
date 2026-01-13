@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card } from '../components/common/Card';
 import { DomainPerformanceChart, RadarPerformanceChart, ProficiencyDistributionChart, SupportTierChart } from '../components/charts/Charts';
@@ -57,6 +56,23 @@ const KPICard: React.FC<{
     );
 };
 
+const StudentBracketList: React.FC<{ title: string; students: string[]; color: string }> = ({ title, students, color }) => (
+    <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+            <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: color }}></div>
+            <h4 className="font-black text-slate-800 text-sm">{title}</h4>
+            <span className="ml-auto text-xs font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-lg">{students.length}</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+            {students.length > 0 ? students.map((name, i) => (
+                <span key={i} className="text-[10px] font-bold text-slate-600 bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-xl">
+                    {name}
+                </span>
+            )) : <span className="text-[10px] text-slate-300 italic">No students in this bracket</span>}
+        </div>
+    </div>
+);
+
 export const AnalyticsTab: React.FC = () => {
     const { students, classProfile } = useStudents();
     const { domains, benchmarks, subdomains: frameworkSubdomains } = useBenchmarks();
@@ -68,7 +84,6 @@ export const AnalyticsTab: React.FC = () => {
 
     const hasData = useMemo(() => students.some(s => s.assessments.length > 0), [students]);
 
-    // Internal Helper for Proficiency Calculation to ensure parity with Context
     const getStudentProficiency = (student: Student, subdomains: Record<string, SubdomainMetadata[]>) => {
         const latest = student.assessments[student.assessments.length - 1];
         if (!latest) return 0;
@@ -83,20 +98,17 @@ export const AnalyticsTab: React.FC = () => {
             if (hasData && possible > 0) domainPercentages.push((earned / possible) * 100);
         });
 
-        // Use explicit number types in reduce to fix arithmetic operation on unknown types
         if (domainPercentages.length > 0) return Math.round(domainPercentages.reduce((a: number, b: number) => a + b, 0) / domainPercentages.length);
         const fallback = Object.values(latest.scores).filter(s => typeof s === 'number' && s > 0) as number[];
-        return fallback.length ? Math.round(fallback.reduce((a: number, b: number) => a + b, 0) / fallback.length) : 0;
+        return fallback.length ? Math.round(fallback.reduce((a, b) => a + b, 0) / fallback.length) : 0;
     };
 
-    // Calculation Engine
     const analytics = useMemo(() => {
         if (students.length === 0) return null;
 
         const levelToUse = classProfile?.gradeLevel || '5';
         const period = TestPeriod.Baseline;
 
-        // Domain averages
         const domainData = domains.map(domain => {
             const bench = benchmarks.find(b => b.domain === domain && b.period === period && b.level_name === levelToUse);
             let total = 0, count = 0;
@@ -116,7 +128,6 @@ export const AnalyticsTab: React.FC = () => {
 
         const sortedDomainPerformance = [...domainData].sort((a,b) => b.score - a.score);
 
-        // Distribution Data (Now Tracking Names)
         const distribution = [
             { name: 'Outstanding (90%+)', count: 0, color: '#4f46e5', students: [] as string[] },
             { name: 'Excellent (80-89%)', count: 0, color: '#10b981', students: [] as string[] },
@@ -124,7 +135,6 @@ export const AnalyticsTab: React.FC = () => {
             { name: 'Developing (<60%)', count: 0, color: '#f43f5e', students: [] as string[] }
         ];
 
-        // Tier Data (Now Tracking Names)
         const tiers = [
             { name: 'Tier 1 (Universal)', value: 0, color: '#10b981', students: [] as string[] },
             { name: 'Tier 2 (Targeted)', value: 0, color: '#f59e0b', students: [] as string[] },
@@ -189,8 +199,8 @@ export const AnalyticsTab: React.FC = () => {
                 }
             );
             setExecutiveBriefing(briefing);
-        } catch (e) { 
-            setExecutiveBriefing('Briefing generation failed. The analysis engine encountered an unexpected formatting error. Please try again.'); 
+        } catch (e: any) { 
+            setExecutiveBriefing(`Briefing generation failed. ${e.message}`); 
         } finally { 
             setIsGenerating(false); 
         }
@@ -227,18 +237,16 @@ export const AnalyticsTab: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                        {/* Distribution Chart */}
-                        <Card variant="default" className="p-8 shadow-xl bg-white flex flex-col h-full">
+                        <Card variant="default" className="p-8 shadow-xl bg-white flex flex-col h-full lg:col-span-1">
                             <div className="flex items-center gap-3 mb-8">
                                 <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl"><Icon name="trendUp" className="w-5 h-5" /></div>
-                                <div><h3 className="font-black text-slate-800">Proficiency Spread</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hover to see names</p></div>
+                                <div><h3 className="font-black text-slate-800">Proficiency Spread</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bracket Breakdown</p></div>
                             </div>
                             <div className="flex-1 min-h-[280px]">
                                 <ProficiencyDistributionChart data={analytics?.distribution || []} />
                             </div>
                         </Card>
 
-                        {/* Radar Chart */}
                         <Card variant="glass" className="p-8 shadow-xl flex flex-col h-full lg:col-span-2">
                              <div className="flex justify-between items-center mb-8">
                                 <div className="flex items-center gap-3">
@@ -256,19 +264,23 @@ export const AnalyticsTab: React.FC = () => {
                         </Card>
                     </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {analytics?.distribution.map((bracket, i) => (
+                            <StudentBracketList key={i} title={bracket.name} students={bracket.students} color={bracket.color} />
+                        ))}
+                    </div>
+
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
-                         {/* Support Tier Pie Chart */}
                          <Card variant="default" className="p-8 shadow-xl bg-white flex flex-col h-full lg:col-span-1">
                             <div className="flex items-center gap-3 mb-8">
                                 <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl"><Icon name="shield" className="w-5 h-5" /></div>
-                                <div><h3 className="font-black text-slate-800">Support Tiers</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hover to see names</p></div>
+                                <div><h3 className="font-black text-slate-800">Support Tiers</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Intervention Mix</p></div>
                             </div>
                             <div className="flex-1 min-h-[280px]">
                                 <SupportTierChart data={analytics?.tiers || []} />
                             </div>
                         </Card>
 
-                        {/* AI Briefing */}
                         <Card variant="paper" className="lg:col-span-3 p-12 border-t-[10px] border-indigo-600 shadow-2xl relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-50 rounded-full blur-[100px] -z-0 opacity-40 group-hover:opacity-60 transition-opacity"></div>
                             

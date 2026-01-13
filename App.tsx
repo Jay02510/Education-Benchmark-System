@@ -69,7 +69,7 @@ const ConnectivityBanner: React.FC = () => {
     return (
         <div className="bg-rose-600 text-white text-[11px] font-bold py-1.5 px-4 text-center animate-in slide-in-from-top duration-300 flex items-center justify-center gap-2 z-[100] sticky top-0">
             <Icon name="alert" className="w-3 h-3" />
-            OFFLINE MODE — Changes saved locally but not synced to cloud.
+            OFFLINE MODE — AI Features Disabled.
         </div>
     );
 };

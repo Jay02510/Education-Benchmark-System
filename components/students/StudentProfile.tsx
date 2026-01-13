@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Student, Resource, Domain, Assessment, StudentLogEntry } from '../../types';
+import { Student, Resource, Domain, Assessment, StudentLogEntry, SubdomainMetadata } from '../../types';
 import { GeminiService } from '../../services/geminiService';
 import { Card } from '../common/Card';
 import { Icon } from '../common/Icon';
@@ -58,13 +58,34 @@ const ProfileStatWidget: React.FC<{ title: string; value: string | number; subte
 
 const AssessmentHistoryItem: React.FC<{ 
     assessment: Assessment; 
+    frameworkSubdomains: Record<string, SubdomainMetadata[]>;
     onEdit: () => void; 
     onDelete: () => void;
-}> = ({ assessment, onEdit, onDelete }) => {
-    const scoreValues = Object.values(assessment.scores) as number[];
-    const avg = scoreValues.length > 0 
-        ? Math.round(scoreValues.reduce((a: number, b: number) => a + b, 0) / scoreValues.length)
-        : 0;
+}> = ({ assessment, frameworkSubdomains, onEdit, onDelete }) => {
+    // True Point Weighted Calculation
+    const calculateOverall = () => {
+        let totalEarned = 0;
+        let totalPossible = 0;
+        let hasPointData = false;
+
+        Object.entries(assessment.subdomainScores || {}).forEach(([key, earned]) => {
+            const [domain, subName] = key.split(':');
+            const metadata = frameworkSubdomains[domain]?.find(s => s.name === subName);
+            if (metadata && typeof earned === 'number') {
+                totalEarned += earned;
+                totalPossible += metadata.maxScore;
+                hasPointData = true;
+            }
+        });
+
+        if (hasPointData && totalPossible > 0) return Math.round((totalEarned / totalPossible) * 100);
+        
+        // Fallback
+        const vals = Object.values(assessment.scores) as number[];
+        return vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+    };
+
+    const avg = calculateOverall();
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
@@ -126,6 +147,7 @@ const AssessmentHistoryItem: React.FC<{
 export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack }) => {
     const { updateAssessmentForStudent, deleteAssessmentForStudent, aiInsights, classProfile, addLogEntry } = useStudents();
     const { resources } = useResources();
+    const { subdomains: frameworkSubdomains } = useBenchmarks();
     const { user } = useAuth();
     const { setActiveTab } = useNavigation();
     
@@ -138,11 +160,33 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
     const [logCategory, setLogCategory] = useState<StudentLogEntry['category']>('Observation');
 
     const sortedAssessments = useMemo(() => {
-        return [...student.assessments].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return [...student.assessments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     }, [student.assessments]);
 
-    const latestAssessment = sortedAssessments[0];
-    const avg = latestAssessment ? Math.round((Object.values(latestAssessment.scores) as number[]).reduce((a, b) => a + b, 0) / Object.keys(latestAssessment.scores).length) : 0;
+    // Calculate current average based on latest assessment using true weighted points
+    const currentProficiency = useMemo(() => {
+        if (student.assessments.length === 0) return 0;
+        const latest = [...student.assessments].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+        
+        let totalEarned = 0;
+        let totalPossible = 0;
+        let hasPointData = false;
+
+        Object.entries(latest.subdomainScores || {}).forEach(([key, earned]) => {
+            const [domain, subName] = key.split(':');
+            const metadata = frameworkSubdomains[domain]?.find(s => s.name === subName);
+            if (metadata && typeof earned === 'number') {
+                totalEarned += earned;
+                totalPossible += metadata.maxScore;
+                hasPointData = true;
+            }
+        });
+
+        if (hasPointData && totalPossible > 0) return Math.round((totalEarned / totalPossible) * 100);
+        
+        const vals = Object.values(latest.scores) as number[];
+        return vals.length > 0 ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+    }, [student.assessments, frameworkSubdomains]);
     
     const actionPoints = useMemo(() => {
         return (student.actionLog || []).filter(l => l.category === 'Intervention').map(l => ({
@@ -154,11 +198,19 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
     const projectionData = useMemo(() => {
         const history = [...student.assessments]
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-            .map(a => ({
-                name: a.type,
-                score: Number(a.scores?.[Domain.Reading] ?? 60),
-                date: a.date
-            }));
+            .map(a => {
+                let totalE = 0;
+                let totalP = 0;
+                let points = false;
+                Object.entries(a.subdomainScores || {}).forEach(([k, v]) => {
+                    const [dom, name] = k.split(':');
+                    const meta = frameworkSubdomains[dom]?.find(s => s.name === name);
+                    // Fixed: Added type check 'typeof v === "number"' to fix error 'Operator += cannot be applied to types number and unknown'
+                    if (meta && typeof v === 'number') { totalE += v; totalP += meta.maxScore; points = true; }
+                });
+                const s = points && totalP > 0 ? Math.round((totalE / totalP) * 100) : (a.scores?.[Domain.Reading] ?? 60);
+                return { name: a.type, score: s, date: a.date };
+            });
         
         if (history.length > 0) {
             const last = history[history.length - 1];
@@ -170,7 +222,7 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
             });
         }
         return history;
-    }, [student.assessments, student.growthVelocity]);
+    }, [student.assessments, student.growthVelocity, frameworkSubdomains]);
 
     const handleAddLog = async () => {
         if (!logText.trim()) return;
@@ -195,15 +247,16 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
     };
 
     const recommendedResources = useMemo(() => {
-        if (!latestAssessment) return [];
-        const weakDomains = Object.entries(latestAssessment.scores)
+        const latest = sortedAssessments[sortedAssessments.length - 1];
+        if (!latest) return [];
+        const weakDomains = Object.entries(latest.scores)
             .filter(([_, score]) => (score as number) < 70)
             .map(([domain]) => domain);
             
         return resources.filter(r => 
             weakDomains.includes(r.domain) && r.level === student.level
         ).slice(0, 3);
-    }, [resources, latestAssessment, student.level]);
+    }, [resources, sortedAssessments, student.level]);
 
     return (
         <div className="flex flex-col h-full bg-[#F8FAFC] overflow-hidden">
@@ -259,7 +312,7 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
                 {activeSection === 'Overview' && (
                     <div className="space-y-8 animate-in fade-in duration-500">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <ProfileStatWidget title="Institutional Avg" value={`${avg}%`} subtext="Class Standard" icon="analytics" gradient="from-blue-500 to-indigo-600" tooltip="Current skill average compared to classmates." />
+                            <ProfileStatWidget title="Institutional Avg" value={`${currentProficiency}%`} subtext="Class Standard" icon="analytics" gradient="from-blue-500 to-indigo-600" tooltip="Current skill average compared to classmates." />
                             <ProfileStatWidget title="Growth Velocity" value={`${student.growthVelocity}%`} subtext="Per Cycle" icon="trendUp" gradient={student.growthVelocity >= 0 ? "from-emerald-400 to-teal-500" : "from-rose-400 to-pink-500"} tooltip="Improvement speed." />
                             <ProfileStatWidget title="Milestone Progress" value="85%" subtext="Estimated Target" icon="benchmark" gradient="from-purple-500 to-indigo-500" tooltip="Proximity to international standard." />
                             <ProfileStatWidget title="Action Records" value={student.actionLog?.length || 0} subtext="Logged Events" icon="chat" gradient="from-slate-700 to-slate-900" tooltip="Logged interventions." />
@@ -290,7 +343,7 @@ export const StudentProfile: React.FC<StudentProfileProps> = ({ student, onBack 
                         </div>
                         <div className="space-y-4">
                             {sortedAssessments.map((a) => (
-                                <AssessmentHistoryItem key={a.id} assessment={a} onEdit={() => openEditAssessment(a)} onDelete={() => handleDeleteAssessment(a.id)} />
+                                <AssessmentHistoryItem key={a.id} assessment={a} frameworkSubdomains={frameworkSubdomains} onEdit={() => openEditAssessment(a)} onDelete={() => handleDeleteAssessment(a.id)} />
                             ))}
                         </div>
                     </div>

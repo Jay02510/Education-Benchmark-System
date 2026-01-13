@@ -2,9 +2,13 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Domain, ResourceType } from '../types.ts';
 
 export class GeminiService {
+    private static getAI() {
+        return new GoogleGenAI({ apiKey: process.env.API_KEY });
+    }
+
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = this.getAI();
             const model = 'gemini-3-flash-preview';
             const sortedAssessments = [...student.assessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             const latest = sortedAssessments[sortedAssessments.length - 1];
@@ -22,7 +26,9 @@ export class GeminiService {
                 history: sortedAssessments.map(a => ({ period: a.type, date: a.date, scores: a.scores }))
             };
 
-            const prompt = `Perform a deep pedagogical analysis and write a progress report for an ESL student. Data: ${JSON.stringify(dataPayload)}`;
+            const prompt = `Perform a deep pedagogical analysis and write a progress report for an ESL student. 
+            Data: ${JSON.stringify(dataPayload)}
+            Task: Provide a "report_card" (parent-facing, encouraging) and "trend_insights" (teacher-facing, technical).`;
             
             const response = await ai.models.generateContent({
                 model,
@@ -32,14 +38,8 @@ export class GeminiService {
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: { 
-                            report_card: { 
-                                type: Type.STRING, 
-                                description: "A warm, professional report for parents." 
-                            }, 
-                            trend_insights: { 
-                                type: Type.STRING, 
-                                description: "Internal teacher notes on specific skill regressions or plateaus." 
-                            } 
+                            report_card: { type: Type.STRING }, 
+                            trend_insights: { type: Type.STRING } 
                         },
                         required: ["report_card", "trend_insights"]
                     }
@@ -49,7 +49,7 @@ export class GeminiService {
             return JSON.parse(response.text || '{}');
         } catch (error) { 
             console.error("AI Analysis failed:", error);
-            return { report_card: "Steady progress observed.", trend_insights: "System fallback active." }; 
+            throw error;
         }
     }
 
@@ -61,15 +61,14 @@ export class GeminiService {
         atRiskCount: number
     ): Promise<string> {
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = this.getAI();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: `Generate a professional executive briefing for a school administrator about Level ${gradeLevel} classes. 
                 Context:
                 - Total students: ${studentCount}
-                - Students flagged for intervention (At Risk): ${atRiskCount}
-                
-                Please highlight institutional health, overall proficiency levels, and mention the efficacy of current resources. Keep the tone strategic and encouraging.`,
+                - Students flagged for intervention: ${atRiskCount}
+                Highlight institutional health and proficiency levels. Keep it strategic.`,
             });
             
             return response.text || "Briefing unavailable.";
@@ -81,22 +80,15 @@ export class GeminiService {
 
     static async generateResourceContent(domain: Domain, subdomain: string, type: ResourceType, level: string, promptText: string): Promise<{ title: string; description: string; content: string } | null> {
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = this.getAI();
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
-                contents: `Create high-quality classroom material (${type}) for Level ${level} students in ${domain}. 
-                Focus on: ${subdomain}. 
-                Specific teacher request: ${promptText}. 
-                Ensure it is curriculum-ready and formatted professionally.`,
+                contents: `Create classroom material (${type}) for Level ${level} in ${domain}: ${subdomain}. Request: ${promptText}`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: { 
                         type: Type.OBJECT, 
-                        properties: { 
-                            title: { type: Type.STRING }, 
-                            description: { type: Type.STRING }, 
-                            content: { type: Type.STRING } 
-                        }, 
+                        properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, content: { type: Type.STRING } }, 
                         required: ["title", "description", "content"] 
                     }
                 }
@@ -110,15 +102,13 @@ export class GeminiService {
 
     static async generateRemedialPrompt(domain: Domain, avgScore: number, level: string): Promise<string> {
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = this.getAI();
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Level: ${level}, Subject: ${domain}, Average Class Score: ${avgScore}%. 
-                Write a concise, natural language request for an AI that will create a practice activity specifically addressing the needs of students at this level who are performing at this score range.`
+                contents: `Create a practice activity prompt for Level ${level} students struggling in ${domain} (Avg ${avgScore}%).`
             });
             return response.text?.trim() || `Practice activity for ${domain}`;
         } catch (error) { 
-            console.error("Remedial prompt generation failed:", error);
             return `Create remedial practice for ${domain}`; 
         }
     }

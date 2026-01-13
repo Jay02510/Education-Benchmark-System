@@ -68,51 +68,44 @@ const calculateRTIStatus = (assessments: Assessment[], thresholds: Record<TestPe
     const avg = getAvgScore(latest);
     const domainEntries = Object.entries(latest.scores) as [Domain, number][];
     
-    const currentPeriodThreshold = thresholds[latest.type] || 65;
+    const currentPeriodThreshold = thresholds[latest.type] || 70;
 
-    if (avg < currentPeriodThreshold - 20) {
+    // Identify ALL weak domains
+    const weakDomains = domainEntries
+        .filter(([_, s]) => s < currentPeriodThreshold)
+        .map(([d]) => d);
+
+    if (avg < currentPeriodThreshold - 15) {
         return { 
             tier: 3, 
             domain: "General" as any, 
-            goal: `Critical support needed for ${latest.type} milestone.`, 
+            goal: `Intensive 1-on-1 support for ${latest.type} cycle.`, 
             trend: Trend.Down, 
-            triggerReason: `Below Threshold: ${Math.round(avg)}% vs Required ${currentPeriodThreshold}%`, 
+            triggerReason: `Critical Gap: ${weakDomains.join(', ')} below benchmark.`, 
             dateIdentified: new Date().toISOString() 
         };
     }
     
-    if (avg < currentPeriodThreshold) {
+    if (weakDomains.length > 0) {
         return { 
             tier: 2, 
-            domain: "General" as any, 
-            goal: `Bridge performance gap for ${latest.type} targets.`, 
+            domain: weakDomains[0] as Domain, 
+            goal: `Targeted intervention for ${weakDomains.join(' and ')}.`, 
             trend: Trend.Stable, 
-            triggerReason: `Target Miss: ${Math.round(avg)}% (Goal: ${currentPeriodThreshold}%)`, 
-            dateIdentified: new Date().toISOString() 
-        };
-    }
-
-    const weakDomain = domainEntries.find(([_, s]) => s < currentPeriodThreshold - 10);
-    if (weakDomain) {
-        return { 
-            tier: 2, 
-            domain: weakDomain[0], 
-            goal: `Focus on ${weakDomain[0]} development.`, 
-            trend: Trend.Stable, 
-            triggerReason: `Domain Gap: ${weakDomain[0]} at ${weakDomain[1]}%`, 
+            triggerReason: `Focus Areas: ${weakDomains.join(', ')}`, 
             dateIdentified: new Date().toISOString() 
         };
     }
 
     if (previous) {
         const prevAvg = getAvgScore(previous);
-        if (avg < prevAvg - 10) {
+        if (avg < prevAvg - 8) {
             return { 
                 tier: 2, 
                 domain: "General" as any, 
-                goal: "Analyze and address score regression.", 
+                goal: "Analyze and address unexpected regression.", 
                 trend: Trend.Down, 
-                triggerReason: `Rapid Decline: -${Math.round(prevAvg - avg)}% change`, 
+                triggerReason: `Performance Regression: -${Math.round(prevAvg - avg)}% change`, 
                 dateIdentified: new Date().toISOString() 
             };
         }
@@ -143,11 +136,9 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (user.isDemo) {
             const localStudents = localStorage.getItem(sKey);
             const localProfile = localStorage.getItem(pKey);
-            // In Demo mode, we ONLY load from localStorage. If empty, it stays empty until loadDemoData is called.
             if (localStudents) setStudents(sortByName(JSON.parse(localStudents)));
             if (localProfile) setClassProfile(JSON.parse(localProfile));
         } else {
-            // Live Firestore subscription
             const qStudents = query(collection(db, 'students'), where('userId', '==', user.id));
             const unsubStudents = onSnapshot(qStudents, (snapshot) => {
                 const raw = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Student[];

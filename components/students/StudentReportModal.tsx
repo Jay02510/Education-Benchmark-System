@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Student, Domain } from '../../types';
 import { useBenchmarks } from '../../context/BenchmarkContext';
+import { useStudents } from '../../context/StudentContext';
+import { GeminiService } from '../../services/geminiService';
 import { Icon } from '../common/Icon';
 
 interface StudentReportModalProps {
@@ -15,9 +17,24 @@ interface StudentReportModalProps {
 
 export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, onClose, student, insight, initialTeacherComment, className }) => {
     const { benchmarks, domains } = useBenchmarks();
+    const { saveAiAnalysis } = useStudents();
     const [teacherComment, setTeacherComment] = useState(initialTeacherComment);
+    const [isGenerating, setIsGenerating] = useState(false);
     const latestAssessment = student.assessments[student.assessments.length - 1];
     const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const handleGenerateInsight = async () => {
+        if (!latestAssessment) return;
+        setIsGenerating(true);
+        try {
+            const result = await GeminiService.generateComprehensiveStudentAnalysis(student);
+            saveAiAnalysis(student.id, result);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     const renderMarkdownBold = (text: string) => {
          const parts = text.split(/\*\*(.*?)\*\*/g);
@@ -121,17 +138,33 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
 
                 {/* AI Insight Section */}
                 <div className="mb-8 break-inside-avoid">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                        <span className="w-2 h-6 bg-purple-600 mr-2 rounded-full"></span>
-                        AI Performance Analysis
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex justify-between items-center">
+                        <div className="flex items-center">
+                            <span className="w-2 h-6 bg-purple-600 mr-2 rounded-full"></span>
+                            AI Performance Analysis
+                        </div>
+                        {!insight && !isGenerating && (
+                            <button 
+                                onClick={handleGenerateInsight} 
+                                className="px-3 py-1 bg-purple-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-lg hover:bg-purple-700 transition print:hidden"
+                            >
+                                Generate with AI
+                            </button>
+                        )}
                     </h3>
                     <div className="bg-purple-50 p-6 rounded-lg border border-purple-100 text-gray-800 text-sm leading-relaxed print:bg-white print:border-gray-300">
-                        {insight ? (
+                        {isGenerating ? (
+                            <div className="space-y-3 animate-pulse">
+                                <div className="h-4 bg-purple-200 rounded w-full"></div>
+                                <div className="h-4 bg-purple-200 rounded w-[90%]"></div>
+                                <div className="h-4 bg-purple-200 rounded w-[95%]"></div>
+                            </div>
+                        ) : insight ? (
                             <div className="prose prose-sm max-w-none">
                                 {insight.split('\n\n').map((para, i) => <p key={i} className="mb-2">{renderMarkdownBold(para)}</p>)}
                             </div>
                         ) : (
-                            <p className="text-gray-500 italic">No analysis generated.</p>
+                            <p className="text-gray-500 italic">No analysis generated. Click 'Generate with AI' to build this section.</p>
                         )}
                     </div>
                 </div>
@@ -153,10 +186,6 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                             {teacherComment || "No additional comments provided."}
                         </p>
                     </div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-2 print:hidden flex items-center gap-1">
-                        <Icon name="info" className="w-3 h-3" />
-                        This section is editable. Your typing appears instantly on the printed report.
-                    </p>
                 </div>
 
                 {/* Footer */}

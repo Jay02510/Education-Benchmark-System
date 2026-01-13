@@ -12,7 +12,6 @@
     <style>
       body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: #f8fafc; }
       #root { min-height: 100vh; }
-      /* Fail-safe loading state */
       #root:empty::before {
         content: 'Initializing System...';
         display: flex;
@@ -24,7 +23,6 @@
         letter-spacing: -0.025em;
       }
     </style>
-    <!-- CRITICAL: Shim must run before modules load -->
     <script>
       window.process = { env: { API_KEY: "" } };
     </script>

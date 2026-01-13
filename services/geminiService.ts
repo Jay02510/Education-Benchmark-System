@@ -1,7 +1,6 @@
 import { Student, Domain, Resource, ResourceType, TestPeriod } from '../types.ts';
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Lazy-load AI client to prevent top-level process.env access crashes
 const getAI = () => {
     const key = (typeof process !== 'undefined' && process.env?.API_KEY) || (window as any).process?.env?.API_KEY || '';
     return new GoogleGenAI({ apiKey: key });
@@ -18,23 +17,35 @@ export class GeminiService {
             const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
 
             const dataPayload = {
-                student: { name: student.name, level: student.level, current_avg: avg },
-                history: sortedAssessments.map(a => ({ period: a.type, date: a.date, scores: a.scores })),
-                intervention: student.interventionStatus ? { active: true, reason: student.interventionStatus.triggerReason, goal: student.interventionStatus.goal } : { active: false }
+                student: { 
+                    name: student.name, 
+                    level: student.level, 
+                    current_avg: avg,
+                    velocity: student.growthVelocity,
+                    intervention: student.interventionStatus 
+                },
+                history: sortedAssessments.map(a => ({ period: a.type, date: a.date, scores: a.scores }))
             };
 
-            const prompt = `Write a progress report for parents in plain English. Data: ${JSON.stringify(dataPayload)}`;
+            const prompt = `Perform a deep pedagogical analysis and write a progress report. Data: ${JSON.stringify(dataPayload)}`;
             
             const response = await ai.models.generateContent({
                 model,
                 contents: prompt,
                 config: {
+                    thinkingConfig: { thinkingBudget: 2000 },
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: { 
-                            report_card: { type: Type.STRING }, 
-                            trend_insights: { type: Type.STRING } 
+                            report_card: { 
+                                type: Type.STRING, 
+                                description: "A warm, professional report for parents." 
+                            }, 
+                            trend_insights: { 
+                                type: Type.STRING, 
+                                description: "Internal teacher notes on specific skill regressions or plateaus." 
+                            } 
                         },
                         required: ["report_card", "trend_insights"]
                     }
@@ -43,7 +54,7 @@ export class GeminiService {
             return JSON.parse(response.text || '{}');
         } catch (error) { 
             console.error("AI Analysis failed:", error);
-            return { report_card: "Student is making steady progress.", trend_insights: "System fallback triggered." }; 
+            return { report_card: "Steady progress observed.", trend_insights: "System fallback active." }; 
         }
     }
 
@@ -58,7 +69,8 @@ export class GeminiService {
             const ai = getAI();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Executive briefing for level ${gradeLevel}. Total students: ${studentCount}, At risk: ${atRiskCount}.`
+                contents: `Executive briefing for level ${gradeLevel}. Total students: ${studentCount}, At risk: ${atRiskCount}. Highlight institutional health and resource efficacy.`,
+                config: { thinkingConfig: { thinkingBudget: 1000 } }
             });
             return response.text || "Briefing unavailable.";
         } catch (error) { return "Unable to generate briefing."; }
@@ -69,7 +81,7 @@ export class GeminiService {
             const ai = getAI();
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
-                contents: `Create ${type} for Level ${level} in ${domain}: ${promptText}`,
+                contents: `Create high-quality ${type} for Level ${level} in ${domain}: ${promptText}. Ensure it is curriculum-ready.`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, content: { type: Type.STRING } }, required: ["title", "description", "content"] }
@@ -84,13 +96,9 @@ export class GeminiService {
             const ai = getAI();
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Level: ${level}, Subject: ${domain}, Avg: ${avgScore}. Write a request for a practice activity.`
+                contents: `Level: ${level}, Subject: ${domain}, Avg Score: ${avgScore}%. Write a natural language request for a practice activity that addresses the specific needs of students at this level.`
             });
             return response.text?.trim() || "";
         } catch (error) { return `Create practice for ${domain}`; }
-    }
-
-    static async getRecommendedResources(domain: Domain, subdomain: string, level: string): Promise<Resource[]> {
-        return []; // Fallback for stability
     }
 }

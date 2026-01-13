@@ -13,26 +13,34 @@ export class GeminiService {
      * Safely retrieves the API key with validation
      */
     private static getApiKey(): string {
-        const key = process.env.API_KEY;
-        if (!key || key === 'undefined' || key.length < 5) {
-            throw new Error("Missing or Invalid API Key. Please ensure you have added a variable named 'API_KEY' in your Vercel project settings.");
+        try {
+            const key = process.env.API_KEY;
+            if (!key || key === 'undefined' || key.length < 5) {
+                throw new Error("API_KEY is not defined in the environment. Please check your Vercel project settings.");
+            }
+            return key;
+        } catch (e) {
+            throw new Error("System Environment Error: Could not access 'process.env.API_KEY'. Ensure your build process includes environment variables.");
         }
-        return key;
     }
 
     private static handleAiError(error: any): never {
         console.error("Gemini API Error Detail:", error);
-        const msg = error.message || "";
+        const msg = error.message || "Unknown AI Error";
         
-        if (msg.includes("API_KEY") || msg.includes("key") || msg.includes("unauthorized")) {
-             throw new Error("API Authentication Failed. Check your Vercel 'API_KEY' variable and redeploy.");
+        if (msg.includes("API_KEY") || msg.includes("key") || msg.includes("unauthorized") || msg.includes("401")) {
+             throw new Error("AI Authentication Failed. Your API Key may be invalid or not yet active. Check Vercel settings and try redeploying.");
         }
         
-        if (msg.includes("Quota") || msg.includes("limit")) {
-             throw new Error("AI capacity reached. Please try again in 60 seconds.");
+        if (msg.includes("Quota") || msg.includes("limit") || msg.includes("429")) {
+             throw new Error("AI Quota Reached. The free tier has a limit of 15 requests per minute. Please wait a moment.");
         }
 
-        throw error;
+        if (msg.includes("not found") || msg.includes("404")) {
+            throw new Error(`Model not found or API Key does not have access to this model version. (${msg})`);
+        }
+
+        throw new Error(`AI Engine Error: ${msg}`);
     }
 
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
@@ -60,7 +68,7 @@ export class GeminiService {
             const prompt = `Perform a technical ESL analysis for student ${student.name}. 
             Data: ${JSON.stringify(dataPayload)}
             Task: Provide a "report_card" (parent-facing) and "trend_insights" (teacher-facing). 
-            Terminologies: Never use 'mastery'. Use 'Outstanding' (90%+) or 'Excellent' (80-89%).`;
+            Terminologies: Never use 'mastery'. Use 'Outstanding' (90%+) or 'Excellent' (80-89%). Focus on learning velocity.`;
             
             const response = await ai.models.generateContent({
                 model,
@@ -104,7 +112,7 @@ export class GeminiService {
             Strongest: ${stats.strongest || 'Various'}
             Weakest: ${stats.weakest || 'Various'}
 
-            Instructions: Format in professional sections with bold headers. Summarize institutional health and growth forecast.`;
+            Instructions: Format in professional sections with bold headers. Summarize institutional health and growth forecast. Mention high performers by name.`;
 
             const response = await ai.models.generateContent({
                 model,

@@ -55,7 +55,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const createNewSession = () => {
         const apiKey = process.env.API_KEY;
         if (!apiKey || apiKey === 'undefined') {
-            throw new Error("API_KEY missing in project environment.");
+            throw new Error("API_KEY missing. Ensure you have added it to Vercel and redeployed.");
         }
 
         const ai = new GoogleGenAI({ apiKey });
@@ -147,10 +147,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: "The AI is currently unavailable. Please verify your API Key and connection.", 
+                text: `AI Error: ${error.message || "Connection timed out."}. Please check Vercel environment variables.`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);
+            // Force recreation of session on next message if it was a configuration error
+            chatSessionRef.current = null;
         } finally {
             setIsTyping(false);
         }

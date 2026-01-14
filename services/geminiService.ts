@@ -5,18 +5,16 @@ const sanitizeJson = (text: string) => {
     return text.replace(/```json/g, '').replace(/```/g, '').trim();
 };
 
+const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
 export class GeminiService {
-    private static clientPromise: Promise<GoogleGenAI> | null = null;
+    private static instance: GoogleGenAI | null = null;
+    private static lastRequestTime = 0;
+    private static MIN_REQUEST_GAP = 200; // Throttle: 200ms between any two calls
 
     /**
-     * Parallel Warm-up: Initiates the client handshake without blocking the UI.
+     * Resolves the AI client with lazy initialization.
      */
-    static warmup() {
-        if (!this.clientPromise) {
-            this.clientPromise = this.getClient();
-        }
-    }
-
     private static async getClient(): Promise<GoogleGenAI> {
         const win = window as any;
 
@@ -29,29 +27,69 @@ export class GeminiService {
                        (typeof process !== 'undefined' ? process.env.API_KEY : '') || 
                        win.API_KEY;
 
-        if (!apiKey || apiKey.length < 5) {
-            throw new Error("Connectivity Identity missing.");
+        if (!apiKey || String(apiKey).length < 5) {
+            throw new Error("Connectivity Identity not found.");
         }
 
-        return new GoogleGenAI({ apiKey });
+        if (!this.instance) {
+            this.instance = new GoogleGenAI({ apiKey });
+        }
+        return this.instance;
+    }
+
+    /**
+     * Exponential Backoff Wrapper
+     * Retries requests on 429 (Rate Limit) or 503 (Overloaded) errors.
+     */
+    private static async callWithRetry<T>(fn: () => Promise<T>, retries = 3, backoff = 2000): Promise<T> {
+        try {
+            // Internal Throttling: Ensure we don't fire requests too close together
+            const now = Date.now();
+            const timeSinceLast = now - this.lastRequestTime;
+            if (timeSinceLast < this.MIN_REQUEST_GAP) {
+                await delay(this.MIN_REQUEST_GAP - timeSinceLast);
+            }
+            this.lastRequestTime = Date.now();
+
+            return await fn();
+        } catch (error: any) {
+            const isRateLimit = error.message?.includes("429") || error.message?.toLowerCase().includes("rate limit");
+            const isOverloaded = error.message?.includes("503") || error.message?.toLowerCase().includes("overloaded");
+
+            if ((isRateLimit || isOverloaded) && retries > 0) {
+                console.warn(`[Gemini] Rate limited. Retrying in ${backoff}ms... (${retries} retries left)`);
+                await delay(backoff);
+                return this.callWithRetry(fn, retries - 1, backoff * 2);
+            }
+            throw error;
+        }
     }
 
     private static async handleError(error: any): Promise<never> {
-        console.error("[Gemini SDK Protocol Error]", error);
+        console.error("[Gemini Protocol Error]", error);
         const win = window as any;
-        if (win.aistudio && (error.message?.includes("401") || error.message?.includes("403"))) {
+        
+        const isAuthError = error.message?.includes("401") || error.message?.includes("403") || error.message?.includes("not found");
+        if (win.aistudio && isAuthError) {
+            this.instance = null; 
             await win.aistudio.openSelectKey();
         }
-        throw new Error(error.message || "AI Engine unavailable.");
+        
+        if (error.message?.includes("429")) {
+            throw new Error("AI Engine is currently at maximum capacity. Please wait a moment.");
+        }
+
+        throw new Error(error.message || "AI Engine communication failure.");
     }
 
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
-        try {
-            const ai = await (this.clientPromise || this.getClient());
+        return this.callWithRetry(async () => {
+            const ai = await this.getClient();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-pro-preview',
-                contents: `Perform high-level pedagogical analysis for ${student.name} (Lvl ${student.level}). Proficiency: ${student.overallGrowth}%. Velocity: ${student.growthVelocity}%. Output report_card and trend_insights.`,
+                contents: `High-level pedagogical analysis for ${student.name} (Lvl ${student.level}). Proficiency: ${student.overallGrowth}%. Velocity: ${student.growthVelocity}%. Provide 'report_card' and 'trend_insights'.`,
                 config: {
+                    thinkingConfig: { thinkingBudget: 0 },
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: Type.OBJECT,
@@ -64,32 +102,26 @@ export class GeminiService {
                 }
             });
             return JSON.parse(sanitizeJson(response.text || '{}'));
-        } catch (error: any) { 
-            return this.handleError(error);
-        }
+        }).catch(err => this.handleError(err));
     }
 
     static async generateClassInsight(gradeLevel: string, studentCount: number, stats: any): Promise<string> {
-        try {
-            const ai = await (this.clientPromise || this.getClient());
-            
-            // Parallel Execution: We could fetch multiple types of insights here if needed
+        return this.callWithRetry(async () => {
+            const ai = await this.getClient();
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Generate an Executive Performance Briefing for a class of ${studentCount} at Benchmark Level ${gradeLevel}. Avg Proficiency: ${stats.classAvg}%. Velocity: ${stats.avgVelocity}%. Strongest: ${stats.strongest}. Weakest: ${stats.weakest}.`
+                contents: `Executive Performance Briefing for class of ${studentCount} at Level ${gradeLevel}. Avg: ${stats.classAvg}%. Velocity: ${stats.avgVelocity}%. Strongest: ${stats.strongest}. Weakest: ${stats.weakest}.`
             });
             return response.text || "Analysis complete.";
-        } catch (error: any) { 
-            return this.handleError(error);
-        }
+        }).catch(err => this.handleError(err));
     }
 
     static async generateResourceContent(domain: Domain, subdomain: string, type: ResourceType, level: string, promptText: string): Promise<{ title: string; description: string; content: string } | null> {
-        try {
-            const ai = await (this.clientPromise || this.getClient());
+        return this.callWithRetry(async () => {
+            const ai = await this.getClient();
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
-                contents: `Create academic content (${type}) for Level ${level} ${domain}. Subject: ${subdomain}. Prompt: ${promptText}.`,
+                contents: `Generate ${type} content for Level ${level} ${domain} (${subdomain}). Prompt context: ${promptText}.`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: { 
@@ -100,19 +132,17 @@ export class GeminiService {
                 }
             });
             return JSON.parse(sanitizeJson(response.text || '{}'));
-        } catch (error) { 
-            return null; 
-        }
+        }).catch(() => null);
     }
 
     static async generateRemedialPrompt(domain: Domain, avgScore: number, level: string): Promise<string> {
-        try {
-            const ai = await (this.clientPromise || this.getClient());
+        return this.callWithRetry(async () => {
+            const ai = await this.getClient();
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Suggest remedial focus for Level ${level} students struggling with ${domain} (Avg: ${avgScore}%).`
+                contents: `Suggest focus area for Level ${level} students struggling with ${domain} (Avg: ${avgScore}%).`
             });
             return response.text?.trim() || `Intervention for ${domain}`;
-        } catch (error) { return `Create targeted practice for ${domain}`; }
+        }).catch(() => `Create practice for ${domain}`);
     }
 }

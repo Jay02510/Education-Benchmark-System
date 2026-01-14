@@ -13,7 +13,6 @@ import { LongitudinalGrowthChart } from '../components/charts/Charts';
 import { Modal } from '../components/common/Modal';
 import { AtRiskDetailsModal } from '../components/students/AtRiskDetailsModal';
 import { TABS } from '../constants';
-import { GeminiService } from '../services/geminiService';
 
 const DashboardWidget: React.FC<{ 
     title: string; 
@@ -25,8 +24,6 @@ const DashboardWidget: React.FC<{
     info?: string;
     onClick?: () => void;
 }> = ({ title, value, subtext, icon, gradient, textColor, info, onClick }) => {
-    const [showInfo, setShowInfo] = useState(false);
-
     return (
         <button 
             onClick={onClick}
@@ -56,7 +53,11 @@ export const StudentsTab: React.FC = () => {
     const { user } = useAuth();
     const { selectedStudentId, setSelectedStudentId, setActiveTab, setBulkEntryOpen } = useNavigation();
     
-    // Concurrent UI Logic
+    /**
+     * UI CONCURRENCY: THE CORRECT WAY
+     * We use startTransition to ensure search/filtering happens in a lower-priority 
+     * process, keeping the main thread (typing) buttery smooth.
+     */
     const [isPending, startTransition] = useTransition();
     const [searchTerm, setSearchTerm] = useState('');
     const [deferredSearch, setDeferredSearch] = useState('');
@@ -79,7 +80,6 @@ export const StudentsTab: React.FC = () => {
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearchTerm(value);
-        // Parallelizing State: Typing is instant, filtering is deferred
         startTransition(() => {
             setDeferredSearch(value);
         });
@@ -143,16 +143,9 @@ export const StudentsTab: React.FC = () => {
 
     const selectedStudent = selectedStudentId ? students.find(s => s.id === selectedStudentId) || null : null;
     
-    // Memoized filtered list using the deferred search term
     const filteredStudents = useMemo(() => {
         return students.filter(student => student.name.toLowerCase().includes(deferredSearch.toLowerCase()));
     }, [students, deferredSearch]);
-
-    const handleStudentInteraction = (id: string) => {
-        // Speculative Warm-up: Initialize AI engine while user is navigating
-        GeminiService.warmup();
-        setSelectedStudentId(id);
-    };
 
     if (selectedStudent) {
         return (
@@ -167,7 +160,7 @@ export const StudentsTab: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-center mb-10">
                 <div>
                     <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">Welcome, {user?.name.split(' ')[0]}</h1>
-                    <p className="text-slate-500 font-medium">Classroom analytics synchronized in parallel.</p>
+                    <p className="text-slate-500 font-medium italic">High-performance educator dashboard.</p>
                 </div>
                 <div className="mt-4 md:mt-0 flex items-center bg-white p-2 rounded-full shadow-sm border border-slate-100 ring-4 ring-slate-50">
                     <Icon name="search" className={`w-5 h-5 ml-3 transition-colors ${isPending ? 'text-indigo-500 animate-pulse' : 'text-slate-400'}`} />
@@ -213,7 +206,7 @@ export const StudentsTab: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-between items-end mb-8 gap-4">
                 <div>
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight">Student Roster</h2>
-                    <p className="text-slate-400 text-sm font-medium">Real-time cohort management</p>
+                    <p className="text-slate-400 text-sm font-medium">Cohort management</p>
                 </div>
                 <div className="flex gap-3 w-full sm:w-auto">
                     <button onClick={() => setBulkEntryOpen(true)} className="flex-1 sm:flex-none px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black hover:bg-slate-50 transition flex items-center justify-center gap-2 shadow-sm active:scale-95"><Icon name="benchmark" className="w-4 h-4 text-indigo-500" /><span className="text-xs uppercase tracking-widest">Batch Entry</span></button>
@@ -231,7 +224,7 @@ export const StudentsTab: React.FC = () => {
                         <StudentCard 
                             key={student.id} 
                             student={student} 
-                            onClick={() => handleStudentInteraction(student.id)} 
+                            onClick={() => setSelectedStudentId(student.id)} 
                         />
                     ))}
                 </div>

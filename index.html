@@ -6,25 +6,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Benchmark | Educator Analytics AI</title>
     
-    <!-- Parallel Network Hints -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://esm.sh" crossorigin>
-    <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script>
       /**
-       * HARDENED KERNEL BOOTSTRAP v9.1 (Parallel Ready)
+       * STABLE KERNEL BOOTSTRAP v9.2
+       * Synchronizes environment identity across all possible injection points.
        */
       (function() {
         const win = window;
         win.process = win.process || { env: {} };
         win.process.env = win.process.env || {};
         const k = win.process.env.API_KEY || win.process.env.VITE_API_KEY || win.API_KEY || (win.ENV && win.ENV.API_KEY) || "";
-        if (k) { win.process.env.API_KEY = k; win.API_KEY = k; }
+        if (k) {
+          win.process.env.API_KEY = k;
+          win.API_KEY = k;
+        }
       })();
     </script>
     <script type="importmap">
@@ -48,7 +50,7 @@
       body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: #f8fafc; overflow-x: hidden; }
       #root { min-height: 100vh; }
       #root:empty::before {
-        content: 'Initializing Benchmark Core...';
+        content: 'Benchmark Core Initializing...';
         display: flex;
         align-items: center;
         justify-content: center;

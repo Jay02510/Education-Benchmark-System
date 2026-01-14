@@ -37,24 +37,24 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const chatSessionRef = useRef<Chat | null>(null);
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
-    // Polling connection status to keep UI updated
+    // Monitoring connectivity with improved accuracy
     useEffect(() => {
         const checkConnection = async () => {
             try {
                 // @ts-ignore
                 const hasKey = await window.aistudio?.hasSelectedApiKey();
-                const keyExists = !!process.env.API_KEY && process.env.API_KEY.length > 5;
-                setIsAiActive(keyExists || !!hasKey);
+                const keyLength = process.env.API_KEY?.length || 0;
+                setIsAiActive(keyLength > 5 || !!hasKey);
             } catch {
                 setIsAiActive(false);
             }
         };
         checkConnection();
-        const interval = setInterval(checkConnection, 3000);
+        const interval = setInterval(checkConnection, 4000);
         return () => clearInterval(interval);
     }, []);
 
-    // Persona switch effect
+    // Identity switch reset
     useEffect(() => {
         const targetPersona = activeTab === TABS.ADMIN ? 'Admin' : 'Teacher';
         if (targetPersona !== currentPersona) {
@@ -63,27 +63,27 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages([{
                 id: `welcome-${Date.now()}`,
                 role: 'model',
-                text: targetPersona === 'Admin' ? "System Diagnostics Mode active." : "Benchmark AI Assistant connected. I'm ready to analyze your institutional data.",
+                text: targetPersona === 'Admin' ? "Admin Core diagnostics established." : "Benchmark AI Assistant connected. I'm ready to analyze your institutional data.",
                 timestamp: Date.now()
             }]);
         }
     }, [activeTab, currentPersona]);
 
+    /**
+     * Creates a new chat session using a fresh client instance.
+     * This is called JIT (Just In Time) to avoid stale keys.
+     */
     const createNewSession = async () => {
-        // Resolve Key
-        let apiKey = process.env.API_KEY;
-        
-        // Handshake check
         if (typeof window !== 'undefined' && (window as any).aistudio) {
             const hasKey = await (window as any).aistudio.hasSelectedApiKey();
             if (!hasKey) {
                 await (window as any).aistudio.openSelectKey();
             }
-            apiKey = process.env.API_KEY; // Re-read after handshake
         }
 
+        const apiKey = process.env.API_KEY;
         if (!apiKey || apiKey.length < 5) {
-            throw new Error("API Key not found. Please redeploy on Vercel with the API_KEY variable or click the offline badge.");
+            throw new Error("No Identity Key found. Please click 'Engine Offline' to connect.");
         }
         
         const ai = new GoogleGenAI({ apiKey });
@@ -124,15 +124,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 };
             case 'get_student_details':
                 const student = students.find(s => s.name.toLowerCase().includes(args.studentName.toLowerCase()));
-                if (!student) return { error: "Student not identified in current roster." };
+                if (!student) return { error: "Student not found in active roster." };
                 return {
                     name: student.name,
                     level: student.level,
                     velocity: `${student.growthVelocity}%`,
-                    intervention: student.interventionStatus?.tier || "None (Tier 1)"
+                    intervention: student.interventionStatus?.tier || "Tier 1"
                 };
             default:
-                return { status: "Data fetch success." };
+                return { status: "Data retrieved." };
         }
     };
 
@@ -141,6 +141,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsTyping(true);
 
         try {
+            // JIT initialization
             if (!chatSessionRef.current) {
                 chatSessionRef.current = await createNewSession();
             }
@@ -148,7 +149,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const chat = chatSessionRef.current;
             let result: GenerateContentResponse = await chat.sendMessage({ message: text });
             
-            // Handle tool loops
+            // Function calling recursion
             while (result.functionCalls && result.functionCalls.length > 0) {
                 const functionResponseParts = await Promise.all(
                     result.functionCalls.map(async (call) => {
@@ -164,21 +165,21 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: result.text || "Analysis processed.", 
+                text: result.text || "Analysis complete.", 
                 timestamp: Date.now() 
             }]);
         } catch (error: any) {
-            console.error("Chat engine error:", error);
+            console.error("Chat engine failure:", error);
             
-            // Auto-trigger handshake if model not found (often key-related)
-            if (error.message?.includes("Requested entity was not found")) {
+            // Check for specific entity errors (often key issues)
+            if (error.message?.includes("Requested entity was not found") || error.message?.includes("API_KEY")) {
                 reconnect();
             }
 
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Engine Error: ${error.message}. Please click 'Engine Offline' or redeploy your project on Vercel.`, 
+                text: `Identity Error: ${error.message || "Failed to resolve API key"}. Please click 'Engine Offline' to authenticate.`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

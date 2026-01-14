@@ -23,7 +23,6 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 const TEACHER_INSTRUCTION = `You are the Benchmark Institutional Assistant. Refer to 'Growth Velocity' and 'Proficiency Tiers'. Be professional, data-driven, and focused on learning outcomes.`;
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { students, classProfile } = useStudents();
     const { activeTab } = useNavigation();
 
     const [isOpen, setIsOpen] = useState(false);
@@ -33,11 +32,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const chatSessionRef = useRef<Chat | null>(null);
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
-    // Live Monitoring of API Key presence across all potential storage points
+    // Live Monitoring of API Key presence
     useEffect(() => {
         const monitor = setInterval(() => {
             const win = window as any;
-            const key = process.env.API_KEY || win.process?.env?.API_KEY || win.API_KEY;
+            const key = (win.process && win.process.env && win.process.env.API_KEY) || 
+                       (typeof process !== 'undefined' ? process.env.API_KEY : '') || 
+                       win.API_KEY;
             setIsAiActive(!!key && key.length > 5);
         }, 2000);
         return () => clearInterval(monitor);
@@ -65,7 +66,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!hasKey) await win.aistudio.openSelectKey();
         }
 
-        const apiKey = process.env.API_KEY || win.process?.env?.API_KEY || win.API_KEY;
+        const apiKey = (win.process && win.process.env && win.process.env.API_KEY) || 
+                       (typeof process !== 'undefined' ? process.env.API_KEY : '') || 
+                       win.API_KEY;
+
         if (!apiKey) throw new Error("Connectivity identity missing. Please connect your engine.");
         
         const ai = new GoogleGenAI({ apiKey });
@@ -84,8 +88,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await win.aistudio.openSelectKey();
             chatSessionRef.current = null;
         } else {
-            // Manual check for standard environment variable injection
-            const key = process.env.API_KEY || win.process?.env?.API_KEY || win.API_KEY;
+            const key = (win.process && win.process.env && win.process.env.API_KEY) || 
+                       (typeof process !== 'undefined' ? process.env.API_KEY : '') || 
+                       win.API_KEY;
             if (key && key.length > 5) {
                 setIsAiActive(true);
                 chatSessionRef.current = null;
@@ -117,7 +122,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Identity Error: ${error.message}. ${isAuthError ? "Please ensure your API_KEY is set in Vercel or click 'Engine Offline' to reconnect." : ""}`, 
+                text: `Identity Error: ${error.message}. ${isAuthError ? "Please ensure your API_KEY is correctly set in your environment or click 'Engine Offline' to reconnect." : ""}`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

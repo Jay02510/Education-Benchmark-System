@@ -8,12 +8,12 @@ const sanitizeJson = (text: string) => {
 export class GeminiService {
     /**
      * Resolves the API key and creates a fresh client instance.
-     * Checks both the built-in process.env and the window shim for resilience.
+     * Adheres strictly to the process.env.API_KEY mandate while providing shims for all environments.
      */
     private static async getClient(): Promise<GoogleGenAI> {
         const win = window as any;
 
-        // 1. Mandatory Handshake for Google AI Studio preview environments
+        // 1. Mandatory Handshake for Google AI Studio (only if the handshake tool is present)
         if (win.aistudio) {
             const hasKey = await win.aistudio.hasSelectedApiKey();
             if (!hasKey) {
@@ -21,11 +21,16 @@ export class GeminiService {
             }
         }
 
-        // 2. Resolve Key (dynamic check allows the kernel shim to work even if compiled)
+        // 2. Resolve Key using process.env.API_KEY
+        // Bundlers (like Vite/Webpack) usually inline this if configured in Vercel.
+        // We also check common shim locations.
         const apiKey = process.env.API_KEY || win.process?.env?.API_KEY || win.API_KEY;
 
         if (!apiKey || apiKey.length < 5) {
-            throw new Error("Connectivity Identity missing. Ensure API_KEY is set in Vercel or click 'Engine Offline' to connect.");
+            const msg = win.location.hostname === 'localhost' 
+                ? "API Key missing in Local Environment."
+                : "Connectivity Identity missing on Vercel. Ensure 'API_KEY' is added to Environment Variables and a new deployment is triggered.";
+            throw new Error(msg);
         }
 
         return new GoogleGenAI({ apiKey });
@@ -41,7 +46,7 @@ export class GeminiService {
             error.message?.includes("401") ||
             error.message?.includes("403");
 
-        // If in AI Studio and key fails, re-trigger the picker
+        // If in AI Studio context and key fails, re-trigger the picker
         if (isAuthError && win.aistudio) {
             await win.aistudio.openSelectKey();
         }

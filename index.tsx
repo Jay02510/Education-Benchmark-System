@@ -2,46 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 
-/**
- * Enhanced System Initialization Kernel
- * Ensures process.env.API_KEY is available globally and synchronized.
- */
-(function kernelBootstrap() {
-  if (typeof window !== 'undefined') {
-    const win = window as any;
-    
-    // 1. Initialize process hierarchy if missing
-    if (!win.process) win.process = { env: {} };
-    if (!win.process.env) win.process.env = {};
-    
-    // 2. Aggregate API_KEY from all possible injection points
-    // This handles Vercel envs, build tool inlining, and platform-specific shims
-    const resolvedKey = 
-      win.process.env.API_KEY || 
-      win.API_KEY || 
-      win.ENV?.API_KEY || 
-      (typeof process !== 'undefined' ? process.env?.API_KEY : '');
-    
-    if (resolvedKey && resolvedKey.length > 5) {
-        win.process.env.API_KEY = resolvedKey;
-        win.API_KEY = resolvedKey;
-        
-        // Ensure local 'process' variable is also updated if it exists in scope
-        try {
-          if (typeof process !== 'undefined' && process.env) {
-            process.env.API_KEY = resolvedKey;
-          }
-        } catch (e) {
-          // Non-critical: some environments restrict access to 'process'
-        }
-        
-        console.debug("[Kernel] Connectivity identity verified.");
-    } else {
-        console.warn("[Kernel] Connectivity identity not found. Application will start in Local-Only mode.");
-    }
-  }
-})();
-
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {

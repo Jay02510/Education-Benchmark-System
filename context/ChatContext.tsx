@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { ChatMessage } from '../types.ts';
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { teacherTools, adminTools } from '../services/agentTools.ts';
-import { useStudents } from './StudentContext.tsx';
 import { useNavigation } from './NavigationContext.tsx';
 import { TABS } from '../constants.ts';
 
@@ -32,19 +31,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const chatSessionRef = useRef<Chat | null>(null);
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
-    // Live Monitoring of API Key presence
+    // Robust Engine Status Monitor
     useEffect(() => {
         const monitor = setInterval(() => {
             const win = window as any;
             const key = (win.process && win.process.env && win.process.env.API_KEY) || 
                        (typeof process !== 'undefined' ? process.env.API_KEY : '') || 
                        win.API_KEY;
-            setIsAiActive(!!key && key.length > 5);
-        }, 2000);
+            // Verify key is non-empty and has plausible length
+            setIsAiActive(!!key && String(key).length > 10);
+        }, 1500);
         return () => clearInterval(monitor);
     }, []);
 
-    // Persona Logic
+    // Automatic Persona Alignment
     useEffect(() => {
         const targetPersona = activeTab === TABS.ADMIN ? 'Admin' : 'Teacher';
         if (targetPersona !== currentPersona) {
@@ -53,7 +53,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages([{
                 id: `welcome-${Date.now()}`,
                 role: 'model',
-                text: targetPersona === 'Admin' ? "Admin diagnostics online." : "Benchmark AI Assistant connected. Ready for data analysis.",
+                text: targetPersona === 'Admin' ? "Admin diagnostics protocol online." : "Benchmark Assistant ready for institutional analysis.",
                 timestamp: Date.now()
             }]);
         }
@@ -66,17 +66,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!hasKey) await win.aistudio.openSelectKey();
         }
 
-        const apiKey = (win.process && win.process.env && win.process.env.API_KEY) || 
-                       (typeof process !== 'undefined' ? process.env.API_KEY : '') || 
-                       win.API_KEY;
+        const apiKey = (win.process && win.process.env && win.process.env.API_KEY) || win.API_KEY;
 
-        if (!apiKey) throw new Error("Connectivity identity missing. Please connect your engine.");
+        if (!apiKey) throw new Error("Connectivity identity missing. Please re-deploy or reconnect.");
         
         const ai = new GoogleGenAI({ apiKey });
         return ai.chats.create({
             model: 'gemini-3-flash-preview',
             config: {
-                systemInstruction: currentPersona === 'Teacher' ? TEACHER_INSTRUCTION : "Admin diagnostics mode.",
+                systemInstruction: currentPersona === 'Teacher' ? TEACHER_INSTRUCTION : "Admin maintenance mode.",
                 tools: [{ functionDeclarations: currentPersona === 'Teacher' ? teacherTools : adminTools }],
             }
         });
@@ -88,18 +86,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await win.aistudio.openSelectKey();
             chatSessionRef.current = null;
         } else {
-            const key = (win.process && win.process.env && win.process.env.API_KEY) || 
-                       (typeof process !== 'undefined' ? process.env.API_KEY : '') || 
-                       win.API_KEY;
-            if (key && key.length > 5) {
+            // Manual fallback if environment fails
+            const manualKey = prompt("Enter Benchmark API Key (Leave blank to use environment):");
+            if (manualKey) {
+                win.API_KEY = manualKey;
+                win.process.env.API_KEY = manualKey;
                 setIsAiActive(true);
-                chatSessionRef.current = null;
             }
+            chatSessionRef.current = null;
         }
     };
 
     const sendMessage = async (text: string) => {
-        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() }]);
+        const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() };
+        setMessages(prev => [...prev, userMsg]);
         setIsTyping(true);
 
         try {
@@ -111,18 +111,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: result.text || "Analysis complete.", 
+                text: result.text || "Protocols complete. No further insights found.", 
                 timestamp: Date.now() 
             }]);
         } catch (error: any) {
-            console.error("Chat Failure:", error);
-            
-            const isAuthError = error.message?.includes("API key not valid") || error.message?.includes("identity missing");
+            console.error("Chat Protocol Error:", error);
             
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Identity Error: ${error.message}. ${isAuthError ? "Please ensure your API_KEY is correctly set in your environment or click 'Engine Offline' to reconnect." : ""}`, 
+                text: `Identity Failure: ${error.message}. Please click 'Engine Offline' to manually connect.`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

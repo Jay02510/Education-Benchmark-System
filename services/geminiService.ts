@@ -7,13 +7,13 @@ const sanitizeJson = (text: string) => {
 
 export class GeminiService {
     /**
-     * Resolves the API key and creates a fresh client instance.
-     * Looks for process.env.API_KEY as mandated, with fallback shims.
+     * Resolves the connectivity identity. 
+     * Prioritizes process.env.API_KEY as per mandatory guidelines.
      */
     private static async getClient(): Promise<GoogleGenAI> {
         const win = window as any;
 
-        // 1. Mandatory Handshake for Google AI Studio (e.g. preview environments)
+        // 1. AI Studio Handshake (Mandatory for Preview)
         if (win.aistudio) {
             const hasKey = await win.aistudio.hasSelectedApiKey();
             if (!hasKey) {
@@ -21,24 +21,20 @@ export class GeminiService {
             }
         }
 
-        // 2. Resolve Key using process.env.API_KEY
-        // We check the specific locations synchronized by our kernel shim.
+        // 2. Multi-point Key Resolution
         const apiKey = (win.process && win.process.env && win.process.env.API_KEY) || 
                        (typeof process !== 'undefined' ? process.env.API_KEY : '') || 
                        win.API_KEY;
 
         if (!apiKey || apiKey.length < 5) {
-            const msg = win.location.hostname === 'localhost' 
-                ? "API Key missing in local .env" 
-                : "Connectivity Identity missing. Ensure API_KEY is set in Vercel environment variables.";
-            throw new Error(msg);
+            throw new Error("Connectivity Identity not found. Access Environment Variables in Vercel to verify.");
         }
 
         return new GoogleGenAI({ apiKey });
     }
 
     private static async handleError(error: any): Promise<never> {
-        console.error("[Gemini SDK Exception]", error);
+        console.error("[Gemini SDK Protocol Error]", error);
         
         const win = window as any;
         const isAuthError = 
@@ -47,12 +43,11 @@ export class GeminiService {
             error.message?.includes("401") ||
             error.message?.includes("403");
 
-        // If in an AI Studio context and key fails, re-trigger the picker
         if (isAuthError && win.aistudio) {
             await win.aistudio.openSelectKey();
         }
 
-        throw new Error(error.message || "The AI engine encountered a communication error.");
+        throw new Error(error.message || "Protocol Failure: AI Engine unavailable.");
     }
 
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
@@ -60,14 +55,14 @@ export class GeminiService {
             const ai = await this.getClient();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-pro-preview',
-                contents: `Analyze student ${student.name} (Level ${student.level}). Proficiency: ${student.overallGrowth}%. Provide 'report_card' and 'trend_insights'.`,
+                contents: `Perform high-level pedagogical analysis for ${student.name} (Lvl ${student.level}). Proficiency: ${student.overallGrowth}%. Velocity: ${student.growthVelocity}%. Output report_card and trend_insights.`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: { 
-                            report_card: { type: Type.STRING }, 
-                            trend_insights: { type: Type.STRING } 
+                            report_card: { type: Type.STRING, description: "Professional summary for parents." }, 
+                            trend_insights: { type: Type.STRING, description: "Strategic insight for teachers." } 
                         },
                         required: ["report_card", "trend_insights"]
                     }
@@ -84,9 +79,9 @@ export class GeminiService {
             const ai = await this.getClient();
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Briefing for class of ${studentCount} at Level ${gradeLevel}. Avg: ${stats.classAvg}%. Velocity: ${stats.avgVelocity}%. Strongest: ${stats.strongest}. Weakest: ${stats.weakest}.`
+                contents: `Generate an Executive Performance Briefing for a class of ${studentCount} at Benchmark Level ${gradeLevel}. Avg Proficiency: ${stats.classAvg}%. Velocity: ${stats.avgVelocity}%.`
             });
-            return response.text || "Analysis complete.";
+            return response.text || "Diagnostic summary complete.";
         } catch (error: any) { 
             return this.handleError(error);
         }
@@ -97,12 +92,16 @@ export class GeminiService {
             const ai = await this.getClient();
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
-                contents: `Generate ${type} for Level ${level} ${domain}. Context: ${promptText}.`,
+                contents: `Create academic content (${type}) for Level ${level} in the ${domain} domain. Subject: ${subdomain}. Prompt: ${promptText}.`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: { 
                         type: Type.OBJECT, 
-                        properties: { title: { type: Type.STRING }, description: { type: Type.STRING }, content: { type: Type.STRING } }, 
+                        properties: { 
+                            title: { type: Type.STRING }, 
+                            description: { type: Type.STRING }, 
+                            content: { type: Type.STRING } 
+                        }, 
                         required: ["title", "description", "content"] 
                     }
                 }
@@ -118,9 +117,9 @@ export class GeminiService {
             const ai = await this.getClient();
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Generate intervention focus for Level ${level} struggling with ${domain} (Avg: ${avgScore}%).`
+                contents: `Suggest a remedial focus for Level ${level} students struggling with ${domain} (Class Avg: ${avgScore}%).`
             });
             return response.text?.trim() || `Intervention for ${domain}`;
-        } catch (error) { return `Create practice for ${domain}`; }
+        } catch (error) { return `Create targeted practice for ${domain}`; }
     }
 }

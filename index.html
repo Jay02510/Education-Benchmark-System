@@ -4,30 +4,30 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Benchmark App | Professional Educator Analytics</title>
+    <title>Benchmark | Educator Analytics AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
       /**
-       * Primary Kernel Bootstrap
-       * Executes before module resolution to ensure process.env is ready and synchronized.
+       * HARDENED KERNEL BOOTSTRAP v9.0
+       * Ensures environment parity between Vercel, Local, and AI Studio.
        */
       (function() {
         const win = window;
         win.process = win.process || { env: {} };
         win.process.env = win.process.env || {};
         
-        // Resolve API_KEY from all possible injection points (Vercel, Build Tools, window globals)
-        const key = win.process.env.API_KEY || win.API_KEY || (win.ENV && win.ENV.API_KEY) || "";
+        // Comprehensive key resolution strategy
+        const k = win.process.env.API_KEY || win.process.env.VITE_API_KEY || win.API_KEY || (win.ENV && win.ENV.API_KEY) || "";
         
-        if (key) {
-          win.process.env.API_KEY = key;
-          win.API_KEY = key;
-          console.debug("[Kernel] Connectivity identity synchronized.");
+        if (k) {
+          win.process.env.API_KEY = k;
+          win.API_KEY = k;
+          console.debug("[Kernel] Identity Resolved.");
         } else {
-          console.warn("[Kernel] Connectivity identity not found at boot. Local-only mode active.");
+          console.warn("[Kernel] Identity Missing. Switching to Setup Mode.");
         }
       })();
     </script>
@@ -52,7 +52,7 @@
       body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: #f8fafc; overflow-x: hidden; }
       #root { min-height: 100vh; }
       #root:empty::before {
-        content: 'Loading Kernel...';
+        content: 'Initializing Benchmark Core...';
         display: flex;
         align-items: center;
         justify-content: center;

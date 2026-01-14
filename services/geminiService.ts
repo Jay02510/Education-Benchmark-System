@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Domain, ResourceType } from '../types.ts';
 
@@ -8,22 +7,24 @@ const sanitizeJson = (text: string) => {
 
 export class GeminiService {
     /**
-     * Resolves the API key and creates a fresh client.
-     * Prioritizes the environment variable but falls back to the system handshake.
+     * Resolves the API key with robust fallbacks for different deployment environments.
      */
     private static async getClient(): Promise<GoogleGenAI> {
-        // Check for high-tier key selection handshake
-        if (typeof window !== 'undefined' && (window as any).aistudio) {
-            const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+        const win = window as any;
+
+        // 1. Handshake for AI Studio / Preview environments
+        if (win.aistudio) {
+            const hasKey = await win.aistudio.hasSelectedApiKey();
             if (!hasKey) {
-                // Mandatory step for production/Vercel environments
-                await (window as any).aistudio.openSelectKey();
-                // Proceed immediately per instructions (mitigate race condition)
+                await win.aistudio.openSelectKey();
             }
         }
 
-        const apiKey = process.env.API_KEY;
+        // 2. Resolve Key (check shimmed process, global window, and AI Studio provided env)
+        const apiKey = process.env.API_KEY || win.API_KEY || win.process?.env?.API_KEY;
+
         if (!apiKey || apiKey.length < 5) {
+            console.error("[Gemini] API Key missing. Ensure API_KEY is set in Vercel/Environment.");
             throw new Error("Connectivity Identity required. Please click the status badge to connect your engine.");
         }
 
@@ -31,18 +32,20 @@ export class GeminiService {
     }
 
     /**
-     * Common error handler to detect when a key needs to be re-selected.
-     * Fix: Explicitly typed as Promise<never> to satisfy TS return requirements in calling functions.
+     * Common error handler to detect when a key needs to be re-selected or if model is unavailable.
      */
     private static async handleError(error: any): Promise<never> {
         console.error("Gemini Service Error:", error);
         
-        // Specific requirement: if "entity not found", re-trigger key selection
-        if (error.message?.includes("Requested entity was not found") || error.message?.includes("API_KEY")) {
-            if (typeof window !== 'undefined' && (window as any).aistudio) {
-                await (window as any).aistudio.openSelectKey();
-            }
+        const win = window as any;
+        const isEntityError = error.message?.includes("Requested entity was not found");
+        const isAuthError = error.message?.includes("API key not valid") || error.message?.includes("401") || error.message?.includes("403");
+
+        if ((isEntityError || isAuthError) && win.aistudio) {
+            console.warn("[Gemini] Authentication or Model error detected. Prompting for key re-selection.");
+            await win.aistudio.openSelectKey();
         }
+
         throw new Error(error.message || "The AI engine encountered a communication error.");
     }
 
@@ -79,7 +82,6 @@ export class GeminiService {
             
             return JSON.parse(sanitizeJson(response.text || '{}'));
         } catch (error: any) { 
-            // Fix: Calling async handleError which returns Promise<never>
             return this.handleError(error);
         }
     }
@@ -99,7 +101,6 @@ export class GeminiService {
             const response = await ai.models.generateContent({ model, contents: prompt });
             return response.text || "Briefing analysis completed.";
         } catch (error: any) { 
-            // Fix: Calling async handleError which returns Promise<never>
             return this.handleError(error);
         }
     }

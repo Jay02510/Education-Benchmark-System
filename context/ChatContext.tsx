@@ -40,11 +40,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Monitoring connectivity and key selection
     useEffect(() => {
         const checkConnection = async () => {
+            const win = window as any;
             try {
-                // @ts-ignore
-                const hasKey = await window.aistudio?.hasSelectedApiKey();
-                const envKey = process.env.API_KEY;
-                // AI is active if we have a direct key or the user has selected one in AI Studio
+                const hasKey = await win.aistudio?.hasSelectedApiKey();
+                const envKey = process.env.API_KEY || win.API_KEY || win.process?.env?.API_KEY;
                 setIsAiActive((envKey && envKey.length > 5) || !!hasKey);
             } catch {
                 setIsAiActive(false);
@@ -60,7 +59,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const targetPersona = activeTab === TABS.ADMIN ? 'Admin' : 'Teacher';
         if (targetPersona !== currentPersona) {
             setCurrentPersona(targetPersona);
-            chatSessionRef.current = null; // Clear session to re-init with new instructions/tools
+            chatSessionRef.current = null;
             setMessages([{
                 id: `welcome-${Date.now()}`,
                 role: 'model',
@@ -74,17 +73,21 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
      * Re-creates the chat session with a fresh client.
      */
     const createNewSession = async () => {
-        // Trigger key handshake if necessary
-        if (typeof window !== 'undefined' && (window as any).aistudio) {
-            const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+        const win = window as any;
+        
+        // 1. Handshake
+        if (win.aistudio) {
+            const hasKey = await win.aistudio.hasSelectedApiKey();
             if (!hasKey) {
-                await (window as any).aistudio.openSelectKey();
+                await win.aistudio.openSelectKey();
             }
         }
 
-        const apiKey = process.env.API_KEY;
+        // 2. Key Resolution
+        const apiKey = process.env.API_KEY || win.API_KEY || win.process?.env?.API_KEY;
+
         if (!apiKey || apiKey.length < 5) {
-            throw new Error("No API Key detected. Please click 'Engine Offline' to connect your account.");
+            throw new Error("API Key not detected. Ensure it's set in your deployment environment or click 'Engine Offline' to authenticate.");
         }
         
         const ai = new GoogleGenAI({ apiKey });
@@ -100,12 +103,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const reconnect = async () => {
-        // @ts-ignore
-        if (window.aistudio) {
-            // @ts-ignore
-            await window.aistudio.openSelectKey();
-            // Clear current invalid session
+        const win = window as any;
+        if (win.aistudio) {
+            await win.aistudio.openSelectKey();
             chatSessionRef.current = null;
+        } else {
+            // Manual check if standalone
+            const apiKey = process.env.API_KEY || win.API_KEY || win.process?.env?.API_KEY;
+            setIsAiActive(!!apiKey && apiKey.length > 5);
         }
     };
 
@@ -126,8 +131,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     atRiskCount: students.filter(s => s.hasAnomaly).length
                 };
             case 'get_student_details':
-                const student = students.find(s => s.name.toLowerCase().includes(args.studentName.toLowerCase()));
-                if (!student) return { error: "Student not found in active database." };
+                const studentName = args.studentName?.toLowerCase() || '';
+                const student = students.find(s => s.name.toLowerCase().includes(studentName));
+                if (!student) return { error: `Student "${args.studentName}" not found in active database.` };
                 return {
                     name: student.name,
                     level: student.level,
@@ -144,7 +150,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsTyping(true);
 
         try {
-            // JIT Re-initialization
             if (!chatSessionRef.current) {
                 chatSessionRef.current = await createNewSession();
             }
@@ -152,7 +157,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const chat = chatSessionRef.current;
             let result: GenerateContentResponse = await chat.sendMessage({ message: text });
             
-            // Loop through function calls if the model requests tools
             while (result.functionCalls && result.functionCalls.length > 0) {
                 const functionResponseParts = await Promise.all(
                     result.functionCalls.map(async (call) => {
@@ -174,15 +178,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (error: any) {
             console.error("Chat failure:", error);
             
-            // Handle key rotation or invalid project selection
-            if (error.message?.includes("Requested entity was not found") || error.message?.includes("API_KEY")) {
+            const isAuthOrEntityError = error.message?.includes("Requested entity was not found") || error.message?.includes("API key not valid");
+            
+            if (isAuthOrEntityError) {
                 reconnect();
             }
 
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Identity Error: ${error.message}. Please click the engine status badge to re-authenticate.`, 
+                text: `Identity Error: ${error.message}. Ensure your project has the Gemini API enabled and the key is valid.`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

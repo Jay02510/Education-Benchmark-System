@@ -7,41 +7,39 @@ const sanitizeJson = (text: string) => {
 
 export class GeminiService {
     /**
-     * Strictly resolves the API key as per SDK guidelines.
+     * Resolves the API key and creates a fresh client instance.
+     * Mandatory for ensuring up-to-date keys from the UI dialog.
      */
     private static async getClient(): Promise<GoogleGenAI> {
         const win = window as any;
 
-        // Mandated handshake for AI Studio environments
+        // 1. Mandatory Handshake for Google AI Studio environments
         if (win.aistudio) {
             const hasKey = await win.aistudio.hasSelectedApiKey();
             if (!hasKey) {
                 await win.aistudio.openSelectKey();
-                // We proceed immediately per core instructions
             }
         }
 
-        // Robust key resolution across shims and environments
-        const apiKey = (typeof process !== 'undefined' && process.env?.API_KEY) || 
-                       win.process?.env?.API_KEY || 
-                       win.API_KEY;
+        // 2. Strict key retrieval
+        const apiKey = process.env.API_KEY;
 
         if (!apiKey || apiKey.length < 5) {
-            throw new Error("Connectivity Identity missing. Please connect your engine via the status button in the chat widget.");
+            throw new Error("Connectivity Identity missing. Please ensure API_KEY is set in Vercel or connected via the AI Status button.");
         }
 
         return new GoogleGenAI({ apiKey });
     }
 
     private static async handleError(error: any): Promise<never> {
-        console.error("[Gemini SDK Error]", error);
+        console.error("[Gemini SDK Exception]", error);
         
         const win = window as any;
-        const isAuthError = error.message?.includes("Requested entity was not found") || 
+        const isAuthError = error.message?.includes("entity was not found") || 
                            error.message?.includes("API key not valid") ||
-                           error.message?.includes("401") ||
-                           error.message?.includes("403");
+                           error.message?.includes("401");
 
+        // If the key is invalid or lost, trigger the selection dialog again
         if (isAuthError && win.aistudio) {
             await win.aistudio.openSelectKey();
         }
@@ -52,34 +50,21 @@ export class GeminiService {
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
         try {
             const ai = await this.getClient();
-            const model = 'gemini-3-pro-preview';
-            
-            const sortedAssessments = [...student.assessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            const latest = sortedAssessments[sortedAssessments.length - 1];
-            const scores = latest ? Object.values(latest.scores) as number[] : [];
-            const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
-
-            const prompt = `Persona: Senior Pedagogical Consultant. 
-            Analyze student ${student.name} (Level ${student.level}).
-            Current Proficiency: ${avg}%. Growth Velocity: ${student.growthVelocity}%.
-            Task: 
-            1. 'report_card': A formal, professional summary for parents.
-            2. 'trend_insights': A technical analysis for teachers.
-            Constraint: Use professional academic terminology. Focus on learning acceleration.`;
-            
             const response = await ai.models.generateContent({
-                model,
-                contents: prompt,
+                model: 'gemini-3-pro-preview',
+                contents: `Analyze student ${student.name} (Level ${student.level}). Proficiency: ${student.overallGrowth}%. Growth Velocity: ${student.growthVelocity}%. Provide 'report_card' (for parents) and 'trend_insights' (for teachers).`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: Type.OBJECT,
-                        properties: { report_card: { type: Type.STRING }, trend_insights: { type: Type.STRING } },
+                        properties: { 
+                            report_card: { type: Type.STRING }, 
+                            trend_insights: { type: Type.STRING } 
+                        },
                         required: ["report_card", "trend_insights"]
                     }
                 }
             });
-            
             return JSON.parse(sanitizeJson(response.text || '{}'));
         } catch (error: any) { 
             return this.handleError(error);
@@ -89,18 +74,11 @@ export class GeminiService {
     static async generateClassInsight(gradeLevel: string, studentCount: number, stats: any): Promise<string> {
         try {
             const ai = await this.getClient();
-            const prompt = `Write an 'Executive Performance Briefing' for school leadership.
-            Class: Level ${gradeLevel} | Cohort Size: ${studentCount}
-            Avg Proficiency: ${stats.classAvg}% | Velocity: ${stats.avgVelocity}%
-            Risk Profile: ${stats.interventionCount} students requiring support.
-            
-            Structure: 1. Institutional Health, 2. Growth Forecast, 3. Strategic Recommendations.`;
-
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: prompt 
+                contents: `Write an 'Executive Performance Briefing' for a class of ${studentCount} at Level ${gradeLevel}. Avg: ${stats.classAvg}%. Velocity: ${stats.avgVelocity}%.`
             });
-            return response.text || "Briefing analysis completed.";
+            return response.text || "Analysis complete.";
         } catch (error: any) { 
             return this.handleError(error);
         }
@@ -123,7 +101,6 @@ export class GeminiService {
             });
             return JSON.parse(sanitizeJson(response.text || '{}'));
         } catch (error) { 
-            console.error("Resource Gen Error:", error);
             return null; 
         }
     }
@@ -133,7 +110,7 @@ export class GeminiService {
             const ai = await this.getClient();
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Class average is ${avgScore}% in ${domain}. Generate a professional intervention focus for Level ${level}.`
+                contents: `Generate an intervention focus for Level ${level} students struggling with ${domain} (Avg: ${avgScore}%).`
             });
             return response.text?.trim() || `Intervention for ${domain}`;
         } catch (error) { return `Create practice for ${domain}`; }

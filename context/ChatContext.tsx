@@ -25,6 +25,18 @@ Be professional, data-driven, and focused on learning outcomes.`;
 
 const ADMIN_INSTRUCTION = `Admin System Monitor active. Core infrastructure verified.`;
 
+/**
+ * Accesses the API key safely from the environment.
+ */
+const getSafeApiKey = (): string => {
+    try {
+        // @ts-ignore
+        return (typeof process !== 'undefined' && process.env) ? process.env.API_KEY || '' : '';
+    } catch {
+        return '';
+    }
+};
+
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { students, classProfile } = useStudents();
     const { activeTab } = useNavigation();
@@ -37,9 +49,21 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
     useEffect(() => {
-        // Simple heartbeat check for the environment key
-        const key = process.env.API_KEY;
+        // Initial heartbeat check
+        const key = getSafeApiKey();
         setIsAiActive(!!key && key !== 'undefined');
+        
+        // Polling for the key (Vercel injection can sometimes be slightly delayed in browser)
+        if (!key) {
+            const poll = setInterval(() => {
+                const currentKey = getSafeApiKey();
+                if (currentKey) {
+                    setIsAiActive(true);
+                    clearInterval(poll);
+                }
+            }, 2000);
+            return () => clearInterval(poll);
+        }
     }, []);
 
     useEffect(() => {
@@ -57,7 +81,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [activeTab, currentPersona]);
 
     const createNewSession = () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+        const apiKey = getSafeApiKey();
+        if (!apiKey) throw new Error("Handshake Pending");
+        
+        const ai = new GoogleGenAI({ apiKey });
         const isTeacher = currentPersona === 'Teacher';
         return ai.chats.create({
             model: 'gemini-3-flash-preview',
@@ -133,10 +160,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }]);
         } catch (error: any) {
             console.error("Chat error:", error);
+            const apiKey = getSafeApiKey();
+            const msg = !apiKey 
+                ? "Secure Handshake Pending: The application is waiting for environment variables to be injected by the host. Please refresh the page if this persists."
+                : "The AI engine is establishing a connection. Please try again in a moment.";
+
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: "The AI engine is establishing a secure handshake. Please refresh the page in a moment to complete the connection.", 
+                text: msg, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

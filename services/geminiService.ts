@@ -8,12 +8,12 @@ const sanitizeJson = (text: string) => {
 export class GeminiService {
     /**
      * Resolves the API key and creates a fresh client instance.
-     * Adheres strictly to the process.env.API_KEY mandate while providing shims for all environments.
+     * Looks for process.env.API_KEY as mandated, with fallback shims.
      */
     private static async getClient(): Promise<GoogleGenAI> {
         const win = window as any;
 
-        // 1. Mandatory Handshake for Google AI Studio (only if the handshake tool is present)
+        // 1. Mandatory Handshake for Google AI Studio (e.g. preview environments)
         if (win.aistudio) {
             const hasKey = await win.aistudio.hasSelectedApiKey();
             if (!hasKey) {
@@ -22,14 +22,15 @@ export class GeminiService {
         }
 
         // 2. Resolve Key using process.env.API_KEY
-        // Bundlers (like Vite/Webpack) usually inline this if configured in Vercel.
-        // We also check common shim locations.
-        const apiKey = process.env.API_KEY || win.process?.env?.API_KEY || win.API_KEY;
+        // We check the specific locations synchronized by our kernel shim.
+        const apiKey = (win.process && win.process.env && win.process.env.API_KEY) || 
+                       (typeof process !== 'undefined' ? process.env.API_KEY : '') || 
+                       win.API_KEY;
 
         if (!apiKey || apiKey.length < 5) {
             const msg = win.location.hostname === 'localhost' 
-                ? "API Key missing in Local Environment."
-                : "Connectivity Identity missing on Vercel. Ensure 'API_KEY' is added to Environment Variables and a new deployment is triggered.";
+                ? "API Key missing in local .env" 
+                : "Connectivity Identity missing. Ensure API_KEY is set in Vercel environment variables.";
             throw new Error(msg);
         }
 
@@ -46,7 +47,7 @@ export class GeminiService {
             error.message?.includes("401") ||
             error.message?.includes("403");
 
-        // If in AI Studio context and key fails, re-trigger the picker
+        // If in an AI Studio context and key fails, re-trigger the picker
         if (isAuthError && win.aistudio) {
             await win.aistudio.openSelectKey();
         }
@@ -59,7 +60,7 @@ export class GeminiService {
             const ai = await this.getClient();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-pro-preview',
-                contents: `Analyze student ${student.name} (Level ${student.level}). Proficiency: ${student.overallGrowth}%. Growth Velocity: ${student.growthVelocity}%. Provide 'report_card' (for parents) and 'trend_insights' (for teachers).`,
+                contents: `Analyze student ${student.name} (Level ${student.level}). Proficiency: ${student.overallGrowth}%. Provide 'report_card' and 'trend_insights'.`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: {
@@ -83,7 +84,7 @@ export class GeminiService {
             const ai = await this.getClient();
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Write an 'Executive Performance Briefing' for a class of ${studentCount} at Level ${gradeLevel}. Avg: ${stats.classAvg}%. Velocity: ${stats.avgVelocity}%.`
+                contents: `Briefing for class of ${studentCount} at Level ${gradeLevel}. Avg: ${stats.classAvg}%. Velocity: ${stats.avgVelocity}%. Strongest: ${stats.strongest}. Weakest: ${stats.weakest}.`
             });
             return response.text || "Analysis complete.";
         } catch (error: any) { 
@@ -96,7 +97,7 @@ export class GeminiService {
             const ai = await this.getClient();
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
-                contents: `Create academic material (${type}) for Level ${level} ${domain}. Context: ${promptText}.`,
+                contents: `Generate ${type} for Level ${level} ${domain}. Context: ${promptText}.`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: { 
@@ -117,7 +118,7 @@ export class GeminiService {
             const ai = await this.getClient();
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Generate an intervention focus for Level ${level} students struggling with ${domain} (Avg: ${avgScore}%).`
+                contents: `Generate intervention focus for Level ${level} struggling with ${domain} (Avg: ${avgScore}%).`
             });
             return response.text?.trim() || `Intervention for ${domain}`;
         } catch (error) { return `Create practice for ${domain}`; }

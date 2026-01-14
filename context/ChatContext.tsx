@@ -37,43 +37,44 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const chatSessionRef = useRef<Chat | null>(null);
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
-    // Monitoring connectivity with improved accuracy
+    // Monitoring connectivity and key selection
     useEffect(() => {
         const checkConnection = async () => {
             try {
                 // @ts-ignore
                 const hasKey = await window.aistudio?.hasSelectedApiKey();
-                const keyLength = process.env.API_KEY?.length || 0;
-                setIsAiActive(keyLength > 5 || !!hasKey);
+                const envKey = process.env.API_KEY;
+                // AI is active if we have a direct key or the user has selected one in AI Studio
+                setIsAiActive((envKey && envKey.length > 5) || !!hasKey);
             } catch {
                 setIsAiActive(false);
             }
         };
         checkConnection();
-        const interval = setInterval(checkConnection, 4000);
+        const interval = setInterval(checkConnection, 3000);
         return () => clearInterval(interval);
     }, []);
 
-    // Identity switch reset
+    // Persona switch effect
     useEffect(() => {
         const targetPersona = activeTab === TABS.ADMIN ? 'Admin' : 'Teacher';
         if (targetPersona !== currentPersona) {
             setCurrentPersona(targetPersona);
-            chatSessionRef.current = null;
+            chatSessionRef.current = null; // Clear session to re-init with new instructions/tools
             setMessages([{
                 id: `welcome-${Date.now()}`,
                 role: 'model',
-                text: targetPersona === 'Admin' ? "Admin Core diagnostics established." : "Benchmark AI Assistant connected. I'm ready to analyze your institutional data.",
+                text: targetPersona === 'Admin' ? "Admin diagnostics system online." : "Benchmark AI Assistant connected. I'm ready to analyze your institutional data.",
                 timestamp: Date.now()
             }]);
         }
     }, [activeTab, currentPersona]);
 
     /**
-     * Creates a new chat session using a fresh client instance.
-     * This is called JIT (Just In Time) to avoid stale keys.
+     * Re-creates the chat session with a fresh client.
      */
     const createNewSession = async () => {
+        // Trigger key handshake if necessary
         if (typeof window !== 'undefined' && (window as any).aistudio) {
             const hasKey = await (window as any).aistudio.hasSelectedApiKey();
             if (!hasKey) {
@@ -83,11 +84,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const apiKey = process.env.API_KEY;
         if (!apiKey || apiKey.length < 5) {
-            throw new Error("No Identity Key found. Please click 'Engine Offline' to connect.");
+            throw new Error("No API Key detected. Please click 'Engine Offline' to connect your account.");
         }
         
         const ai = new GoogleGenAI({ apiKey });
         const isTeacher = currentPersona === 'Teacher';
+        
         return ai.chats.create({
             model: 'gemini-3-flash-preview',
             config: {
@@ -102,6 +104,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (window.aistudio) {
             // @ts-ignore
             await window.aistudio.openSelectKey();
+            // Clear current invalid session
             chatSessionRef.current = null;
         }
     };
@@ -124,15 +127,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 };
             case 'get_student_details':
                 const student = students.find(s => s.name.toLowerCase().includes(args.studentName.toLowerCase()));
-                if (!student) return { error: "Student not found in active roster." };
+                if (!student) return { error: "Student not found in active database." };
                 return {
                     name: student.name,
                     level: student.level,
                     velocity: `${student.growthVelocity}%`,
-                    intervention: student.interventionStatus?.tier || "Tier 1"
+                    intervention: student.interventionStatus?.tier || "None (Tier 1)"
                 };
             default:
-                return { status: "Data retrieved." };
+                return { status: "Operation successful." };
         }
     };
 
@@ -141,7 +144,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsTyping(true);
 
         try {
-            // JIT initialization
+            // JIT Re-initialization
             if (!chatSessionRef.current) {
                 chatSessionRef.current = await createNewSession();
             }
@@ -149,7 +152,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const chat = chatSessionRef.current;
             let result: GenerateContentResponse = await chat.sendMessage({ message: text });
             
-            // Function calling recursion
+            // Loop through function calls if the model requests tools
             while (result.functionCalls && result.functionCalls.length > 0) {
                 const functionResponseParts = await Promise.all(
                     result.functionCalls.map(async (call) => {
@@ -169,9 +172,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 timestamp: Date.now() 
             }]);
         } catch (error: any) {
-            console.error("Chat engine failure:", error);
+            console.error("Chat failure:", error);
             
-            // Check for specific entity errors (often key issues)
+            // Handle key rotation or invalid project selection
             if (error.message?.includes("Requested entity was not found") || error.message?.includes("API_KEY")) {
                 reconnect();
             }
@@ -179,7 +182,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Identity Error: ${error.message || "Failed to resolve API key"}. Please click 'Engine Offline' to authenticate.`, 
+                text: `Identity Error: ${error.message}. Please click the engine status badge to re-authenticate.`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);
@@ -198,6 +201,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useChat = () => {
     const context = useContext(ChatContext);
-    if (context === undefined) throw new Error('useChat error');
+    if (context === undefined) throw new Error('useChat must be used within a ChatProvider');
     return context;
 };

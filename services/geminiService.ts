@@ -7,46 +7,43 @@ const sanitizeJson = (text: string) => {
 
 export class GeminiService {
     /**
-     * Resolves the API key with robust fallbacks for different deployment environments.
+     * Strictly resolves the API key as per SDK guidelines.
      */
     private static async getClient(): Promise<GoogleGenAI> {
         const win = window as any;
 
-        // 1. Handshake for AI Studio / Preview environments
+        // Mandated handshake for AI Studio environments
         if (win.aistudio) {
             const hasKey = await win.aistudio.hasSelectedApiKey();
             if (!hasKey) {
                 await win.aistudio.openSelectKey();
+                // We proceed immediately per core instructions
             }
         }
 
-        // 2. Resolve Key (check shimmed process, global window, and AI Studio provided env)
-        const apiKey = process.env.API_KEY || win.API_KEY || win.process?.env?.API_KEY;
+        const apiKey = process.env.API_KEY || win.API_KEY;
 
         if (!apiKey || apiKey.length < 5) {
-            console.error("[Gemini] API Key missing. Ensure API_KEY is set in Vercel/Environment.");
-            throw new Error("Connectivity Identity required. Please click the status badge to connect your engine.");
+            throw new Error("Connectivity Identity missing. Please connect your engine via the status button.");
         }
 
         return new GoogleGenAI({ apiKey });
     }
 
-    /**
-     * Common error handler to detect when a key needs to be re-selected or if model is unavailable.
-     */
     private static async handleError(error: any): Promise<never> {
-        console.error("Gemini Service Error:", error);
+        console.error("[Gemini SDK Error]", error);
         
         const win = window as any;
-        const isEntityError = error.message?.includes("Requested entity was not found");
-        const isAuthError = error.message?.includes("API key not valid") || error.message?.includes("401") || error.message?.includes("403");
+        const isAuthError = error.message?.includes("Requested entity was not found") || 
+                           error.message?.includes("API key not valid") ||
+                           error.message?.includes("401") ||
+                           error.message?.includes("403");
 
-        if ((isEntityError || isAuthError) && win.aistudio) {
-            console.warn("[Gemini] Authentication or Model error detected. Prompting for key re-selection.");
+        if (isAuthError && win.aistudio) {
             await win.aistudio.openSelectKey();
         }
 
-        throw new Error(error.message || "The AI engine encountered a communication error.");
+        throw new Error(error.message || "The AI engine encountered a critical communication error.");
     }
 
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
@@ -64,7 +61,7 @@ export class GeminiService {
             Current Proficiency: ${avg}%. Growth Velocity: ${student.growthVelocity}%.
             Task: 
             1. 'report_card': A formal, professional summary for parents.
-            2. 'trend_insights': A technical analysis for teachers focusing on velocity and intervention efficacy.
+            2. 'trend_insights': A technical analysis for teachers.
             Constraint: Use professional academic terminology. Focus on learning acceleration.`;
             
             const response = await ai.models.generateContent({
@@ -89,8 +86,6 @@ export class GeminiService {
     static async generateClassInsight(gradeLevel: string, studentCount: number, stats: any): Promise<string> {
         try {
             const ai = await this.getClient();
-            const model = 'gemini-3-flash-preview';
-
             const prompt = `Write an 'Executive Performance Briefing' for school leadership.
             Class: Level ${gradeLevel} | Cohort Size: ${studentCount}
             Avg Proficiency: ${stats.classAvg}% | Velocity: ${stats.avgVelocity}%
@@ -98,7 +93,10 @@ export class GeminiService {
             
             Structure: 1. Institutional Health, 2. Growth Forecast, 3. Strategic Recommendations.`;
 
-            const response = await ai.models.generateContent({ model, contents: prompt });
+            const response = await ai.models.generateContent({ 
+                model: 'gemini-3-flash-preview', 
+                contents: prompt 
+            });
             return response.text || "Briefing analysis completed.";
         } catch (error: any) { 
             return this.handleError(error);

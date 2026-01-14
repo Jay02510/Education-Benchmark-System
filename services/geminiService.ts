@@ -21,10 +21,13 @@ export class GeminiService {
             }
         }
 
-        const apiKey = process.env.API_KEY || win.API_KEY;
+        // Robust key resolution across shims and environments
+        const apiKey = (typeof process !== 'undefined' && process.env?.API_KEY) || 
+                       win.process?.env?.API_KEY || 
+                       win.API_KEY;
 
         if (!apiKey || apiKey.length < 5) {
-            throw new Error("Connectivity Identity missing. Please connect your engine via the status button.");
+            throw new Error("Connectivity Identity missing. Please connect your engine via the status button in the chat widget.");
         }
 
         return new GoogleGenAI({ apiKey });

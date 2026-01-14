@@ -14,13 +14,18 @@ import App from './App.tsx';
     if (!win.process) win.process = { env: {} };
     if (!win.process.env) win.process.env = {};
     
-    // Ensure API_KEY is consistently mapped
-    const apiKey = win.process.env.API_KEY || win.API_KEY;
+    // Ensure API_KEY is consistently mapped across all potential access patterns
+    const apiKey = win.process.env.API_KEY || win.API_KEY || '';
     if (apiKey) {
         win.process.env.API_KEY = apiKey;
         win.API_KEY = apiKey;
     }
     
+    // Safety check for node-isms in browser SDKs
+    if (typeof process === 'undefined') {
+        win.process = win.process || { env: {} };
+    }
+
     console.debug(`[System] Kernel Initialized. API_KEY state: ${!!win.process.env.API_KEY ? 'READY' : 'WAITING_FOR_HANDSHAKE'}`);
   }
 })();
@@ -42,7 +47,7 @@ const watchdog = setTimeout(() => {
             </div>
         `;
     }
-}, 6000);
+}, 8000);
 
 try {
   const root = ReactDOM.createRoot(rootElement);

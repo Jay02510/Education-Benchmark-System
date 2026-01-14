@@ -5,25 +5,13 @@ const sanitizeJson = (text: string) => {
     return text.replace(/```json/g, '').replace(/```/g, '').trim();
 };
 
-const getApiKey = (): string => {
-    // Robust check for the API key in various possible environment shims
-    const key = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
-    return key || '';
-};
-
 export class GeminiService {
     /**
      * Executes the generative AI analysis using the environment-provided API_KEY.
      */
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
-        const apiKey = getApiKey();
-        if (!apiKey) {
-            console.warn("API Handshake: Credentials not found in client environment.");
-            throw new Error("System is optimizing the secure connection. Please refresh in a moment.");
-        }
-
         try {
-            const ai = new GoogleGenAI({ apiKey });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
             const model = 'gemini-3-pro-preview';
             
             const sortedAssessments = [...student.assessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -55,14 +43,13 @@ export class GeminiService {
             return JSON.parse(sanitizeJson(response.text || '{}'));
         } catch (error: any) { 
             console.error("Gemini Handshake Error:", error);
-            throw new Error("The AI analysis engine is synchronizing with the server. Ensure the project is redeployed on Vercel.");
+            throw new Error("The AI analysis engine is synchronizing with the server. Ensure the project is redeployed on Vercel if this persists.");
         }
     }
 
     static async generateClassInsight(gradeLevel: string, studentCount: number, stats: any): Promise<string> {
-        const apiKey = getApiKey();
         try {
-            const ai = new GoogleGenAI({ apiKey });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
             const model = 'gemini-3-flash-preview';
 
             const prompt = `Write an 'Executive Performance Briefing' for school leadership.
@@ -81,9 +68,8 @@ export class GeminiService {
     }
 
     static async generateResourceContent(domain: Domain, subdomain: string, type: ResourceType, level: string, promptText: string): Promise<{ title: string; description: string; content: string } | null> {
-        const apiKey = getApiKey();
         try {
-            const ai = new GoogleGenAI({ apiKey });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
                 contents: `Create academic material (${type}) for Level ${level} ${domain}. Context: ${promptText}.`,
@@ -101,9 +87,8 @@ export class GeminiService {
     }
 
     static async generateRemedialPrompt(domain: Domain, avgScore: number, level: string): Promise<string> {
-        const apiKey = getApiKey();
         try {
-            const ai = new GoogleGenAI({ apiKey });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
                 contents: `Class average is ${avgScore}% in ${domain}. Generate a professional intervention focus for Level ${level}.`

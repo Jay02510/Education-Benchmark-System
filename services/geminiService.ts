@@ -7,16 +7,33 @@ const sanitizeJson = (text: string) => {
 
 export class GeminiService {
     /**
-     * Executes the generative AI analysis using the environment-provided API_KEY.
+     * Resolves the API Key. Priority: Environment Variable > System Handshake.
      */
+    private static async resolveApiKey(): Promise<string> {
+        // First check process.env as per instructions
+        const envKey = process.env.API_KEY;
+        if (envKey && envKey.length > 5) return envKey;
+
+        // Fallback to system handshake if in aistudio environment
+        if (typeof window !== 'undefined' && (window as any).aistudio) {
+            const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+            if (!hasKey) {
+                await (window as any).aistudio.openSelectKey();
+            }
+            // If it's still not found in process.env after openSelectKey, it will throw below
+        }
+
+        const finalKey = process.env.API_KEY;
+        if (!finalKey) {
+            throw new Error("API_KEY is not detected. Please ensure you have deployed with the variable or selected a key via the 'Engine' status button.");
+        }
+        return finalKey;
+    }
+
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
         try {
-            // Check if process/env is accessible
-            if (typeof process === 'undefined' || !process.env || !process.env.API_KEY) {
-                throw new Error("API_KEY environment variable is not defined or accessible in this environment.");
-            }
-
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = await this.resolveApiKey();
+            const ai = new GoogleGenAI({ apiKey });
             const model = 'gemini-3-pro-preview';
             
             const sortedAssessments = [...student.assessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -47,19 +64,15 @@ export class GeminiService {
             
             return JSON.parse(sanitizeJson(response.text || '{}'));
         } catch (error: any) { 
-            console.error("Gemini Analysis Error Detail:", error);
-            // Re-throw the actual error message to help the user diagnose the key/environment issue
-            throw new Error(error.message || "The AI analysis engine encountered an unexpected error.");
+            console.error("Gemini SDK Error:", error);
+            throw new Error(`Analysis Engine: ${error.message || "Unknown error"}`);
         }
     }
 
     static async generateClassInsight(gradeLevel: string, studentCount: number, stats: any): Promise<string> {
         try {
-            if (typeof process === 'undefined' || !process.env || !process.env.API_KEY) {
-                throw new Error("API_KEY not found in environment.");
-            }
-
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = await this.resolveApiKey();
+            const ai = new GoogleGenAI({ apiKey });
             const model = 'gemini-3-flash-preview';
 
             const prompt = `Write an 'Executive Performance Briefing' for school leadership.
@@ -70,18 +83,16 @@ export class GeminiService {
             Structure: 1. Institutional Health, 2. Growth Forecast, 3. Strategic Recommendations.`;
 
             const response = await ai.models.generateContent({ model, contents: prompt });
-            return response.text || "Analysis complete but briefing content was unretrievable.";
+            return response.text || "Insight generation failed to return content.";
         } catch (error: any) { 
-            console.error("AI Briefing Error Detail:", error);
-            throw new Error(`Briefing Handshake Failed: ${error.message}`);
+            throw new Error(`Engine Insight Error: ${error.message}`);
         }
     }
 
     static async generateResourceContent(domain: Domain, subdomain: string, type: ResourceType, level: string, promptText: string): Promise<{ title: string; description: string; content: string } | null> {
         try {
-            if (typeof process === 'undefined' || !process.env || !process.env.API_KEY) return null;
-            
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = await this.resolveApiKey();
+            const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
                 contents: `Create academic material (${type}) for Level ${level} ${domain}. Context: ${promptText}.`,
@@ -96,16 +107,15 @@ export class GeminiService {
             });
             return JSON.parse(sanitizeJson(response.text || '{}'));
         } catch (error) { 
-            console.error("Resource Generation Error:", error);
+            console.error("Resource Gen Error:", error);
             return null; 
         }
     }
 
     static async generateRemedialPrompt(domain: Domain, avgScore: number, level: string): Promise<string> {
         try {
-            if (typeof process === 'undefined' || !process.env || !process.env.API_KEY) return `Intervention for ${domain}`;
-
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = await this.resolveApiKey();
+            const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
                 contents: `Class average is ${avgScore}% in ${domain}. Generate a professional intervention focus for Level ${level}.`

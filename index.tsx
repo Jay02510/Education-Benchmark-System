@@ -2,14 +2,19 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 
-// Global shim for process to support direct process.env.API_KEY access in browser
-// Add a type assertion to window to allow accessing 'process' property during initialization
-if (typeof window !== 'undefined' && !(window as any).process) {
-  (window as any).process = {
-    env: {
-      API_KEY: undefined
-    }
-  };
+// Global shim for process to support direct process.env.API_KEY access in browser.
+// We check for existence first to avoid overwriting variables injected by the host.
+if (typeof window !== 'undefined') {
+  const win = window as any;
+  if (!win.process) {
+    win.process = { env: {} };
+  } else if (!win.process.env) {
+    win.process.env = {};
+  }
+  
+  // Ensure the variable name is exactly API_KEY as per system requirements
+  // and Vercel configuration.
+  console.debug("System: Initializing Environment Shim");
 }
 
 const rootElement = document.getElementById('root');
@@ -26,14 +31,11 @@ try {
     </React.StrictMode>
   );
 } catch (error: any) {
-  console.error("Critical Boot Error:", error);
-  rootElement.innerHTML = `
-    <div style="padding: 40px; font-family: sans-serif; max-width: 600px; margin: 0 auto; text-align: center;">
-      <h1 style="color: #e11d48;">Launch Error</h1>
-      <p style="color: #475569;">${error.message}</p>
-      <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer;">
-        Try Again
-      </button>
-    </div>
-  `;
+    console.error("Critical Launch Failure:", error);
+    rootElement.innerHTML = `
+        <div style="padding: 40px; font-family: sans-serif; text-align: center;">
+            <h1 style="color: #e11d48;">Launch Error</h1>
+            <p>${error.message}</p>
+        </div>
+    `;
 }

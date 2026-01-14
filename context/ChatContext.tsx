@@ -21,17 +21,15 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-const TEACHER_INSTRUCTION = `You are the Benchmark Executive Assistant. You are grounded in real-time institutional data.
+const TEACHER_INSTRUCTION = `You are the Benchmark Institutional Assistant.
 When discussing students, refer to their 'Growth Velocity' and 'Proficiency Tiers'. 
-Use the 'get_student_details' and 'get_class_summary' tools to provide evidence-based answers.
-Be professional, encouraging, and data-driven.`;
+Be professional, data-driven, and focused on learning outcomes.`;
 
-const ADMIN_INSTRUCTION = `System Administrator Persona active. Focused on infrastructure and database health.`;
+const ADMIN_INSTRUCTION = `Admin System Monitor active. Core infrastructure verified.`;
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { students, classProfile } = useStudents();
     const { activeTab } = useNavigation();
-    const { resources } = useResources();
 
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -41,8 +39,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
     useEffect(() => {
-        const apiKey = process.env.API_KEY;
-        setIsAiActive(!!apiKey && apiKey !== 'undefined' && apiKey.length > 10);
+        // Safe check for the key injection
+        const key = process.env.API_KEY;
+        setIsAiActive(!!key && key !== 'undefined' && key.length > 5);
     }, []);
 
     useEffect(() => {
@@ -53,7 +52,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages([{
                 id: `welcome-${Date.now()}`,
                 role: 'model',
-                text: targetPersona === 'Admin' ? "Administrator Mode Initialized. Core systems healthy." : "Benchmark AI Assistant active. I'm connected to your classroom data and ready to provide strategic insights.",
+                text: targetPersona === 'Admin' ? "System Diagnostics Mode active." : "Benchmark AI Assistant connected. I'm ready to analyze your institutional data.",
                 timestamp: Date.now()
             }]);
         }
@@ -62,7 +61,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const createNewSession = () => {
         const apiKey = process.env.API_KEY;
         if (!apiKey || apiKey === 'undefined') {
-            throw new Error("System is awaiting environment sync.");
+            throw new Error("AI engine synchronization in progress. Please check Vercel settings.");
         }
 
         const ai = new GoogleGenAI({ apiKey });
@@ -84,36 +83,28 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const executeTool = async (name: string, args: any): Promise<any> => {
-        if (currentPersona === 'Admin') return { status: "Verified" };
+        if (currentPersona === 'Admin') return { status: "Diagnostics: OK" };
         
         switch (name) {
             case 'get_class_summary':
                 return { 
                     className: classProfile?.className || "Active Roster",
                     studentCount: students.length, 
-                    atRiskCount: students.filter(s => s.hasAnomaly).length,
-                    averageVelocity: students.length ? Math.round(students.reduce((a,b)=>a+b.growthVelocity,0)/students.length) : 0
+                    atRiskCount: students.filter(s => s.hasAnomaly).length
                 };
 
             case 'get_student_details':
                 const student = students.find(s => s.name.toLowerCase().includes(args.studentName.toLowerCase()));
-                if (!student) return { error: "No student matching that identity." };
+                if (!student) return { error: "Student identity not found." };
                 return {
                     name: student.name,
                     level: student.level,
                     velocity: `${student.growthVelocity}%`,
-                    interventionStatus: student.interventionStatus?.tier || "Tier 1"
-                };
-
-            case 'list_at_risk_students':
-                const atRisk = students.filter(s => s.hasAnomaly || s.interventionStatus !== null);
-                return { 
-                    total: atRisk.length,
-                    roster: atRisk.map(s => s.name)
+                    intervention: student.interventionStatus?.tier || "Tier 1"
                 };
 
             default:
-                return { status: "Tool executed successfully." };
+                return { status: "Data retrieved." };
         }
     };
 
@@ -144,7 +135,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: result.text || "I've analyzed the data and updated the perspective.", 
+                text: result.text || "I have analyzed the current data metrics.", 
                 timestamp: Date.now() 
             }]);
         } catch (error: any) {
@@ -152,7 +143,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: "The AI Engine is currently optimizing its connection. Please verify your system credentials if this persists.", 
+                text: `Engine sync pending: ${error.message || "Checking environment credentials..."}. Please ensure Vercel is redeployed.`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

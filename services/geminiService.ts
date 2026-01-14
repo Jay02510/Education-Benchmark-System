@@ -6,10 +6,17 @@ const sanitizeJson = (text: string) => {
 };
 
 export class GeminiService {
+    /**
+     * Direct retrieval of the API key from environment.
+     * In Vercel, ensures the build-time variable is accessible.
+     */
     private static getApiKey(): string {
+        // Standard check for the injected environment variable
         const key = process.env.API_KEY;
+        
         if (!key || key === 'undefined' || key.length < 5) {
-            throw new Error("ENVIRONMENT_CONFIG_MISSING");
+            console.error("Critical: API_KEY is missing from environment.");
+            throw new Error("AI_SYNC_PENDING");
         }
         return key;
     }
@@ -18,15 +25,15 @@ export class GeminiService {
         console.error("Gemini API Error:", error);
         const msg = error.message || "";
         
-        if (msg === "ENVIRONMENT_CONFIG_MISSING") {
-            throw new Error("The AI Engine is awaiting final environment synchronization. Please verify Vercel 'API_KEY' settings.");
+        if (msg === "AI_SYNC_PENDING") {
+            throw new Error("The AI Engine is awaiting final environment synchronization. Please verify Vercel 'API_KEY' settings and redeploy.");
         }
         
-        if (msg.includes("API_KEY") || msg.includes("unauthorized") || msg.includes("401")) {
-             throw new Error("Authentication synchronization in progress. Please refresh the dashboard.");
+        if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("unauthorized")) {
+             throw new Error("Security handshake in progress. Please refresh the dashboard in a moment.");
         }
         
-        throw new Error("The intelligence engine is currently optimizing. Please try again in 10 seconds.");
+        throw new Error("Strategic analysis engine is optimizing. Please re-run the request.");
     }
 
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
@@ -44,10 +51,9 @@ export class GeminiService {
             Analyze student ${student.name} (Level ${student.level}).
             Current Proficiency: ${avg}%. Growth Velocity: ${student.growthVelocity}%.
             Task: 
-            1. 'report_card': A formal, encouraging summary for parents.
+            1. 'report_card': A formal, professional summary for parents.
             2. 'trend_insights': A technical analysis for teachers focusing on velocity and intervention efficacy.
-            Constraint: NEVER use the word 'mastery'. Use 'Outstanding' (90%+) or 'Excellent' (80%+). 
-            Context: This report is for a high-level academic review.`;
+            Constraint: Use 'Outstanding' (90%+) or 'Excellent' (80%+). Focus on learning acceleration.`;
             
             const response = await ai.models.generateContent({
                 model,
@@ -74,21 +80,16 @@ export class GeminiService {
             const ai = new GoogleGenAI({ apiKey });
             const model = 'gemini-3-flash-preview';
 
-            const prompt = `Write an 'Executive Performance Briefing' for a School Director.
+            const prompt = `Write an 'Executive Performance Briefing' for school leadership.
             Class: Level ${gradeLevel} | Cohort Size: ${studentCount}
-            Class Average Proficiency: ${stats.classAvg}%
-            Aggregate Velocity: ${stats.avgVelocity}% / cycle
-            Risk Profile: ${stats.interventionCount} students requiring Tier 2/3 support.
+            Avg Proficiency: ${stats.classAvg}% | Velocity: ${stats.avgVelocity}%
+            Risk Profile: ${stats.interventionCount} students requiring support.
             
-            Focus Areas: ${stats.weakest || 'Universal progression'}.
-            
-            Instructions: 
-            - Use sophisticated institutional language (e.g., 'pedagogical milestones', 'learning acceleration', 'risk mitigation').
-            - Structure with: 1. Institutional Health Summary, 2. Growth Forecast, 3. Strategic Recommendations.
-            - Ensure names of high performers are mentioned to celebrate success.`;
+            Structure: 1. Institutional Health, 2. Growth Forecast, 3. Strategic Recommendations. 
+            Use sophisticated, data-driven language. Mention high-velocity students for recognition.`;
 
             const response = await ai.models.generateContent({ model, contents: prompt });
-            return response.text || "Briefing calculation incomplete.";
+            return response.text || "Briefing compilation incomplete.";
         } catch (error) { 
             return this.handleAiError(error);
         }
@@ -100,7 +101,7 @@ export class GeminiService {
             const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
-                contents: `Generate specialized material (${type}) for Level ${level} in ${domain}. Focus: ${promptText}. Ensure high academic rigor.`,
+                contents: `Create academic material (${type}) for Level ${level} ${domain}. Context: ${promptText}.`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: { 
@@ -120,7 +121,7 @@ export class GeminiService {
             const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Class is at ${avgScore}% in ${domain}. Suggest a remediation focus for Level ${level}.`
+                contents: `Class average is ${avgScore}% in ${domain}. Generate a professional intervention focus for Level ${level}.`
             });
             return response.text?.trim() || `Intervention for ${domain}`;
         } catch (error) { return `Create practice for ${domain}`; }

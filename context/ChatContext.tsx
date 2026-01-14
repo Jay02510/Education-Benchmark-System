@@ -25,6 +25,12 @@ Be professional, data-driven, and focused on learning outcomes.`;
 
 const ADMIN_INSTRUCTION = `Admin System Monitor active. Core infrastructure verified.`;
 
+const getApiKey = (): string => {
+    // Robust check for the API key in various possible environment shims
+    const key = (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
+    return key || '';
+};
+
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { students, classProfile } = useStudents();
     const { activeTab } = useNavigation();
@@ -37,8 +43,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
     useEffect(() => {
-        // Direct heartbeat check for the environment key
-        const key = process.env.API_KEY;
+        const key = getApiKey();
         setIsAiActive(!!key && key !== 'undefined');
     }, []);
 
@@ -57,7 +62,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [activeTab, currentPersona]);
 
     const createNewSession = () => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const apiKey = getApiKey();
+        if (!apiKey) throw new Error("API Key missing");
+        
+        const ai = new GoogleGenAI({ apiKey });
         const isTeacher = currentPersona === 'Teacher';
         return ai.chats.create({
             model: 'gemini-3-flash-preview',
@@ -133,10 +141,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }]);
         } catch (error: any) {
             console.error("Chat error:", error);
+            const key = getApiKey();
+            const errorText = !key 
+                ? "The API Key could not be detected in the client environment. Please ensure you have triggered a NEW DEPLOYMENT on Vercel after adding the API_KEY to your project settings."
+                : "The AI engine encountered an issue during the handshake. Please verify that your API key is active and has sufficient quota.";
+            
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: "The AI engine is establishing a secure handshake. Please refresh the page and try again once the Vercel deployment has finished.", 
+                text: errorText, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

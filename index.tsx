@@ -3,26 +3,41 @@ import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 
 /**
- * Hyper-Robust Environment Shim
- * Forces process.env.API_KEY to be available globally
+ * Enhanced System Initialization Kernel
+ * Ensures process.env.API_KEY is available globally and synchronized.
  */
-(function initializeSystemEnvironment() {
+(function kernelBootstrap() {
   if (typeof window !== 'undefined') {
     const win = window as any;
     
-    // Create hierarchy if missing
+    // 1. Initialize process hierarchy if missing
     if (!win.process) win.process = { env: {} };
     if (!win.process.env) win.process.env = {};
     
-    // Capture API key from any potential source (Vercel, Build Tool, or AI Studio)
-    const possibleKey = win.process.env.API_KEY || win.API_KEY || win.ENV?.API_KEY || '';
+    // 2. Aggregate API_KEY from all possible injection points
+    // This handles Vercel envs, build tool inlining, and platform-specific shims
+    const resolvedKey = 
+      win.process.env.API_KEY || 
+      win.API_KEY || 
+      win.ENV?.API_KEY || 
+      (typeof process !== 'undefined' ? process.env?.API_KEY : '');
     
-    if (possibleKey) {
-        win.process.env.API_KEY = possibleKey;
-        win.API_KEY = possibleKey;
-        console.debug("[System] API Connectivity Identity Verified.");
+    if (resolvedKey && resolvedKey.length > 5) {
+        win.process.env.API_KEY = resolvedKey;
+        win.API_KEY = resolvedKey;
+        
+        // Ensure local 'process' variable is also updated if it exists in scope
+        try {
+          if (typeof process !== 'undefined' && process.env) {
+            process.env.API_KEY = resolvedKey;
+          }
+        } catch (e) {
+          // Non-critical: some environments restrict access to 'process'
+        }
+        
+        console.debug("[Kernel] Connectivity identity verified.");
     } else {
-        console.warn("[System] API Key not detected in immediate environment. Awaiting handshake.");
+        console.warn("[Kernel] Connectivity identity not found. Application will start in Local-Only mode.");
     }
   }
 })();
@@ -30,20 +45,8 @@ import App from './App.tsx';
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {
-  throw new Error("Critical: DOM Root node 'root' is missing.");
+  throw new Error("Critical Failure: DOM Root not found.");
 }
-
-// Global Error Catcher for Module Loading
-window.onerror = (msg, url, line) => {
-    if (msg.toString().includes('Import map')) {
-        rootElement.innerHTML = `
-            <div style="padding: 40px; font-family: sans-serif; text-align: center; background: #fff1f2; color: #9f1239; border-radius: 1.5rem; margin: 2rem; border: 1px solid #fecdd3;">
-                <h1 style="font-weight: 800; font-size: 1.25rem;">Browser Compatibility Error</h1>
-                <p style="margin-top: 1rem;">This application requires a modern browser with Import Map support.</p>
-            </div>
-        `;
-    }
-};
 
 try {
   const root = ReactDOM.createRoot(rootElement);
@@ -54,5 +57,11 @@ try {
   );
 } catch (error: any) {
     console.error("Critical System Launch Failure:", error);
-    rootElement.innerHTML = `<div style="padding: 40px; color: #9f1239;">Kernel Panic: ${error.message}</div>`;
+    rootElement.innerHTML = `
+        <div style="padding: 40px; font-family: sans-serif; text-align: center; background: #fff1f2; color: #9f1239; border-radius: 1.5rem; margin: 2rem; border: 1px solid #fecdd3;">
+            <h1 style="font-weight: 800; font-size: 1.25rem;">Kernel Panic</h1>
+            <p style="margin-top: 1rem; font-family: monospace; font-size: 0.8rem;">${error.message}</p>
+            <button onclick="window.location.reload()" style="margin-top: 1.5rem; background: #9f1239; color: white; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 700; border: none; cursor: pointer;">Retry System Boot</button>
+        </div>
+    `;
 }

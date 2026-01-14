@@ -8,12 +8,12 @@ const sanitizeJson = (text: string) => {
 export class GeminiService {
     /**
      * Resolves the API key and creates a fresh client instance.
-     * Mandatory for ensuring up-to-date keys from the UI dialog.
+     * Checks both the built-in process.env and the window shim for resilience.
      */
     private static async getClient(): Promise<GoogleGenAI> {
         const win = window as any;
 
-        // 1. Mandatory Handshake for Google AI Studio environments
+        // 1. Mandatory Handshake for Google AI Studio preview environments
         if (win.aistudio) {
             const hasKey = await win.aistudio.hasSelectedApiKey();
             if (!hasKey) {
@@ -21,11 +21,11 @@ export class GeminiService {
             }
         }
 
-        // 2. Strict key retrieval
-        const apiKey = process.env.API_KEY;
+        // 2. Resolve Key (dynamic check allows the kernel shim to work even if compiled)
+        const apiKey = process.env.API_KEY || win.process?.env?.API_KEY || win.API_KEY;
 
         if (!apiKey || apiKey.length < 5) {
-            throw new Error("Connectivity Identity missing. Please ensure API_KEY is set in Vercel or connected via the AI Status button.");
+            throw new Error("Connectivity Identity missing. Ensure API_KEY is set in Vercel or click 'Engine Offline' to connect.");
         }
 
         return new GoogleGenAI({ apiKey });
@@ -35,16 +35,18 @@ export class GeminiService {
         console.error("[Gemini SDK Exception]", error);
         
         const win = window as any;
-        const isAuthError = error.message?.includes("entity was not found") || 
-                           error.message?.includes("API key not valid") ||
-                           error.message?.includes("401");
+        const isAuthError = 
+            error.message?.includes("entity was not found") || 
+            error.message?.includes("API key not valid") ||
+            error.message?.includes("401") ||
+            error.message?.includes("403");
 
-        // If the key is invalid or lost, trigger the selection dialog again
+        // If in AI Studio and key fails, re-trigger the picker
         if (isAuthError && win.aistudio) {
             await win.aistudio.openSelectKey();
         }
 
-        throw new Error(error.message || "The AI engine encountered a critical communication error.");
+        throw new Error(error.message || "The AI engine encountered a communication error.");
     }
 
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {

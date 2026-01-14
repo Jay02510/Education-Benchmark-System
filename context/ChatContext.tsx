@@ -33,11 +33,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const chatSessionRef = useRef<Chat | null>(null);
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
-    // Live Monitoring of API Key presence
+    // Live Monitoring of API Key presence across all potential storage points
     useEffect(() => {
         const monitor = setInterval(() => {
-            const hasKey = !!process.env.API_KEY && process.env.API_KEY.length > 5;
-            setIsAiActive(hasKey);
+            const win = window as any;
+            const key = process.env.API_KEY || win.process?.env?.API_KEY || win.API_KEY;
+            setIsAiActive(!!key && key.length > 5);
         }, 2000);
         return () => clearInterval(monitor);
     }, []);
@@ -64,8 +65,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!hasKey) await win.aistudio.openSelectKey();
         }
 
-        const apiKey = process.env.API_KEY;
-        if (!apiKey) throw new Error("Connectivity Identity missing.");
+        const apiKey = process.env.API_KEY || win.process?.env?.API_KEY || win.API_KEY;
+        if (!apiKey) throw new Error("Connectivity identity missing. Please connect your engine.");
         
         const ai = new GoogleGenAI({ apiKey });
         return ai.chats.create({
@@ -82,6 +83,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (win.aistudio) {
             await win.aistudio.openSelectKey();
             chatSessionRef.current = null;
+        } else {
+            // Manual check for standard environment variable injection
+            const key = process.env.API_KEY || win.process?.env?.API_KEY || win.API_KEY;
+            if (key && key.length > 5) {
+                setIsAiActive(true);
+                chatSessionRef.current = null;
+            }
         }
     };
 
@@ -103,10 +111,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }]);
         } catch (error: any) {
             console.error("Chat Failure:", error);
+            
+            const isAuthError = error.message?.includes("API key not valid") || error.message?.includes("identity missing");
+            
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Identity Error: ${error.message}. Please click 'Engine Offline' to connect.`, 
+                text: `Identity Error: ${error.message}. ${isAuthError ? "Please ensure your API_KEY is set in Vercel or click 'Engine Offline' to reconnect." : ""}`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

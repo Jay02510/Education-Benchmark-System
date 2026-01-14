@@ -44,11 +44,9 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                 throw new Error("Received an empty response from AI.");
             }
         } catch (e: any) {
-            console.error("Report generation error details:", e);
-            const msg = e.message?.toLowerCase().includes("api_key") 
-                ? "API Configuration Error: Please ensure your environment credentials are valid."
-                : "The analysis engine is currently busy. Please try again in a few seconds.";
-            setError(msg);
+            console.error("Report generation error:", e);
+            // Display the actual error message for diagnostics
+            setError(e.message || "An unexpected error occurred during analysis.");
         } finally {
             setIsGenerating(false);
         }
@@ -185,7 +183,7 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                                 <div className="h-3 bg-purple-200 rounded-full w-full animate-pulse"></div>
                                 <div className="h-3 bg-purple-200 rounded-full w-[90%] animate-pulse delay-75"></div>
                                 <div className="h-3 bg-purple-200 rounded-full w-[95%] animate-pulse delay-150"></div>
-                                <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest text-center mt-4">Consulting LLM Engine...</p>
+                                <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest text-center mt-4">Consulting AI Engine...</p>
                             </div>
                         ) : error ? (
                             <div className="flex items-start gap-4">
@@ -193,7 +191,7 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                                     <Icon name="alert" className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <p className="font-black text-sm uppercase tracking-tight mb-1">Analysis Suspended</p>
+                                    <p className="font-black text-sm uppercase tracking-tight mb-1">Diagnostic Alert</p>
                                     <p className="text-xs font-medium opacity-80 leading-relaxed">{error}</p>
                                 </div>
                             </div>

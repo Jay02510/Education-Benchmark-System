@@ -2,6 +2,16 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 
+// Global shim for process to support direct process.env.API_KEY access in browser
+// Add a type assertion to window to allow accessing 'process' property during initialization
+if (typeof window !== 'undefined' && !(window as any).process) {
+  (window as any).process = {
+    env: {
+      API_KEY: undefined
+    }
+  };
+}
+
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {

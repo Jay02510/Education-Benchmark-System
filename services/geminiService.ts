@@ -11,7 +11,12 @@ export class GeminiService {
      */
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+            // Check if process/env is accessible
+            if (typeof process === 'undefined' || !process.env || !process.env.API_KEY) {
+                throw new Error("API_KEY environment variable is not defined or accessible in this environment.");
+            }
+
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const model = 'gemini-3-pro-preview';
             
             const sortedAssessments = [...student.assessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -42,14 +47,19 @@ export class GeminiService {
             
             return JSON.parse(sanitizeJson(response.text || '{}'));
         } catch (error: any) { 
-            console.error("Gemini Analysis Error:", error);
-            throw new Error("The AI analysis engine is synchronizing. Please verify your Vercel deployment settings.");
+            console.error("Gemini Analysis Error Detail:", error);
+            // Re-throw the actual error message to help the user diagnose the key/environment issue
+            throw new Error(error.message || "The AI analysis engine encountered an unexpected error.");
         }
     }
 
     static async generateClassInsight(gradeLevel: string, studentCount: number, stats: any): Promise<string> {
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+            if (typeof process === 'undefined' || !process.env || !process.env.API_KEY) {
+                throw new Error("API_KEY not found in environment.");
+            }
+
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const model = 'gemini-3-flash-preview';
 
             const prompt = `Write an 'Executive Performance Briefing' for school leadership.
@@ -62,14 +72,16 @@ export class GeminiService {
             const response = await ai.models.generateContent({ model, contents: prompt });
             return response.text || "Analysis complete but briefing content was unretrievable.";
         } catch (error: any) { 
-            console.error("AI Briefing Error:", error);
-            throw new Error("The institutional briefing engine is awaiting a system handshake.");
+            console.error("AI Briefing Error Detail:", error);
+            throw new Error(`Briefing Handshake Failed: ${error.message}`);
         }
     }
 
     static async generateResourceContent(domain: Domain, subdomain: string, type: ResourceType, level: string, promptText: string): Promise<{ title: string; description: string; content: string } | null> {
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+            if (typeof process === 'undefined' || !process.env || !process.env.API_KEY) return null;
+            
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
                 contents: `Create academic material (${type}) for Level ${level} ${domain}. Context: ${promptText}.`,
@@ -83,12 +95,17 @@ export class GeminiService {
                 }
             });
             return JSON.parse(sanitizeJson(response.text || '{}'));
-        } catch (error) { return null; }
+        } catch (error) { 
+            console.error("Resource Generation Error:", error);
+            return null; 
+        }
     }
 
     static async generateRemedialPrompt(domain: Domain, avgScore: number, level: string): Promise<string> {
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+            if (typeof process === 'undefined' || !process.env || !process.env.API_KEY) return `Intervention for ${domain}`;
+
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
                 contents: `Class average is ${avgScore}% in ${domain}. Generate a professional intervention focus for Level ${level}.`

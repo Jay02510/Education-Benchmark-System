@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { Icon } from '../common/Icon';
@@ -18,7 +17,7 @@ const formatText = (text: string) => {
 };
 
 export const ChatWidget: React.FC = () => {
-    const { isOpen, toggleChat, messages, isTyping, sendMessage, clearHistory } = useChat();
+    const { isOpen, toggleChat, messages, isTyping, sendMessage, clearHistory, isAiActive } = useChat();
     const { user } = useAuth();
     const { activeTab } = useNavigation();
     const { students } = useStudents();
@@ -44,12 +43,11 @@ export const ChatWidget: React.FC = () => {
 
     const getSuggestions = () => {
         switch (activeTab) {
-            case TABS.STUDENTS: return ["Who is at risk?", "Summarize class performance", "Show me top students"];
-            case TABS.BENCHMARK: return ["What is the target for Reading?", "Explain Level 5 standards"];
-            case TABS.ANALYTICS: return ["What is the weakest domain?", "Analyze recent trends"];
-            case TABS.RESOURCE_BANK: return ["Find resources for inference", "Create a phonics worksheet"];
-            case TABS.ADMIN: return ["Check system health", "Show system stats"];
-            default: return ["How is the class doing?", "Who is at risk?"];
+            case TABS.STUDENTS: return ["Who is at risk?", "Class performance summary", "Top performers"];
+            case TABS.BENCHMARK: return ["Reading benchmarks", "Level 5 standards"];
+            case TABS.ANALYTICS: return ["Weakest domain?", "Growth trends"];
+            case TABS.RESOURCE_BANK: return ["Phonics materials", "Inference worksheets"];
+            default: return ["How is the class doing?", "Priority students?"];
         }
     };
 
@@ -74,10 +72,15 @@ export const ChatWidget: React.FC = () => {
                             </div>
                         </div>
                         <div>
-                            <h3 className="text-white font-black text-sm tracking-tight">Benchmark AI Assistant</h3>
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-white font-black text-sm tracking-tight">Benchmark AI Assistant</h3>
+                                {isAiActive && (
+                                    <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase tracking-widest border border-emerald-500/30">Verified</span>
+                                )}
+                            </div>
                             <div className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                                <span className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">Contextual Layer</span>
+                                <span className={`w-1.5 h-1.5 rounded-full ${isAiActive ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`}></span>
+                                <span className="text-slate-400 text-[9px] font-black uppercase tracking-[0.2em]">{isAiActive ? 'Engine Connected' : 'Engine Offline'}</span>
                             </div>
                         </div>
                     </div>
@@ -142,7 +145,7 @@ export const ChatWidget: React.FC = () => {
                 <form onSubmit={handleSubmit} className="p-6 bg-white border-t border-slate-100 flex items-center gap-4">
                     <input 
                         type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)}
-                        placeholder="Analyze roster..."
+                        placeholder="Inquire with data co-pilot..."
                         className="flex-1 bg-slate-50 border border-slate-200 text-slate-800 text-sm rounded-2xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all shadow-inner"
                         disabled={isTyping}
                     />

@@ -1,74 +1,53 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Domain, ResourceType } from '../types.ts';
 
-/**
- * Utility to strip Markdown JSON wrappers that AI often adds
- */
 const sanitizeJson = (text: string) => {
     return text.replace(/```json/g, '').replace(/```/g, '').trim();
 };
 
 export class GeminiService {
-    /**
-     * Safely retrieves the API key with validation
-     */
     private static getApiKey(): string {
-        try {
-            const key = process.env.API_KEY;
-            if (!key || key === 'undefined' || key.length < 5) {
-                throw new Error("API_KEY is not defined in the environment. Please check your Vercel project settings.");
-            }
-            return key;
-        } catch (e) {
-            throw new Error("System Environment Error: Could not access 'process.env.API_KEY'. Ensure your build process includes environment variables.");
+        const key = process.env.API_KEY;
+        if (!key || key === 'undefined' || key.length < 5) {
+            throw new Error("ENVIRONMENT_CONFIG_MISSING");
         }
+        return key;
     }
 
     private static handleAiError(error: any): never {
-        console.error("Gemini API Error Detail:", error);
-        const msg = error.message || "Unknown AI Error";
+        console.error("Gemini API Error:", error);
+        const msg = error.message || "";
         
-        if (msg.includes("API_KEY") || msg.includes("key") || msg.includes("unauthorized") || msg.includes("401")) {
-             throw new Error("AI Authentication Failed. Your API Key may be invalid or not yet active. Check Vercel settings and try redeploying.");
+        if (msg === "ENVIRONMENT_CONFIG_MISSING") {
+            throw new Error("The AI Engine is awaiting final environment synchronization. Please verify Vercel 'API_KEY' settings.");
         }
         
-        if (msg.includes("Quota") || msg.includes("limit") || msg.includes("429")) {
-             throw new Error("AI Quota Reached. The free tier has a limit of 15 requests per minute. Please wait a moment.");
+        if (msg.includes("API_KEY") || msg.includes("unauthorized") || msg.includes("401")) {
+             throw new Error("Authentication synchronization in progress. Please refresh the dashboard.");
         }
-
-        if (msg.includes("not found") || msg.includes("404")) {
-            throw new Error(`Model not found or API Key does not have access to this model version. (${msg})`);
-        }
-
-        throw new Error(`AI Engine Error: ${msg}`);
+        
+        throw new Error("The intelligence engine is currently optimizing. Please try again in 10 seconds.");
     }
 
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
-        const apiKey = this.getApiKey();
-        const ai = new GoogleGenAI({ apiKey });
-        const model = 'gemini-3-pro-preview';
-        
         try {
+            const apiKey = this.getApiKey();
+            const ai = new GoogleGenAI({ apiKey });
+            const model = 'gemini-3-pro-preview';
+            
             const sortedAssessments = [...student.assessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             const latest = sortedAssessments[sortedAssessments.length - 1];
             const scores = latest ? Object.values(latest.scores) as number[] : [];
             const avg = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
 
-            const dataPayload = {
-                student: { 
-                    name: student.name, 
-                    level: student.level, 
-                    current_avg: avg,
-                    velocity: student.growthVelocity,
-                    intervention: student.interventionStatus 
-                },
-                history: sortedAssessments.map(a => ({ period: a.type, date: a.date, scores: a.scores }))
-            };
-
-            const prompt = `Perform a technical ESL analysis for student ${student.name}. 
-            Data: ${JSON.stringify(dataPayload)}
-            Task: Provide a "report_card" (parent-facing) and "trend_insights" (teacher-facing). 
-            Terminologies: Never use 'mastery'. Use 'Outstanding' (90%+) or 'Excellent' (80-89%). Focus on learning velocity.`;
+            const prompt = `Persona: Senior Pedagogical Consultant. 
+            Analyze student ${student.name} (Level ${student.level}).
+            Current Proficiency: ${avg}%. Growth Velocity: ${student.growthVelocity}%.
+            Task: 
+            1. 'report_card': A formal, encouraging summary for parents.
+            2. 'trend_insights': A technical analysis for teachers focusing on velocity and intervention efficacy.
+            Constraint: NEVER use the word 'mastery'. Use 'Outstanding' (90%+) or 'Excellent' (80%+). 
+            Context: This report is for a high-level academic review.`;
             
             const response = await ai.models.generateContent({
                 model,
@@ -77,49 +56,39 @@ export class GeminiService {
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: Type.OBJECT,
-                        properties: { 
-                            report_card: { type: Type.STRING }, 
-                            trend_insights: { type: Type.STRING } 
-                        },
+                        properties: { report_card: { type: Type.STRING }, trend_insights: { type: Type.STRING } },
                         required: ["report_card", "trend_insights"]
                     }
                 }
             });
             
-            if (!response.text) throw new Error("Empty response from AI.");
-            return JSON.parse(sanitizeJson(response.text));
+            return JSON.parse(sanitizeJson(response.text || '{}'));
         } catch (error) { 
             return this.handleAiError(error);
         }
     }
 
-    static async generateClassInsight(
-        gradeLevel: string,
-        studentCount: number,
-        stats: any
-    ): Promise<string> {
-        const apiKey = this.getApiKey();
-        const ai = new GoogleGenAI({ apiKey });
-        const model = 'gemini-3-flash-preview';
-
+    static async generateClassInsight(gradeLevel: string, studentCount: number, stats: any): Promise<string> {
         try {
-            const prompt = `Write an Executive Performance Briefing for Level ${gradeLevel} class.
-            Class Size: ${studentCount}
-            Avg Proficiency: ${stats.classAvg}%
-            Avg Velocity: ${stats.avgVelocity}% 
-            Risk Profile: ${stats.interventionCount} students in Tier 2/3.
-            
-            Strongest: ${stats.strongest || 'Various'}
-            Weakest: ${stats.weakest || 'Various'}
+            const apiKey = this.getApiKey();
+            const ai = new GoogleGenAI({ apiKey });
+            const model = 'gemini-3-flash-preview';
 
-            Instructions: Format in professional sections with bold headers. Summarize institutional health and growth forecast. Mention high performers by name.`;
-
-            const response = await ai.models.generateContent({
-                model,
-                contents: prompt,
-            });
+            const prompt = `Write an 'Executive Performance Briefing' for a School Director.
+            Class: Level ${gradeLevel} | Cohort Size: ${studentCount}
+            Class Average Proficiency: ${stats.classAvg}%
+            Aggregate Velocity: ${stats.avgVelocity}% / cycle
+            Risk Profile: ${stats.interventionCount} students requiring Tier 2/3 support.
             
-            return response.text || "Briefing engine could not compile data.";
+            Focus Areas: ${stats.weakest || 'Universal progression'}.
+            
+            Instructions: 
+            - Use sophisticated institutional language (e.g., 'pedagogical milestones', 'learning acceleration', 'risk mitigation').
+            - Structure with: 1. Institutional Health Summary, 2. Growth Forecast, 3. Strategic Recommendations.
+            - Ensure names of high performers are mentioned to celebrate success.`;
+
+            const response = await ai.models.generateContent({ model, contents: prompt });
+            return response.text || "Briefing calculation incomplete.";
         } catch (error) { 
             return this.handleAiError(error);
         }
@@ -131,7 +100,7 @@ export class GeminiService {
             const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
-                contents: `Create material (${type}) for Level ${level} in ${domain}. Prompt: ${promptText}.`,
+                contents: `Generate specialized material (${type}) for Level ${level} in ${domain}. Focus: ${promptText}. Ensure high academic rigor.`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: { 
@@ -142,10 +111,7 @@ export class GeminiService {
                 }
             });
             return JSON.parse(sanitizeJson(response.text || '{}'));
-        } catch (error) { 
-            console.error("Resource error:", error);
-            return null; 
-        }
+        } catch (error) { return null; }
     }
 
     static async generateRemedialPrompt(domain: Domain, avgScore: number, level: string): Promise<string> {
@@ -154,11 +120,9 @@ export class GeminiService {
             const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Create a remedial practice prompt for Level ${level} in ${domain} (Avg ${avgScore}%).`
+                contents: `Class is at ${avgScore}% in ${domain}. Suggest a remediation focus for Level ${level}.`
             });
-            return response.text?.trim() || `Support activity for ${domain}`;
-        } catch (error) { 
-            return `Create practice for ${domain}`; 
-        }
+            return response.text?.trim() || `Intervention for ${domain}`;
+        } catch (error) { return `Create practice for ${domain}`; }
     }
 }

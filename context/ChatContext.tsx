@@ -4,8 +4,6 @@ import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { teacherTools, adminTools } from '../services/agentTools.ts';
 import { useStudents } from './StudentContext.tsx';
 import { useNavigation } from './NavigationContext.tsx';
-import { useBenchmarks } from './BenchmarkContext.tsx';
-import { useResources } from './ResourceContext.tsx';
 import { TABS } from '../constants.ts';
 
 interface ChatContextType {
@@ -22,7 +20,7 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 const TEACHER_INSTRUCTION = `You are the Benchmark Institutional Assistant.
-When discussing students, refer to their 'Growth Velocity' and 'Proficiency Tiers'. 
+Refer to 'Growth Velocity' and 'Proficiency Tiers'. 
 Be professional, data-driven, and focused on learning outcomes.`;
 
 const ADMIN_INSTRUCTION = `Admin System Monitor active. Core infrastructure verified.`;
@@ -39,9 +37,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
     useEffect(() => {
-        // Safe check for the key injection
+        // Direct heartbeat check for the environment key
         const key = process.env.API_KEY;
-        setIsAiActive(!!key && key !== 'undefined' && key.length > 5);
+        setIsAiActive(!!key && key !== 'undefined');
     }, []);
 
     useEffect(() => {
@@ -59,12 +57,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [activeTab, currentPersona]);
 
     const createNewSession = () => {
-        const apiKey = process.env.API_KEY;
-        if (!apiKey || apiKey === 'undefined') {
-            throw new Error("AI engine synchronization in progress. Please check Vercel settings.");
-        }
-
-        const ai = new GoogleGenAI({ apiKey });
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const isTeacher = currentPersona === 'Teacher';
         return ai.chats.create({
             model: 'gemini-3-flash-preview',
@@ -143,7 +136,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Engine sync pending: ${error.message || "Checking environment credentials..."}. Please ensure Vercel is redeployed.`, 
+                text: "The AI engine is establishing a secure handshake. Please refresh the page and try again once the Vercel deployment has finished.", 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

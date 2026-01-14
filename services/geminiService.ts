@@ -7,39 +7,11 @@ const sanitizeJson = (text: string) => {
 
 export class GeminiService {
     /**
-     * Direct retrieval of the API key from environment.
-     * In Vercel, ensures the build-time variable is accessible.
+     * Executes the generative AI analysis using the environment-provided API_KEY.
      */
-    private static getApiKey(): string {
-        // Standard check for the injected environment variable
-        const key = process.env.API_KEY;
-        
-        if (!key || key === 'undefined' || key.length < 5) {
-            console.error("Critical: API_KEY is missing from environment.");
-            throw new Error("AI_SYNC_PENDING");
-        }
-        return key;
-    }
-
-    private static handleAiError(error: any): never {
-        console.error("Gemini API Error:", error);
-        const msg = error.message || "";
-        
-        if (msg === "AI_SYNC_PENDING") {
-            throw new Error("The AI Engine is awaiting final environment synchronization. Please verify Vercel 'API_KEY' settings and redeploy.");
-        }
-        
-        if (msg.includes("API_KEY") || msg.includes("401") || msg.includes("unauthorized")) {
-             throw new Error("Security handshake in progress. Please refresh the dashboard in a moment.");
-        }
-        
-        throw new Error("Strategic analysis engine is optimizing. Please re-run the request.");
-    }
-
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
         try {
-            const apiKey = this.getApiKey();
-            const ai = new GoogleGenAI({ apiKey });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const model = 'gemini-3-pro-preview';
             
             const sortedAssessments = [...student.assessments].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -53,7 +25,7 @@ export class GeminiService {
             Task: 
             1. 'report_card': A formal, professional summary for parents.
             2. 'trend_insights': A technical analysis for teachers focusing on velocity and intervention efficacy.
-            Constraint: Use 'Outstanding' (90%+) or 'Excellent' (80%+). Focus on learning acceleration.`;
+            Constraint: Use professional academic terminology. Focus on learning acceleration.`;
             
             const response = await ai.models.generateContent({
                 model,
@@ -69,15 +41,15 @@ export class GeminiService {
             });
             
             return JSON.parse(sanitizeJson(response.text || '{}'));
-        } catch (error) { 
-            return this.handleAiError(error);
+        } catch (error: any) { 
+            console.error("Gemini API Handshake Error:", error);
+            throw new Error("The AI analysis engine is synchronizing with the server. Please verify your Vercel deployment settings if this persists.");
         }
     }
 
     static async generateClassInsight(gradeLevel: string, studentCount: number, stats: any): Promise<string> {
         try {
-            const apiKey = this.getApiKey();
-            const ai = new GoogleGenAI({ apiKey });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const model = 'gemini-3-flash-preview';
 
             const prompt = `Write an 'Executive Performance Briefing' for school leadership.
@@ -85,20 +57,19 @@ export class GeminiService {
             Avg Proficiency: ${stats.classAvg}% | Velocity: ${stats.avgVelocity}%
             Risk Profile: ${stats.interventionCount} students requiring support.
             
-            Structure: 1. Institutional Health, 2. Growth Forecast, 3. Strategic Recommendations. 
-            Use sophisticated, data-driven language. Mention high-velocity students for recognition.`;
+            Structure: 1. Institutional Health, 2. Growth Forecast, 3. Strategic Recommendations.`;
 
             const response = await ai.models.generateContent({ model, contents: prompt });
-            return response.text || "Briefing compilation incomplete.";
-        } catch (error) { 
-            return this.handleAiError(error);
+            return response.text || "Analysis complete but briefing content was unretrievable.";
+        } catch (error: any) { 
+            console.error("AI Briefing Error:", error);
+            throw new Error("The institutional briefing engine is awaiting a system handshake.");
         }
     }
 
     static async generateResourceContent(domain: Domain, subdomain: string, type: ResourceType, level: string, promptText: string): Promise<{ title: string; description: string; content: string } | null> {
         try {
-            const apiKey = this.getApiKey();
-            const ai = new GoogleGenAI({ apiKey });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
                 contents: `Create academic material (${type}) for Level ${level} ${domain}. Context: ${promptText}.`,
@@ -117,8 +88,7 @@ export class GeminiService {
 
     static async generateRemedialPrompt(domain: Domain, avgScore: number, level: string): Promise<string> {
         try {
-            const apiKey = this.getApiKey();
-            const ai = new GoogleGenAI({ apiKey });
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
                 contents: `Class average is ${avgScore}% in ${domain}. Generate a professional intervention focus for Level ${level}.`

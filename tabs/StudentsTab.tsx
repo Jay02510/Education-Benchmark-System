@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useTransition } from 'react';
 import { Student, TestPeriod } from '../types';
 import { StudentCard } from '../components/students/StudentCard';
 import { StudentProfile } from '../components/students/StudentProfile';
@@ -13,6 +13,7 @@ import { LongitudinalGrowthChart } from '../components/charts/Charts';
 import { Modal } from '../components/common/Modal';
 import { AtRiskDetailsModal } from '../components/students/AtRiskDetailsModal';
 import { TABS } from '../constants';
+import { GeminiService } from '../services/geminiService';
 
 const DashboardWidget: React.FC<{ 
     title: string; 
@@ -36,33 +37,12 @@ const DashboardWidget: React.FC<{
                     <div className={`p-2.5 rounded-xl bg-white/30 backdrop-blur-md shadow-inner text-white`}>
                         <Icon name={icon} className="w-6 h-6" />
                     </div>
-                    {info && (
-                        <div 
-                            onMouseEnter={() => setShowInfo(true)}
-                            onMouseLeave={() => setShowInfo(false)}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                            }}
-                            className="p-1 rounded-full bg-white/10 text-white/50 hover:text-white transition cursor-help"
-                        >
-                            <Icon name="info" className="w-4 h-4" />
-                        </div>
-                    )}
                 </div>
                 
                 <div className="relative min-h-[80px]">
-                    {showInfo && info ? (
-                        <div className="bg-white/10 backdrop-blur-xl p-3 rounded-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-200">
-                            <p className="text-[10px] font-bold text-white leading-relaxed">{info}</p>
-                        </div>
-                    ) : (
-                        <>
-                            <h3 className="text-4xl font-extrabold text-white mb-1 tracking-tight">{value}</h3>
-                            <p className="text-white/90 font-medium text-sm mb-4">{subtext}</p>
-                            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-white/60">{title}</p>
-                        </>
-                    )}
+                    <h3 className="text-4xl font-extrabold text-white mb-1 tracking-tight">{value}</h3>
+                    <p className="text-white/90 font-medium text-sm mb-4">{subtext}</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-white/60">{title}</p>
                 </div>
             </div>
             <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-1000 z-0"></div>
@@ -76,7 +56,11 @@ export const StudentsTab: React.FC = () => {
     const { user } = useAuth();
     const { selectedStudentId, setSelectedStudentId, setActiveTab, setBulkEntryOpen } = useNavigation();
     
+    // Concurrent UI Logic
+    const [isPending, startTransition] = useTransition();
     const [searchTerm, setSearchTerm] = useState('');
+    const [deferredSearch, setDeferredSearch] = useState('');
+
     const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
     const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
     const [isAtRiskModalOpen, setIsAtRiskModalOpen] = useState(false);
@@ -91,6 +75,15 @@ export const StudentsTab: React.FC = () => {
             setEditGradeLevel(classProfile.gradeLevel);
         }
     }, [classProfile]);
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setSearchTerm(value);
+        // Parallelizing State: Typing is instant, filtering is deferred
+        startTransition(() => {
+            setDeferredSearch(value);
+        });
+    };
 
     const stats = useMemo(() => {
         if (!students.length) return { classAvg: 0, interventionCount: 0, growth: 0, avgVelocity: 0, atRiskList: [] };
@@ -122,7 +115,6 @@ export const StudentsTab: React.FC = () => {
     }, [students]);
 
     const velocityChartData = useMemo(() => {
-        // Calculate class average for each period
         const periods = [TestPeriod.Baseline, TestPeriod.Midline, TestPeriod.Endline];
         return periods.map(p => {
             let total = 0;
@@ -135,17 +127,14 @@ export const StudentsTab: React.FC = () => {
                     count++;
                 }
             });
-            return {
-                name: p,
-                avg: count > 0 ? Math.round(total / count) : null
-            };
+            return { name: p, avg: count > 0 ? Math.round(total / count) : null };
         }).filter(d => d.avg !== null);
     }, [students]);
 
     useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 500);
+        const timer = setTimeout(() => setIsLoading(false), 300);
         return () => clearTimeout(timer);
-    }, [students.length, classProfile]);
+    }, [students.length]);
 
     const handleSaveClass = async () => {
         await updateClassProfile({ className: editClassName, gradeLevel: editGradeLevel });
@@ -153,7 +142,17 @@ export const StudentsTab: React.FC = () => {
     };
 
     const selectedStudent = selectedStudentId ? students.find(s => s.id === selectedStudentId) || null : null;
-    const filteredStudents = students.filter(student => student.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // Memoized filtered list using the deferred search term
+    const filteredStudents = useMemo(() => {
+        return students.filter(student => student.name.toLowerCase().includes(deferredSearch.toLowerCase()));
+    }, [students, deferredSearch]);
+
+    const handleStudentInteraction = (id: string) => {
+        // Speculative Warm-up: Initialize AI engine while user is navigating
+        GeminiService.warmup();
+        setSelectedStudentId(id);
+    };
 
     if (selectedStudent) {
         return (
@@ -168,92 +167,44 @@ export const StudentsTab: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-center mb-10">
                 <div>
                     <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">Welcome, {user?.name.split(' ')[0]}</h1>
-                    <p className="text-slate-500 font-medium">Your classroom is {navigator.onLine ? 'fully synced' : 'running locally'}.</p>
+                    <p className="text-slate-500 font-medium">Classroom analytics synchronized in parallel.</p>
                 </div>
-                <div className="mt-4 md:mt-0 flex items-center bg-white p-2 rounded-full shadow-sm border border-slate-100">
-                    <Icon name="search" className="w-5 h-5 text-slate-400 ml-3" />
+                <div className="mt-4 md:mt-0 flex items-center bg-white p-2 rounded-full shadow-sm border border-slate-100 ring-4 ring-slate-50">
+                    <Icon name="search" className={`w-5 h-5 ml-3 transition-colors ${isPending ? 'text-indigo-500 animate-pulse' : 'text-slate-400'}`} />
                     <input 
                         type="text" 
                         placeholder="Search roster..." 
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        onChange={handleSearchChange}
                         className="bg-transparent border-none focus:ring-0 text-sm font-bold text-slate-700 placeholder-slate-400 w-48 md:w-64"
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10">
-                <div className="md:col-span-4 lg:col-span-3 bg-white rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col items-center text-center relative overflow-hidden group">
-                    <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-indigo-50 to-blue-50 z-0 opacity-40"></div>
-                    <button 
-                        onClick={() => setIsEditClassModalOpen(true)}
-                        className="absolute top-4 right-4 p-2 rounded-full bg-white/80 text-slate-400 hover:text-indigo-600 hover:bg-white transition shadow-sm z-10 border border-slate-100"
-                        title="Edit Class Profile"
-                    >
-                        <Icon name="settings" className="w-4 h-4" />
-                    </button>
+                <div className="md:col-span-4 lg:col-span-3 bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 flex flex-col items-center text-center relative overflow-hidden group">
+                    <button onClick={() => setIsEditClassModalOpen(true)} className="absolute top-4 right-4 p-2 rounded-full bg-white/80 text-slate-400 hover:text-indigo-600 transition shadow-sm z-10 border border-slate-100"><Icon name="settings" className="w-4 h-4" /></button>
                     <div className="relative z-10 mt-2 mb-4">
                         <div className="w-24 h-24 p-1 rounded-full bg-white shadow-xl mx-auto ring-4 ring-slate-50">
-                            <div className="w-full h-full rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-4xl font-black text-white">
-                                {classProfile?.className.charAt(0) || 'C'}
-                            </div>
+                            <div className="w-full h-full rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-4xl font-black text-white">{classProfile?.className.charAt(0) || 'C'}</div>
                         </div>
                     </div>
                     <h2 className="text-2xl font-black text-slate-900 relative z-10 truncate w-full px-2 tracking-tight">{classProfile?.className || 'Setup Required'}</h2>
                     <p className="text-sm font-bold text-slate-400 mb-6 relative z-10">Level {classProfile?.gradeLevel || '-'}</p>
-                    <div className="flex gap-4 w-full relative z-10">
-                        <div className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                            <p className="text-2xl font-black text-slate-800 leading-none mb-1">{students.length}</p>
-                            <p className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Students</p>
-                        </div>
-                        <div className="flex-1 bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                            <p className="text-2xl font-black text-slate-800 leading-none mb-1">0%</p>
-                            <p className="text-[10px] uppercase font-black text-slate-400 tracking-wider">Activity</p>
-                        </div>
-                    </div>
                 </div>
 
                 <div className="md:col-span-8 lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <DashboardWidget 
-                        title="Actionable Alerts" 
-                        value={`${stats.interventionCount} Tasks`} 
-                        subtext="Priority support items" 
-                        icon="alert" 
-                        gradient="from-orange-400 to-pink-500" 
-                        textColor="text-white" 
-                        info="Click to see students flagged for intervention based on recent regression or low scores."
-                        onClick={() => setIsAtRiskModalOpen(true)}
-                    />
-                    <DashboardWidget 
-                        title="Class Performance" 
-                        value={`${stats.classAvg}%`} 
-                        subtext="Average Proficiency" 
-                        icon="analytics" 
-                        gradient="from-indigo-500 to-blue-600" 
-                        textColor="text-white" 
-                        info="The current average proficiency of all students across all domains."
-                        onClick={() => setActiveTab(TABS.ANALYTICS)}
-                    />
+                    <DashboardWidget title="At-Risk Alerts" value={`${stats.interventionCount}`} subtext="Critical Tasks" icon="alert" gradient="from-orange-400 to-pink-500" textColor="text-white" onClick={() => setIsAtRiskModalOpen(true)} />
+                    <DashboardWidget title="Class Avg" value={`${stats.classAvg}%`} subtext="Proficiency" icon="analytics" gradient="from-indigo-500 to-blue-600" textColor="text-white" onClick={() => setActiveTab(TABS.ANALYTICS)} />
                 </div>
 
-                <div className="md:col-span-12 lg:col-span-4 bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex flex-col">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-black text-slate-800 tracking-tight">Growth Velocity</h3>
-                        <span className={`text-xs font-black px-2.5 py-1 rounded-lg flex items-center gap-1 ${stats.avgVelocity >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                             {stats.avgVelocity >= 0 ? '+' : ''}{stats.avgVelocity}% / Cycle
-                        </span>
-                    </div>
+                <div className="md:col-span-12 lg:col-span-4 bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex flex-col">
+                    <div className="flex justify-between items-center mb-4"><h3 className="font-black text-slate-800 tracking-tight">Growth Velocity</h3></div>
                     <div className="flex-1 min-h-[140px]">
                         {velocityChartData.length > 1 ? (
-                            <LongitudinalGrowthChart 
-                                data={velocityChartData} 
-                                lines={[{ key: 'avg', color: '#6366f1' }]} 
-                                type="area"
-                            />
+                            <LongitudinalGrowthChart data={velocityChartData} lines={[{ key: 'avg', color: '#6366f1' }]} type="area" />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold text-xs text-center px-4">
-                                Longitudinal trend will activate after Midline data is synced
-                            </div>
+                            <div className="w-full h-full flex items-center justify-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold text-[10px] uppercase tracking-widest px-4">Awaiting Midline Data</div>
                         )}
                     </div>
                 </div>
@@ -262,41 +213,32 @@ export const StudentsTab: React.FC = () => {
             <div className="flex flex-col sm:flex-row justify-between items-end mb-8 gap-4">
                 <div>
                     <h2 className="text-3xl font-black text-slate-900 tracking-tight">Student Roster</h2>
-                    <p className="text-slate-400 text-sm font-medium">Class management for {classProfile?.className}</p>
+                    <p className="text-slate-400 text-sm font-medium">Real-time cohort management</p>
                 </div>
                 <div className="flex gap-3 w-full sm:w-auto">
-                    <button onClick={() => setBulkEntryOpen(true)} className="flex-1 sm:flex-none px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black hover:bg-slate-50 transition flex items-center justify-center gap-2 shadow-sm active:scale-95">
-                        <Icon name="benchmark" className="w-4 h-4 text-indigo-500" />
-                        <span className="text-xs uppercase tracking-widest">Batch Entry</span>
-                    </button>
-                    <button onClick={() => setIsAddStudentModalOpen(true)} className="flex-1 sm:flex-none px-6 py-3 bg-slate-900 text-white rounded-2xl font-black hover:bg-indigo-600 transition shadow-xl shadow-indigo-900/10 flex items-center justify-center gap-2 active:scale-95">
-                        <Icon name="plus" className="w-4 h-4" />
-                        <span className="text-xs uppercase tracking-widest">Add Student</span>
-                    </button>
+                    <button onClick={() => setBulkEntryOpen(true)} className="flex-1 sm:flex-none px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-2xl font-black hover:bg-slate-50 transition flex items-center justify-center gap-2 shadow-sm active:scale-95"><Icon name="benchmark" className="w-4 h-4 text-indigo-500" /><span className="text-xs uppercase tracking-widest">Batch Entry</span></button>
+                    <button onClick={() => setIsAddStudentModalOpen(true)} className="flex-1 sm:flex-none px-6 py-3 bg-slate-900 text-white rounded-2xl font-black hover:bg-indigo-600 transition shadow-xl flex items-center justify-center gap-2 active:scale-95"><Icon name="plus" className="w-4 h-4" /><span className="text-xs uppercase tracking-widest">Add Student</span></button>
                 </div>
             </div>
             
             {isLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
                     {[...Array(6)].map((_, i) => <StudentCardSkeleton key={i} />)}
                 </div>
             ) : filteredStudents.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6 transition-opacity duration-300 ${isPending ? 'opacity-50' : 'opacity-100'}`}>
                     {filteredStudents.map(student => (
-                        <StudentCard key={student.id} student={student} onClick={() => setSelectedStudentId(student.id)} />
+                        <StudentCard 
+                            key={student.id} 
+                            student={student} 
+                            onClick={() => handleStudentInteraction(student.id)} 
+                        />
                     ))}
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center py-20 text-center border-4 border-dashed border-slate-200 rounded-[3rem] bg-slate-50/50">
-                    <div className="p-6 bg-white rounded-3xl mb-6 text-slate-200 shadow-xl ring-1 ring-black/5">
-                        <Icon name="students" className="w-16 h-16" />
-                    </div>
-                    <h3 className="text-2xl font-black text-slate-800 mb-2">No Students Found</h3>
-                    <p className="text-slate-400 text-sm max-w-sm mx-auto mb-10 font-medium">Your roster is currently empty. Start by adding students manually or using the Batch Entry tool.</p>
-                    <div className="flex gap-4">
-                        <button onClick={() => setBulkEntryOpen(true)} className="px-8 py-4 bg-white border border-slate-200 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition shadow-sm">Batch Import</button>
-                        <button onClick={() => setIsAddStudentModalOpen(true)} className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition shadow-xl">Add Student</button>
-                    </div>
+                    <h3 className="text-2xl font-black text-slate-800 mb-2">No Results Found</h3>
+                    <p className="text-slate-400 text-sm max-w-sm mx-auto mb-10 font-medium">Refine your search or add new students.</p>
                 </div>
             )}
 
@@ -307,29 +249,21 @@ export const StudentsTab: React.FC = () => {
                         <input value={editClassName} onChange={(e) => setEditClassName(e.target.value)} className="w-full px-5 py-3 border border-slate-200 bg-slate-50 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800" />
                     </div>
                     <div>
-                        <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5 ml-1">Target Benchmark Level</label>
+                        <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5 ml-1">Benchmark Level</label>
                         <select value={editGradeLevel} onChange={(e) => setEditGradeLevel(e.target.value)} className="w-full px-5 py-3 border border-slate-200 bg-slate-50 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-slate-800">
-                            <option value="5">Level 5 (Pre-A1)</option>
-                            <option value="6-1">Level 6-1 (Starters)</option>
-                            <option value="6-2">Level 6-2 (Movers)</option>
-                            <option value="7-2">Level 7-2 (Flyers)</option>
-                            <option value="7-3">Level 7-3 (KET/PET)</option>
+                            <option value="5">Level 5</option>
+                            <option value="6-1">Level 6-1</option>
+                            <option value="6-2">Level 6-2</option>
                         </select>
                     </div>
                     <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                        <button onClick={() => setIsEditClassModalOpen(false)} className="px-5 py-2.5 text-slate-500 font-bold hover:text-slate-700">Cancel</button>
                         <button onClick={handleSaveClass} className="px-8 py-2.5 bg-slate-900 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-600 active:scale-95 transition-all">Save Changes</button>
                     </div>
                 </div>
             </Modal>
 
             <AddStudentModal isOpen={isAddStudentModalOpen} onClose={() => setIsAddStudentModalOpen(false)} />
-            <AtRiskDetailsModal 
-                isOpen={isAtRiskModalOpen} 
-                onClose={() => setIsAtRiskModalOpen(false)} 
-                atRiskStudents={stats.atRiskList} 
-                domainCount={domains.length || 8}
-            />
+            <AtRiskDetailsModal isOpen={isAtRiskModalOpen} onClose={() => setIsAtRiskModalOpen(false)} atRiskStudents={stats.atRiskList} domainCount={domains.length || 8} />
         </div>
     );
 };

@@ -5,30 +5,26 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Benchmark | Educator Analytics AI</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Parallel Network Hints -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://esm.sh" crossorigin>
+    <link rel="dns-prefetch" href="https://generativelanguage.googleapis.com">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <script>
       /**
-       * HARDENED KERNEL BOOTSTRAP v9.0
-       * Ensures environment parity between Vercel, Local, and AI Studio.
+       * HARDENED KERNEL BOOTSTRAP v9.1 (Parallel Ready)
        */
       (function() {
         const win = window;
         win.process = win.process || { env: {} };
         win.process.env = win.process.env || {};
-        
-        // Comprehensive key resolution strategy
         const k = win.process.env.API_KEY || win.process.env.VITE_API_KEY || win.API_KEY || (win.ENV && win.ENV.API_KEY) || "";
-        
-        if (k) {
-          win.process.env.API_KEY = k;
-          win.API_KEY = k;
-          console.debug("[Kernel] Identity Resolved.");
-        } else {
-          console.warn("[Kernel] Identity Missing. Switching to Setup Mode.");
-        }
+        if (k) { win.process.env.API_KEY = k; win.API_KEY = k; }
       })();
     </script>
     <script type="importmap">
@@ -42,8 +38,8 @@
     "firebase/app": "https://esm.sh/firebase@11.1.0/app",
     "firebase/auth": "https://esm.sh/firebase@11.1.0/auth",
     "firebase/firestore": "https://esm.sh/firebase@11.1.0/firestore",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "firebase/": "https://esm.sh/firebase@^12.7.0/"
   }
 }

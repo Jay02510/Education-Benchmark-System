@@ -14,10 +14,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <script>
-      /**
-       * STABLE KERNEL BOOTSTRAP v9.2
-       * Synchronizes environment identity across all possible injection points.
-       */
       (function() {
         const win = window;
         win.process = win.process || { env: {} };
@@ -40,14 +36,22 @@
     "firebase/app": "https://esm.sh/firebase@11.1.0/app",
     "firebase/auth": "https://esm.sh/firebase@11.1.0/auth",
     "firebase/firestore": "https://esm.sh/firebase@11.1.0/firestore",
-    "react/": "https://esm.sh/react@^19.2.3/",
+    "firebase/": "https://esm.sh/firebase@^12.8.0/",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "firebase/": "https://esm.sh/firebase@^12.7.0/"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
     <style>
-      body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: #f8fafc; overflow-x: hidden; }
+      body { 
+        font-family: 'Inter', sans-serif; 
+        margin: 0; 
+        padding: 0; 
+        background-color: #f8fafc; 
+        overflow-x: hidden; 
+        -webkit-font-smoothing: antialiased;
+        transition: background-color 0.3s ease;
+      }
       #root { min-height: 100vh; }
       #root:empty::before {
         content: 'Benchmark Core Initializing...';
@@ -61,6 +65,20 @@
         animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
       }
       @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+      
+      /* Global Smooth Scrolling */
+      html { scroll-behavior: smooth; }
+      
+      /* Custom Scrollbar for Intelligence */
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+      /* Micro-animation classes */
+      .scale-hover { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+      .scale-hover:hover { transform: scale(1.02); }
+      .scale-hover:active { transform: scale(0.98); }
     </style>
   </head>
   <body class="text-gray-800 antialiased">

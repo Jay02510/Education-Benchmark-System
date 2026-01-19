@@ -1,4 +1,5 @@
-import { Student, Benchmark, Domain, TestPeriod, Trend, TeacherStrategy, Resource, ResourceType } from '../types';
+
+import { Student, Benchmark, Domain, TestPeriod, Trend, TeacherStrategy, Resource, ResourceType, VelocityBand } from '../types';
 
 let bCounter = 0;
 const createBench = (level: string, period: TestPeriod, domain: Domain, target: number, desc: string, cefr: string, yle: string): Benchmark => {
@@ -24,6 +25,8 @@ export const mockStudents: Student[] = [
         photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
         overallGrowth: 12,
         growthVelocity: 4,
+        // Fix: Added missing required velocityBand property
+        velocityBand: VelocityBand.Stable,
         hasAnomaly: true,
         assessments: [
             { 
@@ -52,6 +55,8 @@ export const mockStudents: Student[] = [
         photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bella',
         overallGrowth: 18,
         growthVelocity: 6,
+        // Fix: Added missing required velocityBand property
+        velocityBand: VelocityBand.Stable,
         hasAnomaly: false,
         assessments: [
             { id: 'a3', type: TestPeriod.Baseline, date: '2023-09-15', scores: { [Domain.Reading]: 75, [Domain.Writing]: 72, [Domain.Grammar]: 80, [Domain.Vocabulary]: 78, [Domain.Phonics]: 85, [Domain.Listening]: 75, [Domain.Speaking]: 74, [Domain.DataLiteracy]: 70 }, subdomainScores: {} },
@@ -68,6 +73,8 @@ export const mockStudents: Student[] = [
         photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Chris',
         overallGrowth: -3,
         growthVelocity: -2,
+        // Fix: Added missing required velocityBand property
+        velocityBand: VelocityBand.AtRisk,
         hasAnomaly: true,
         assessments: [
             { id: 'a5', type: TestPeriod.Baseline, date: '2023-09-15', scores: { [Domain.Reading]: 55, [Domain.Writing]: 50, [Domain.Grammar]: 60, [Domain.Vocabulary]: 58, [Domain.Phonics]: 65, [Domain.Listening]: 52, [Domain.Speaking]: 50, [Domain.DataLiteracy]: 45 }, subdomainScores: {} },

@@ -1,4 +1,3 @@
-
 export enum Domain {
     Reading = "Reading",
     Writing = "Writing",
@@ -28,6 +27,12 @@ export enum Trend {
     Plateau = "plateau",
 }
 
+export enum VelocityBand {
+    Fast = "fast",
+    Stable = "stable",
+    AtRisk = "at-risk",
+}
+
 export enum ResourceType {
     MicroLesson = "Micro-Lesson",
     QuickPractice = "Quick Practice Card",
@@ -50,7 +55,7 @@ export interface StudentLogEntry {
     author: string;
     category: 'Intervention' | 'Observation' | 'Parent Communication' | 'Goal Met';
     content: string;
-    impactScore?: number; // -1 to 1 to track if the action helped
+    impactScore?: number; 
 }
 
 export interface Student {
@@ -60,11 +65,13 @@ export interface Student {
     class: string;
     photoUrl: string;
     overallGrowth: number;
-    growthVelocity: number; // New: Speed of change
+    growthVelocity: number; 
+    velocityBand: VelocityBand;
     hasAnomaly: boolean;
     assessments: Assessment[];
     interventionStatus: Intervention | null;
-    actionLog: StudentLogEntry[]; // New: Historical log
+    actionLog: StudentLogEntry[];
+    aiMicroNarrative?: string;
 }
 
 export interface Assessment {

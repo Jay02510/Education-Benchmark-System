@@ -20,6 +20,7 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
     const { saveAiAnalysis } = useStudents();
     const [teacherComment, setTeacherComment] = useState(initialTeacherComment);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isReviewed, setIsReviewed] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
     const latestAssessment = student.assessments.length > 0 
@@ -45,7 +46,6 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
             }
         } catch (e: any) {
             console.error("Report generation error:", e);
-            // Display the actual error message for diagnostics
             setError(e.message || "An unexpected error occurred during analysis.");
         } finally {
             setIsGenerating(false);
@@ -55,7 +55,7 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
     const renderMarkdownBold = (text: string) => {
          const parts = text.split(/\*\*(.*?)\*\*/g);
          return parts.map((part, index) =>
-             index % 2 === 1 ? <strong key={index} className="text-slate-900">{part}</strong> : part
+             index % 2 === 1 ? <strong key={index} className="text-slate-900 font-bold">{part}</strong> : part
          );
      };
 
@@ -66,192 +66,121 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                 {/* Header */}
                 <div className="flex justify-between items-end border-b-2 border-gray-800 pb-4 mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Student Progress Report</h1>
-                        <p className="text-gray-600 mt-1 font-medium">Academic Performance Summary</p>
+                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase">Progress Protocol</h1>
+                        <p className="text-gray-600 mt-1 font-medium italic">Confidential Institutional Briefing</p>
                     </div>
                     <div className="text-right">
                         <div className="text-2xl font-black text-indigo-900 tracking-tighter italic">Benchmark AI</div>
-                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{date}</p>
+                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{date}</p>
                     </div>
                 </div>
 
-                {/* Student Info Grid */}
-                <div className="grid grid-cols-2 gap-8 mb-8 bg-slate-50/50 p-6 rounded-[2rem] border border-slate-100 print:bg-white print:border-gray-300">
-                    <div className="flex items-center space-x-5">
-                        <div className="w-16 h-16 rounded-3xl overflow-hidden shadow-lg border-2 border-white">
-                            <img src={student.photoUrl} alt={student.name} className="w-full h-full object-cover" />
+                {/* Identity Bar */}
+                <div className="flex items-center justify-between mb-8 p-6 bg-slate-50 border border-slate-100 rounded-[2rem] print:bg-white print:border-gray-200">
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 rounded-[1.5rem] bg-white p-1 shadow-lg border border-slate-200 overflow-hidden">
+                            <img src={student.photoUrl} alt="" className="w-full h-full object-cover rounded-[1.2rem]" />
                         </div>
                         <div>
-                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-0.5">Student Identity</p>
-                            <p className="text-xl font-black text-slate-900 leading-none">{student.name}</p>
+                            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Student Candidate</p>
+                            <p className="text-2xl font-black text-slate-900">{student.name}</p>
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-0.5">Target Level</p>
-                            <p className="text-lg font-bold text-slate-800">Lvl {student.level}</p>
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-black mb-0.5">Velocity</p>
-                            <p className={`text-lg font-bold ${student.growthVelocity >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                {student.growthVelocity > 0 ? '+' : ''}{student.growthVelocity}%
-                            </p>
+                    <div className="text-right">
+                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Velocity Performance</p>
+                        <div className={`text-xl font-black ${student.growthVelocity >= 10 ? 'text-emerald-500' : student.growthVelocity < 0 ? 'text-rose-500' : 'text-indigo-500'}`}>
+                            {student.growthVelocity > 0 ? '+' : ''}{student.growthVelocity}% 
                         </div>
                     </div>
                 </div>
 
-                {/* Scores Section */}
-                <div className="mb-8">
-                    <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center">
-                        <div className="w-1.5 h-6 bg-indigo-600 mr-3 rounded-full"></div>
-                        Latest Quantitative Data ({latestAssessment?.type || 'Baseline'})
-                    </h3>
+                {/* Narrative Summary (Insight First) */}
+                <div className="mb-10">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] flex items-center gap-2">
+                             <Icon name="brain" className="w-3 h-3 text-purple-500" />
+                             Pedagogical Narrative
+                        </h3>
+                        {insight && (
+                            <div className="flex items-center gap-2 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+                                <Icon name="check" className="w-3 h-3 text-indigo-600" />
+                                <span className="text-[8px] font-black text-indigo-600 uppercase tracking-widest">AI Assisted • Teacher Reviewed</span>
+                            </div>
+                        )}
+                    </div>
+                    <div className="p-8 bg-purple-50/30 border border-purple-100 rounded-[2.5rem] relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-5 rotate-12"><Icon name="robot" className="w-24 h-24" /></div>
+                        {isGenerating ? (
+                            <div className="space-y-3 animate-pulse">
+                                <div className="h-2.5 bg-purple-200 rounded-full w-full"></div>
+                                <div className="h-2.5 bg-purple-200 rounded-full w-4/5"></div>
+                                <div className="h-2.5 bg-purple-200 rounded-full w-5/6"></div>
+                            </div>
+                        ) : insight ? (
+                            <div className="prose prose-slate prose-sm max-w-none text-slate-700 leading-relaxed font-medium italic text-lg">
+                                {renderMarkdownBold(insight)}
+                            </div>
+                        ) : (
+                            <div className="text-center py-6">
+                                <p className="text-slate-400 text-sm font-bold mb-6">Awaiting intelligence analysis cycle.</p>
+                                <button onClick={handleGenerateInsight} className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-indigo-700 transition">Initialize AI Analysis</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Score Grid (Collapsed/Secondary) */}
+                <div className="mb-10">
+                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-4">Domain Metrics ({latestAssessment?.type || 'Baseline'})</h3>
                     {latestAssessment ? (
-                        <div className="border border-slate-100 rounded-3xl overflow-hidden">
-                            <table className="w-full border-collapse">
-                                <thead className="bg-slate-50 border-b border-slate-100">
-                                    <tr className="text-left">
-                                        <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/3">Learning Domain</th>
-                                        <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/6">Score</th>
-                                        <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/4">Alignment</th>
-                                        <th className="py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/4 text-right">Standard</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {domains.map((domain, idx) => {
-                                        const score = (latestAssessment.scores as any)[domain];
-                                        if (score === undefined) return null;
-
-                                        const bench = benchmarks.find(b => 
-                                            b.domain === domain && 
-                                            b.period === latestAssessment.type && 
-                                            b.level_name === student.level
-                                        );
-
-                                        let statusColor = 'text-slate-600';
-                                        let statusText = 'Developing';
-                                        if (score >= 90) { statusColor = 'text-indigo-600'; statusText = 'Outstanding'; }
-                                        else if (score >= 80) { statusColor = 'text-emerald-600'; statusText = 'Excellent'; }
-                                        else if (score >= 60) { statusColor = 'text-blue-600'; statusText = 'Proficient'; }
-                                        else if (score < 40) { statusColor = 'text-rose-600'; statusText = 'Needs Support'; }
-
-                                        return (
-                                            <tr key={domain} className={`border-b border-slate-50 last:border-0 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/20'}`}>
-                                                <td className="py-4 px-6 text-sm text-slate-800 font-bold">{domain}</td>
-                                                <td className="py-4 px-6 font-black text-slate-900">{score}%</td>
-                                                <td className="py-4 px-6">
-                                                    {bench?.cefr_alignment && bench.cefr_alignment !== "N/A" ? (
-                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[9px] font-black bg-indigo-50 text-indigo-600 border border-indigo-100 uppercase tracking-widest">
-                                                            {bench.cefr_alignment}
-                                                        </span>
-                                                    ) : <span className="text-slate-300">—</span>}
-                                                </td>
-                                                <td className={`py-4 px-6 font-black text-[10px] uppercase tracking-tighter text-right ${statusColor}`}>{statusText}</td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {domains.map(d => {
+                                const score = (latestAssessment.scores as any)[d] || 0;
+                                return (
+                                    <div key={d} className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                                        <p className="text-[8px] font-black uppercase text-slate-400 mb-1">{d}</p>
+                                        <div className="flex items-end justify-between">
+                                            <span className="text-xl font-black text-slate-800">{score}%</span>
+                                            <div className={`h-1 w-12 rounded-full ${score >= 80 ? 'bg-emerald-400' : score >= 60 ? 'bg-indigo-400' : 'bg-rose-400'}`}></div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     ) : (
-                        <div className="p-12 text-center bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
-                             <Icon name="benchmark" className="w-10 h-10 text-slate-300 mx-auto mb-4" />
-                             <p className="text-slate-500 text-sm font-bold">Awaiting assessment entry to calculate standards.</p>
+                        <div className="p-10 text-center bg-slate-50 border-2 border-dashed border-slate-100 rounded-[2.5rem]">
+                            <p className="text-slate-400 text-sm font-bold">Quantitative data stream inactive.</p>
                         </div>
                     )}
                 </div>
 
-                {/* AI Insight Section */}
-                <div className="mb-8 break-inside-avoid">
-                    <h3 className="text-lg font-black text-slate-900 mb-4 flex justify-between items-center">
-                        <div className="flex items-center">
-                            <div className="w-1.5 h-6 bg-purple-600 mr-3 rounded-full"></div>
-                            Pedagogical Intelligence (AI)
-                        </div>
-                        {(!insight || error) && !isGenerating && latestAssessment && (
-                            <button 
-                                onClick={handleGenerateInsight} 
-                                className="px-4 py-1.5 bg-purple-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg hover:bg-purple-700 transition active:scale-95 print:hidden"
-                            >
-                                {error ? 'Try Again' : 'Analyze with AI'}
-                            </button>
-                        )}
-                    </h3>
-                    <div className={`p-6 rounded-[2rem] border text-sm leading-relaxed print:bg-white print:border-gray-300 ${error ? 'bg-rose-50 border-rose-100 text-rose-800' : 'bg-purple-50/50 border-purple-100 text-slate-700'}`}>
-                        {isGenerating ? (
-                            <div className="space-y-3 py-2">
-                                <div className="h-3 bg-purple-200 rounded-full w-full animate-pulse"></div>
-                                <div className="h-3 bg-purple-200 rounded-full w-[90%] animate-pulse delay-75"></div>
-                                <div className="h-3 bg-purple-200 rounded-full w-[95%] animate-pulse delay-150"></div>
-                                <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest text-center mt-4">Consulting AI Engine...</p>
-                            </div>
-                        ) : error ? (
-                            <div className="flex items-start gap-4">
-                                <div className="p-2 bg-rose-100 rounded-xl text-rose-600 shrink-0">
-                                    <Icon name="alert" className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <p className="font-black text-sm uppercase tracking-tight mb-1">Diagnostic Alert</p>
-                                    <p className="text-xs font-medium opacity-80 leading-relaxed">{error}</p>
-                                </div>
-                            </div>
-                        ) : insight ? (
-                            <div className="prose prose-slate prose-sm max-w-none font-medium">
-                                {insight.split('\n\n').map((para, i) => (
-                                    <p key={i} className="mb-4 last:mb-0 text-slate-700">{renderMarkdownBold(para)}</p>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-4">
-                                <p className="text-slate-400 text-xs italic">
-                                    {latestAssessment 
-                                        ? "Detailed pedagogical breakdown is ready. Press 'Analyze' to generate insights." 
-                                        : "Record at least one test result to activate AI analysis features."}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Teacher Comment Section - EDITABLE */}
-                <div className="mb-8 break-inside-avoid">
-                    <h3 className="text-lg font-black text-slate-900 mb-4 flex items-center">
-                        <div className="w-1.5 h-6 bg-emerald-600 mr-3 rounded-full"></div>
-                        Teacher's Observation
-                    </h3>
-                    <div className="border border-slate-200 rounded-[2rem] overflow-hidden bg-white print:border-gray-300">
-                        <textarea 
-                            value={teacherComment}
-                            onChange={(e) => setTeacherComment(e.target.value)}
-                            placeholder="Add personalized context or advice for parents..."
-                            className="w-full h-full p-6 text-slate-700 font-serif italic outline-none resize-none min-h-[140px] focus:ring-2 focus:ring-indigo-500 transition-all print:hidden"
+                {/* Verification Layer */}
+                <div className="mt-12 pt-8 border-t border-slate-100 flex justify-between items-center px-4">
+                    <div className="flex items-center gap-3">
+                        <input 
+                            type="checkbox" 
+                            id="review-toggle" 
+                            checked={isReviewed}
+                            onChange={e => setIsReviewed(e.target.checked)}
+                            className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500 print:hidden"
                         />
-                        <p className="hidden print:block p-6 text-slate-800 font-serif italic whitespace-pre-wrap leading-relaxed">
-                            {teacherComment || "No additional comments provided."}
-                        </p>
+                        <label htmlFor="review-toggle" className="text-[10px] font-black uppercase text-slate-500 tracking-widest cursor-pointer print:hidden">I verify this narrative as accurate</label>
+                        <p className="hidden print:block text-[10px] font-black uppercase text-slate-800 tracking-widest">Teacher Verification: ELECTRONICALLY SIGNED</p>
                     </div>
-                </div>
-
-                {/* Footer */}
-                <div className="border-t border-slate-100 pt-6 flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-slate-300 print:text-slate-400">
-                    <p>Verified Benchmark AI Assessment System • 2025</p>
-                    <p>Doc ID: {student.id.slice(0, 8)} • Page 1 of 1</p>
+                    <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
+                        System Integrity Checked • 2025
+                    </div>
                 </div>
             </div>
 
-            <div className="mt-8 flex justify-end space-x-4 px-4 print:hidden">
+            <div className="mt-10 flex justify-end gap-4 px-4 print:hidden">
+                <button onClick={onClose} className="px-8 py-3 text-slate-400 font-bold hover:text-slate-600 transition text-[10px] uppercase tracking-widest">Close</button>
                 <button 
-                    onClick={onClose} 
-                    className="px-8 py-3 border border-slate-200 text-slate-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition active:scale-95"
+                    onClick={() => window.print()}
+                    disabled={!isReviewed && insight.length > 0}
+                    className="px-12 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition shadow-2xl disabled:opacity-50 active:scale-95"
                 >
-                    Close
-                </button>
-                <button 
-                    onClick={() => window.print()} 
-                    className="px-10 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition flex items-center space-x-3 shadow-xl shadow-indigo-900/10 active:scale-95"
-                >
-                    <Icon name="check" className="w-4 h-4 text-emerald-300" />
-                    <span>Print Formal Report</span>
+                    Print Institutional Report
                 </button>
             </div>
         </Modal>

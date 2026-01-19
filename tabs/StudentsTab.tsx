@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useTransition } from 'react';
-import { Student, TestPeriod } from '../types';
+import { Student, TestPeriod, UserRole, VelocityBand } from '../types';
 import { StudentCard } from '../components/students/StudentCard';
 import { StudentProfile } from '../components/students/StudentProfile';
 import { useStudents } from '../context/StudentContext';
@@ -9,9 +9,10 @@ import { useNavigation } from '../context/NavigationContext';
 import { Icon } from '../components/common/Icon';
 import { AddStudentModal } from '../components/students/AddStudentModal';
 import { StudentCardSkeleton } from '../components/common/Skeleton';
-import { LongitudinalGrowthChart } from '../components/charts/Charts';
+import { LongitudinalGrowthChart, SupportTierChart } from '../components/charts/Charts';
 import { Modal } from '../components/common/Modal';
 import { AtRiskDetailsModal } from '../components/students/AtRiskDetailsModal';
+import { InsightCard } from '../components/common/InsightCard';
 import { TABS } from '../constants';
 
 const DashboardWidget: React.FC<{ 
@@ -52,19 +53,6 @@ const DashboardWidget: React.FC<{
     );
 };
 
-const IntelligenceRibbon: React.FC<{ items: { icon: string, label: string, color: string }[] }> = ({ items }) => (
-    <div className="flex gap-4 overflow-x-auto pb-4 mb-10 scrollbar-none animate-in fade-in slide-in-from-top-4 duration-1000">
-        {items.map((item, i) => (
-            <div key={i} className="flex items-center gap-3 shrink-0 px-5 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-indigo-100 transition-colors group cursor-default">
-                <div className={`p-2 rounded-xl bg-${item.color}-50 text-${item.color}-500 group-hover:bg-indigo-600 group-hover:text-white transition-all`}>
-                    <Icon name={item.icon} className="w-4 h-4" />
-                </div>
-                <span className="text-xs font-black text-slate-700 tracking-tight">{item.label}</span>
-            </div>
-        ))}
-    </div>
-);
-
 export const StudentsTab: React.FC = () => {
     const { students, classProfile, updateClassProfile } = useStudents();
     const { domains } = useBenchmarks();
@@ -79,24 +67,6 @@ export const StudentsTab: React.FC = () => {
     const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
     const [isAtRiskModalOpen, setIsAtRiskModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-
-    const [editClassName, setEditClassName] = useState(classProfile?.className || '');
-    const [editGradeLevel, setEditGradeLevel] = useState(classProfile?.gradeLevel || '5');
-
-    useEffect(() => {
-        if (classProfile) {
-            setEditClassName(classProfile.className);
-            setEditGradeLevel(classProfile.gradeLevel);
-        }
-    }, [classProfile]);
-
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setSearchTerm(value);
-        startTransition(() => {
-            setDeferredSearch(value);
-        });
-    };
 
     const stats = useMemo(() => {
         if (!students.length) return { classAvg: 0, interventionCount: 0, growth: 0, avgVelocity: 0, atRiskList: [] };
@@ -118,29 +88,27 @@ export const StudentsTab: React.FC = () => {
             }
         });
 
+        const tiers = [
+            { name: 'Tier 1', value: 0, color: '#10b981' },
+            { name: 'Tier 2', value: 0, color: '#f59e0b' },
+            { name: 'Tier 3', value: 0, color: '#f43f5e' }
+        ];
+
+        students.forEach(s => {
+            if (s.interventionStatus?.tier === 3) tiers[2].value++;
+            else if (s.interventionStatus?.tier === 2) tiers[1].value++;
+            else tiers[0].value++;
+        });
+
         return {
             classAvg: count ? Math.round(totalScore / count) : 0,
             interventionCount: atRiskList.length,
             growth: count ? Math.round(totalGrowth / count) : 0,
             avgVelocity: Math.round(totalVelocity / students.length),
-            atRiskList
+            atRiskList,
+            tiers
         };
     }, [students]);
-
-    const intelligenceItems = useMemo(() => {
-        const items = [];
-        if (stats.interventionCount > 0) {
-            items.push({ icon: 'alert', label: `${stats.interventionCount} Urgent Interventions`, color: 'rose' });
-        }
-        if (stats.avgVelocity > 10) {
-            items.push({ icon: 'trendUp', label: `Exceptional Class Velocity (+${stats.avgVelocity}%)`, color: 'emerald' });
-        }
-        if (students.length < 5) {
-            items.push({ icon: 'plus', label: `Incomplete Roster Detected`, color: 'amber' });
-        }
-        items.push({ icon: 'benchmark', label: `Standard Mapping: CEFR Starters`, color: 'indigo' });
-        return items;
-    }, [stats, students]);
 
     const velocityChartData = useMemo(() => {
         const periods = [TestPeriod.Baseline, TestPeriod.Midline, TestPeriod.Endline];
@@ -164,88 +132,115 @@ export const StudentsTab: React.FC = () => {
         return () => clearTimeout(timer);
     }, [students.length]);
 
-    const handleSaveClass = async () => {
-        await updateClassProfile({ className: editClassName, gradeLevel: editGradeLevel });
-        setIsEditClassModalOpen(false);
-    };
-
-    const selectedStudent = selectedStudentId ? students.find(s => s.id === selectedStudentId) || null : null;
     const filteredStudents = useMemo(() => {
         return students.filter(student => student.name.toLowerCase().includes(deferredSearch.toLowerCase()));
     }, [students, deferredSearch]);
 
-    if (selectedStudent) {
-        return (
-            <div className="p-4 md:p-8 h-full bg-[#F8FAFC]">
-                <StudentProfile student={selectedStudent} onBack={() => setSelectedStudentId(null)} />
-            </div>
-        );
+    if (selectedStudentId) {
+        const selectedStudent = students.find(s => s.id === selectedStudentId);
+        if (selectedStudent) {
+            return <StudentProfile student={selectedStudent} onBack={() => setSelectedStudentId(null)} />;
+        }
     }
 
+    const isTeacher = user?.role === UserRole.Teacher;
+
     return (
-        <div className="p-6 md:p-12 h-full max-w-[1920px] mx-auto overflow-y-auto pb-32">
+        <div className="p-6 md:p-12 h-full max-w-[1920px] mx-auto overflow-y-auto pb-32 scrollbar-thin scrollbar-thumb-slate-200">
+            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-8">
                 <div>
-                    <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2">Hello, {user?.name.split(' ')[0]}</h1>
-                    <p className="text-slate-400 font-bold text-lg">Your class overview for <span className="text-indigo-600">{classProfile?.className || 'the day'}</span>.</p>
+                    <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2">
+                        {isTeacher ? `Teaching Today: ${user?.name.split(' ')[0]}` : "Institutional Intelligence"}
+                    </h1>
+                    <p className="text-slate-400 font-bold text-lg">
+                        {isTeacher ? "Your classroom strategy co-pilot." : "System-wide growth and risk monitoring."}
+                    </p>
                 </div>
                 <div className="mt-4 md:mt-0 flex items-center bg-white p-3 rounded-full shadow-xl shadow-slate-200/50 border border-slate-100 ring-8 ring-slate-50 transition-all focus-within:ring-indigo-50">
                     <Icon name="search" className={`w-6 h-6 ml-3 transition-colors ${isPending ? 'text-indigo-500 animate-pulse' : 'text-slate-300'}`} />
                     <input 
                         type="text" 
-                        placeholder="Filter class roster..." 
+                        placeholder="Search roster..." 
                         value={searchTerm}
-                        onChange={handleSearchChange}
+                        onChange={(e) => {
+                            setSearchTerm(e.target.value);
+                            startTransition(() => setDeferredSearch(e.target.value));
+                        }}
                         className="bg-transparent border-none focus:ring-0 text-md font-black text-slate-700 placeholder-slate-300 w-56 md:w-80"
                     />
                 </div>
             </div>
 
-            <IntelligenceRibbon items={intelligenceItems} />
-
+            {/* Role-Specific Hero Section */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-12">
-                <div className="md:col-span-4 lg:col-span-3 bg-white rounded-[2.8rem] p-10 shadow-2xl shadow-slate-200/40 border border-slate-100 flex flex-col items-center text-center relative overflow-hidden group">
+                {isTeacher ? (
+                    // TEACHER: Today's Teaching Actions
+                    <div className="md:col-span-8 lg:col-span-9">
+                        <InsightCard 
+                            title="Today's Teaching Actions"
+                            description="AI-Prioritized Classroom Strategy"
+                            contextForAi={`Class average is ${stats.classAvg}%. ${stats.interventionCount} students need tier 2/3 support. Growth velocity is ${stats.avgVelocity}%.`}
+                            actionLabel="Analyze Weakness"
+                            onAction={() => setActiveTab(TABS.RESOURCE_BANK)}
+                        >
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <DashboardWidget title="Risk Protocol" value={stats.interventionCount} subtext="Requires Attention" icon="alert" gradient="from-rose-500 to-pink-600" textColor="text-white" onClick={() => setIsAtRiskModalOpen(true)} />
+                                <DashboardWidget title="Class Velocity" value={`+${stats.avgVelocity}%`} subtext="Growth Speed" icon="trendUp" gradient="from-indigo-600 to-violet-700" textColor="text-white" onClick={() => setActiveTab(TABS.ANALYTICS)} />
+                                <DashboardWidget title="Classroom Avg" value={`${stats.classAvg}%`} subtext="Proficiency" icon="analytics" gradient="from-blue-500 to-indigo-600" textColor="text-white" />
+                            </div>
+                        </InsightCard>
+                    </div>
+                ) : (
+                    // ADMIN: Institutional Health
+                    <div className="md:col-span-8 lg:col-span-9">
+                        <InsightCard 
+                            title="Institutional Performance Briefing"
+                            description="Executive Oversight"
+                            contextForAi={`Institutional average is ${stats.classAvg}%. Tier 3 students represent ${Math.round((stats.tiers[2].value / students.length) * 100)}% of population.`}
+                            actionLabel="Download Briefing"
+                            onAction={() => setActiveTab(TABS.ANALYTICS)}
+                            variant="intelligence"
+                        >
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div className="bg-slate-800 rounded-3xl p-6">
+                                    <h4 className="text-white font-black text-sm uppercase tracking-widest mb-4">Tier Distribution</h4>
+                                    <div className="h-64"><SupportTierChart data={stats.tiers as any} /></div>
+                                </div>
+                                <div className="bg-slate-800 rounded-3xl p-6">
+                                    <h4 className="text-white font-black text-sm uppercase tracking-widest mb-4">Growth Velocity Trend</h4>
+                                    <div className="h-64"><LongitudinalGrowthChart data={velocityChartData} lines={[{ key: 'avg', color: '#6366f1' }]} type="area" /></div>
+                                </div>
+                            </div>
+                        </InsightCard>
+                    </div>
+                )}
+
+                {/* Shared Profile Card */}
+                <div className="md:col-span-4 lg:col-span-3 bg-white rounded-[2.8rem] p-10 shadow-2xl border border-slate-100 flex flex-col items-center text-center relative overflow-hidden group">
                     <button onClick={() => setIsEditClassModalOpen(true)} className="absolute top-6 right-6 p-2.5 rounded-2xl bg-slate-50 text-slate-400 hover:text-indigo-600 transition shadow-inner border border-slate-100"><Icon name="settings" className="w-5 h-5" /></button>
                     <div className="relative z-10 mt-2 mb-8 scale-hover">
                         <div className="w-28 h-28 p-1.5 rounded-[2.5rem] bg-gradient-to-tr from-slate-50 to-white shadow-2xl mx-auto ring-8 ring-slate-50 transition-transform group-hover:rotate-12">
                             <div className="w-full h-full rounded-[2.2rem] bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-5xl font-black text-white shadow-inner">{classProfile?.className.charAt(0) || 'C'}</div>
                         </div>
                     </div>
-                    <h2 className="text-3xl font-black text-slate-900 relative z-10 truncate w-full px-2 tracking-tight mb-2">{classProfile?.className || 'Institutional Core'}</h2>
-                    <p className="text-sm font-black text-slate-400 uppercase tracking-[0.3em] relative z-10 mb-8">Level {classProfile?.gradeLevel || '—'}</p>
+                    <h2 className="text-3xl font-black text-slate-900 truncate w-full px-2 tracking-tight mb-2">{classProfile?.className || 'Classroom'}</h2>
+                    <p className="text-sm font-black text-slate-400 uppercase tracking-[0.3em] mb-8">Level {classProfile?.gradeLevel || '—'}</p>
                     <div className="mt-auto w-full pt-6 border-t border-slate-50">
                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Active Enrollment</p>
                          <p className="text-xl font-black text-slate-800">{students.length} Students</p>
                     </div>
                 </div>
-
-                <div className="md:col-span-8 lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-8">
-                    <DashboardWidget title="Risk Protocol" value={`${stats.interventionCount}`} subtext="Critical Alerts" icon="alert" gradient="from-rose-500 to-pink-600" textColor="text-white" onClick={() => setIsAtRiskModalOpen(true)} />
-                    <DashboardWidget title="Class Metric" value={`${stats.classAvg}%`} subtext="Avg Proficiency" icon="analytics" gradient="from-indigo-600 to-violet-700" textColor="text-white" onClick={() => setActiveTab(TABS.ANALYTICS)} />
-                </div>
-
-                <div className="md:col-span-12 lg:col-span-4 bg-white rounded-[2.8rem] p-8 shadow-2xl shadow-slate-200/40 border border-slate-100 flex flex-col">
-                    <div className="flex justify-between items-center mb-6">
-                        <h3 className="font-black text-slate-800 tracking-tight text-xl">Class Trajectory</h3>
-                        <div className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase rounded-full">Automated Trend</div>
-                    </div>
-                    <div className="flex-1 min-h-[160px]">
-                        {velocityChartData.length > 1 ? (
-                            <LongitudinalGrowthChart data={velocityChartData} lines={[{ key: 'avg', color: '#6366f1' }]} type="area" />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-slate-50/50 rounded-3xl border-4 border-dashed border-slate-100 text-slate-300 font-black text-[11px] uppercase tracking-[0.3em] px-10 text-center">Data Threshold Unmet for Charting</div>
-                        )}
-                    </div>
-                </div>
             </div>
 
+            {/* Roster Section */}
             <div className="flex flex-col sm:flex-row justify-between items-end mb-12 gap-6">
                 <div>
                     <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Student Roster</h2>
-                    <p className="text-slate-400 font-bold text-md mt-1 italic">Managing institutional cohorts and test cycles.</p>
+                    <p className="text-slate-400 font-bold text-md mt-1 italic">Managing institutional cohorts and growth velocity.</p>
                 </div>
                 <div className="flex gap-4 w-full sm:w-auto">
-                    <button onClick={() => setBulkEntryOpen(true)} className="flex-1 sm:flex-none px-8 py-4 bg-white border border-slate-200 text-slate-800 rounded-2xl font-black hover:bg-slate-50 transition flex items-center justify-center gap-3 shadow-sm active:scale-95 border-b-4"><Icon name="benchmark" className="w-5 h-5 text-indigo-500" /><span className="text-xs uppercase tracking-widest">Bulk Sync</span></button>
+                    <button onClick={() => setBulkEntryOpen(true)} className="flex-1 sm:flex-none px-8 py-4 bg-white border border-slate-200 text-slate-800 rounded-2xl font-black hover:bg-slate-50 transition flex items-center justify-center gap-3 shadow-sm active:scale-95 border-b-4"><Icon name="benchmark" className="w-5 h-5 text-indigo-500" /><span className="text-xs uppercase tracking-widest">Bulk Entry</span></button>
                     <button onClick={() => setIsAddStudentModalOpen(true)} className="flex-1 sm:flex-none px-8 py-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-indigo-600 hover:shadow-indigo-200 transition shadow-2xl flex items-center justify-center gap-3 active:scale-95 border-b-4 border-slate-950"><Icon name="plus" className="w-5 h-5" /><span className="text-xs uppercase tracking-widest">New Roster</span></button>
                 </div>
             </div>
@@ -267,8 +262,8 @@ export const StudentsTab: React.FC = () => {
             ) : (
                 <div className="flex flex-col items-center justify-center py-24 text-center border-4 border-dashed border-slate-100 rounded-[4rem] bg-white shadow-inner">
                     <div className="p-8 bg-slate-50 rounded-full mb-6 text-slate-200"><Icon name="search" className="w-20 h-20" /></div>
-                    <h3 className="text-3xl font-black text-slate-800 mb-2">No Matches in Cohort</h3>
-                    <p className="text-slate-400 text-sm max-w-sm mx-auto mb-10 font-bold">Try refining your search protocol or add a new profile to the system.</p>
+                    <h3 className="text-3xl font-black text-slate-800 mb-2">No Matches</h3>
+                    <p className="text-slate-400 text-sm max-w-sm mx-auto mb-10 font-bold">Try refining your search protocol or add a new profile.</p>
                 </div>
             )}
 
@@ -276,18 +271,18 @@ export const StudentsTab: React.FC = () => {
                 <div className="space-y-8">
                     <div>
                         <label className="block text-[11px] font-black uppercase text-slate-400 tracking-widest mb-2 ml-1">Classroom Label</label>
-                        <input value={editClassName} onChange={(e) => setEditClassName(e.target.value)} className="w-full px-6 py-4 border-2 border-slate-100 bg-slate-50 rounded-2xl focus:bg-white focus:border-indigo-500 outline-none font-black text-slate-800 transition-all" />
+                        <input value={classProfile?.className || ''} onChange={(e) => updateClassProfile({ className: e.target.value })} className="w-full px-6 py-4 border-2 border-slate-100 bg-slate-50 rounded-2xl focus:bg-white focus:border-indigo-500 outline-none font-black text-slate-800 transition-all" />
                     </div>
                     <div>
                         <label className="block text-[11px] font-black uppercase text-slate-400 tracking-widest mb-2 ml-1">Benchmark Calibration</label>
-                        <select value={editGradeLevel} onChange={(e) => setEditGradeLevel(e.target.value)} className="w-full px-6 py-4 border-2 border-slate-100 bg-slate-50 rounded-2xl focus:bg-white focus:border-indigo-500 outline-none font-black text-slate-800 transition-all">
+                        <select value={classProfile?.gradeLevel || '5'} onChange={(e) => updateClassProfile({ gradeLevel: e.target.value })} className="w-full px-6 py-4 border-2 border-slate-100 bg-slate-50 rounded-2xl focus:bg-white focus:border-indigo-500 outline-none font-black text-slate-800 transition-all">
                             <option value="5">Level 5 (Age 5)</option>
                             <option value="6-1">Level 6-1</option>
                             <option value="6-2">Level 6-2</option>
                         </select>
                     </div>
                     <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
-                        <button onClick={handleSaveClass} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl hover:bg-indigo-600 active:scale-95 transition-all">Update Registry</button>
+                        <button onClick={() => setIsEditClassModalOpen(false)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl hover:bg-indigo-600 active:scale-95 transition-all">Close</button>
                     </div>
                 </div>
             </Modal>

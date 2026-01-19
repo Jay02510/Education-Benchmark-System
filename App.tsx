@@ -19,6 +19,8 @@ import { LoginScreen } from './components/auth/LoginScreen.tsx';
 import { ChatWidget } from './components/chat/ChatWidget.tsx';
 import { PlatformGuideModal } from './components/common/PlatformGuideModal.tsx';
 import { BulkAssessmentModal } from './components/students/BulkAssessmentModal.tsx';
+import { CommandCenter } from './components/common/CommandCenter.tsx';
+import { AICoach } from './components/common/AICoach.tsx';
 
 type TabName = typeof TABS[keyof typeof TABS];
 
@@ -109,6 +111,7 @@ const MainAppLayout: React.FC = () => {
             
             <div className="flex flex-1 overflow-hidden relative">
                 {(!classProfile && !user?.isDemo) && <OnboardingWizard />}
+                <CommandCenter />
 
                 {isMobileMenuOpen && (
                     <div className="fixed inset-0 bg-slate-900/60 z-[100] lg:hidden backdrop-blur-sm transition-opacity print:hidden" onClick={() => setIsMobileMenuOpen(false)} />
@@ -236,6 +239,7 @@ const MainAppLayout: React.FC = () => {
                      </div>
 
                      <ChatWidget />
+                     <AICoach />
                      <PlatformGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
                      
                      <BulkAssessmentModal isOpen={isBulkEntryOpen} onClose={() => setBulkEntryOpen(false)} />

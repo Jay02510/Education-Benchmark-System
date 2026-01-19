@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Student, ClassProfile, Assessment, Resource, Intervention, Trend, Domain, StudentLogEntry, TestPeriod, SubdomainMetadata } from '../types.ts';
+import { Student, ClassProfile, Assessment, Resource, Intervention, Trend, Domain, StudentLogEntry, TestPeriod, SubdomainMetadata, VelocityBand } from '../types.ts';
 import { mockStudents } from '../data/mockData.ts';
 import { useToast } from './ToastContext.tsx';
 import { useAuth } from './AuthContext.tsx';
@@ -94,6 +95,13 @@ const calculateVelocity = (assessments: Assessment[], frameworkSubdomains: Recor
     return latestAvg - prevAvg;
 };
 
+// Fix: Determination logic for VelocityBand based on growthVelocity
+const calculateVelocityBand = (velocity: number): VelocityBand => {
+    if (velocity >= 10) return VelocityBand.Fast;
+    if (velocity < 0) return VelocityBand.AtRisk;
+    return VelocityBand.Stable;
+};
+
 const calculateRTIStatus = (assessments: Assessment[], thresholds: Record<TestPeriod, number>, frameworkSubdomains: Record<string, SubdomainMetadata[]>): Intervention | null => {
     if (assessments.length === 0) return null;
     const sorted = [...assessments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -151,7 +159,7 @@ const sortByName = (list: Student[]) => [...list].sort((a, b) => a.name.localeCo
 
 export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user } = useAuth();
-    const { thresholds, subdomains: frameworkSubdomains } = useBenchmarks(); 
+    const { thresholds, frameworkSubdomains } = useBenchmarks(); 
     const [students, setStudents] = useState<Student[]>([]);
     const [classProfile, setClassProfile] = useState<ClassProfile | null>(null);
     const { showToast } = useToast();
@@ -232,6 +240,8 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             photoUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name.trim()}`,
             overallGrowth: 0,
             growthVelocity: 0,
+            // Fix: Initial velocity band for new students
+            velocityBand: VelocityBand.Stable,
             hasAnomaly: false,
             assessments: [],
             interventionStatus: null,
@@ -287,6 +297,8 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
         const velocity = calculateVelocity(assessments, frameworkSubdomains);
+        // Fix: Determine velocity band
+        const velocityBand = calculateVelocityBand(velocity);
         const rti = calculateRTIStatus(assessments, thresholds, frameworkSubdomains);
         const latestAvg = getTrueProficiency(assessments[assessments.length-1], frameworkSubdomains);
         const firstAvg = getTrueProficiency(assessments[0], frameworkSubdomains);
@@ -296,6 +308,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             assessments, 
             overallGrowth: Math.round(growth), 
             growthVelocity: velocity, 
+            velocityBand, // Fix: Include in payload
             interventionStatus: rti, 
             hasAnomaly: !!rti 
         };
@@ -312,10 +325,19 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         const assessments = student.assessments.filter(a => a.id !== assessmentId);
         const velocity = calculateVelocity(assessments, frameworkSubdomains);
+        // Fix: Recalculate band
+        const velocityBand = calculateVelocityBand(velocity);
         const rti = calculateRTIStatus(assessments, thresholds, frameworkSubdomains);
         const growth = assessments.length >= 2 ? getTrueProficiency(assessments[assessments.length-1], frameworkSubdomains) - getTrueProficiency(assessments[0], frameworkSubdomains) : 0;
 
-        const payload = { assessments, overallGrowth: Math.round(growth), growthVelocity: velocity, interventionStatus: rti, hasAnomaly: !!rti };
+        const payload = { 
+            assessments, 
+            overallGrowth: Math.round(growth), 
+            growthVelocity: velocity, 
+            velocityBand, // Fix: Include in payload
+            interventionStatus: rti, 
+            hasAnomaly: !!rti 
+        };
 
         if (user.isDemo) syncStudents(students.map(s => s.id === studentId ? { ...s, ...payload } : s));
         else await updateDoc(doc(db, 'students', studentId), payload);
@@ -349,12 +371,21 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
             
             const vel = calculateVelocity(assessments, frameworkSubdomains);
+            // Fix: Band calculation for bulk entries
+            const velocityBand = calculateVelocityBand(vel);
             const latestAvg = getTrueProficiency(assessments[assessments.length-1], frameworkSubdomains);
             const firstAvg = getTrueProficiency(assessments[0], frameworkSubdomains);
             const growth = assessments.length >= 2 ? latestAvg - firstAvg : 0;
             const rti = calculateRTIStatus(assessments, thresholds, frameworkSubdomains);
             
-            const payload = { assessments, overallGrowth: Math.round(growth), growthVelocity: vel, interventionStatus: rti, hasAnomaly: !!rti };
+            const payload = { 
+                assessments, 
+                overallGrowth: Math.round(growth), 
+                growthVelocity: vel, 
+                velocityBand, // Fix: Include in payload
+                interventionStatus: rti, 
+                hasAnomaly: !!rti 
+            };
 
             if (batch) batch.update(doc(db, 'students', s.id), payload);
             updatedStudents[sIdx] = { ...s, ...payload };

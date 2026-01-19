@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../common/Modal';
 import { useStudents } from '../../context/StudentContext';
 import { Icon } from '../common/Icon';
-import { Student } from '../../types';
+import { Student, VelocityBand } from '../../types';
 
 interface AddStudentModalProps {
     isOpen: boolean;
@@ -143,6 +143,8 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
                 photoUrl: finalPhotoUrl,
                 overallGrowth: 0,
                 growthVelocity: 0,
+                // Fix: Initialize with required velocityBand
+                velocityBand: VelocityBand.Stable,
                 hasAnomaly: false,
                 assessments: [],
                 interventionStatus: null,

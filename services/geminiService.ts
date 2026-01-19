@@ -10,11 +10,8 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 export class GeminiService {
     private static instance: GoogleGenAI | null = null;
     private static lastRequestTime = 0;
-    private static MIN_REQUEST_GAP = 200; // Throttle: 200ms between any two calls
+    private static MIN_REQUEST_GAP = 200; 
 
-    /**
-     * Resolves the AI client with lazy initialization.
-     */
     private static async getClient(): Promise<GoogleGenAI> {
         const win = window as any;
 
@@ -37,13 +34,8 @@ export class GeminiService {
         return this.instance;
     }
 
-    /**
-     * Exponential Backoff Wrapper
-     * Retries requests on 429 (Rate Limit) or 503 (Overloaded) errors.
-     */
     private static async callWithRetry<T>(fn: () => Promise<T>, retries = 3, backoff = 2000): Promise<T> {
         try {
-            // Internal Throttling: Ensure we don't fire requests too close together
             const now = Date.now();
             const timeSinceLast = now - this.lastRequestTime;
             if (timeSinceLast < this.MIN_REQUEST_GAP) {
@@ -82,6 +74,30 @@ export class GeminiService {
         throw new Error(error.message || "AI Engine communication failure.");
     }
 
+    static async generateMicroNarrative(context: string): Promise<string> {
+        return this.callWithRetry(async () => {
+            const ai = await this.getClient();
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: `Provide a 1-sentence pedagogical micro-narrative for the following data. Focus on "What to do next". Context: ${context}`,
+                config: { thinkingConfig: { thinkingBudget: 0 } }
+            });
+            return response.text || "No immediate directive.";
+        }).catch(() => "Continue monitoring current trajectory.");
+    }
+
+    static async generateInsightForChart(chartTitle: string, dataPoints: string): Promise<string> {
+        return this.callWithRetry(async () => {
+            const ai = await this.getClient();
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: `Interpret this chart "${chartTitle}". Data: ${dataPoints}. Answer "So what should I do?" in 2 sentences or less.`,
+                config: { thinkingConfig: { thinkingBudget: 0 } }
+            });
+            return response.text || "Continue current plan.";
+        }).catch(() => "Data suggests steady progress.");
+    }
+
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
         return this.callWithRetry(async () => {
             const ai = await this.getClient();
@@ -110,7 +126,7 @@ export class GeminiService {
             const ai = await this.getClient();
             const response = await ai.models.generateContent({ 
                 model: 'gemini-3-flash-preview', 
-                contents: `Executive Performance Briefing for class of ${studentCount} at Level ${gradeLevel}. Avg: ${stats.classAvg}%. Velocity: ${stats.avgVelocity}%. Strongest: ${stats.strongest}. Weakest: ${stats.weakest}.`
+                contents: `Executive Performance Briefing for class of ${studentCount} at Level ${gradeLevel}. Avg: ${stats.classAvg}%. Velocity: ${stats.avgVelocity}%. Strongest: ${stats.strongest}. Weakest: ${stats.weakest}. Focus on institutional risk.`
             });
             return response.text || "Analysis complete.";
         }).catch(err => this.handleError(err));

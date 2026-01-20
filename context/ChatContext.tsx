@@ -36,7 +36,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const chatSessionRef = useRef<Chat | null>(null);
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
-    const verifyKey = () => !!process.env.API_KEY;
+    // Robust verification looking at both shimmed and native process objects
+    const verifyKey = () => {
+        const k = process.env.API_KEY || (window as any).process?.env?.API_KEY;
+        return !!k && k !== "undefined" && k !== "";
+    };
 
     useEffect(() => {
         setIsAiActive(verifyKey());
@@ -59,8 +63,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const getChatSession = async () => {
         if (chatSessionRef.current) return chatSessionRef.current;
         
-        const apiKey = process.env.API_KEY;
-        if (!apiKey) throw new Error("The Engine is currently locked. Please verify system configuration.");
+        const apiKey = process.env.API_KEY || (window as any).process?.env?.API_KEY;
+        if (!apiKey || apiKey === "undefined") {
+            console.error("Benchmark AI: Chat Initialization Aborted. API_KEY not detected.");
+            throw new Error("System Identity Locked: API Key missing from Vercel environment.");
+        }
         
         const ai = new GoogleGenAI({ apiKey });
         const session = ai.chats.create({
@@ -78,11 +85,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         chatSessionRef.current = null;
         const active = verifyKey();
         setIsAiActive(active);
+        
         if (!active) {
             setMessages(prev => [...prev, {
                 id: `err-${Date.now()}`,
                 role: 'model',
-                text: "Alert: API Key not detected in environment. Intelligence features remain offline.",
+                text: "Configuration Alert: No API Key detected. Ensure 'API_KEY' is added to your Vercel Project Settings and redeploy.",
                 timestamp: Date.now(),
                 isError: true
             }]);
@@ -90,7 +98,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
              setMessages(prev => [...prev, {
                 id: `sys-${Date.now()}`,
                 role: 'model',
-                text: "Handshake successful. Engine re-calibrated.",
+                text: "Communication Handshake successful. Intelligence Engine re-calibrated.",
                 timestamp: Date.now()
             }]);
         }
@@ -108,14 +116,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: result.text || "Data inquiry complete.", 
+                text: result.text || "Inquiry analyzed. Parameters confirmed.", 
                 timestamp: Date.now() 
             }]);
         } catch (error: any) {
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Connectivity Alert: ${error.message}`, 
+                text: `Connectivity Alert: ${error.message}. Please check engine logs.`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

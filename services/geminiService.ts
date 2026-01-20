@@ -4,21 +4,25 @@ import { Student, Domain, ResourceType } from '../types.ts';
 
 /**
  * Utility to extract JSON from a model response that might contain
- * conversational text before or after the JSON block.
+ * conversational text, thinking tokens, or markdown blocks.
  */
 const extractJson = (text: string) => {
     try {
+        // Remove markdown formatting if present
+        let sanitized = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        
         // Find the first '{' and the last '}'
-        const firstBracket = text.indexOf('{');
-        const lastBracket = text.lastIndexOf('}');
+        const firstBracket = sanitized.indexOf('{');
+        const lastBracket = sanitized.lastIndexOf('}');
+        
         if (firstBracket !== -1 && lastBracket !== -1) {
-            const jsonStr = text.substring(firstBracket, lastBracket + 1);
-            return JSON.parse(jsonStr);
+            sanitized = sanitized.substring(firstBracket, lastBracket + 1);
+            return JSON.parse(sanitized);
         }
-        return JSON.parse(text);
+        return JSON.parse(sanitized);
     } catch (e) {
-        console.error("AI JSON Parse Failure. Raw Text:", text);
-        throw new Error("The Intelligence Engine returned an invalid data format.");
+        console.error("Benchmark AI: Parsing Error. Raw payload:", text);
+        throw new Error("Data Synthesis Failure: The Engine returned an incompatible format.");
     }
 };
 
@@ -32,13 +36,14 @@ Think like a senior administrator. Use Benchmark terminology: 'Growth Velocity',
 
 export class GeminiService {
     private static lastRequestTime = 0;
-    private static MIN_REQUEST_GAP = 1000; 
+    private static MIN_REQUEST_GAP = 1200; 
 
-    private static async callWithRetry<T>(fn: (ai: GoogleGenAI) => Promise<T>, retries = 2): Promise<T> {
-        const apiKey = process.env.API_KEY;
-        if (!apiKey) {
-            console.error("CRITICAL: API_KEY is undefined in process.env");
-            throw new Error("AI Connectivity Identity missing. Ensure API_KEY is configured in the environment.");
+    private static async callWithRetry<T>(fn: (ai: GoogleGenAI) => Promise<T>, retries = 3): Promise<T> {
+        const apiKey = process.env.API_KEY || (window as any).process?.env?.API_KEY;
+        
+        if (!apiKey || apiKey === "undefined" || apiKey === "") {
+            console.error("Benchmark AI: CONFIGURATION ALERT - API_KEY is missing from environment.");
+            throw new Error("System Identity Not Found. Please verify API_KEY in the Vercel Dashboard.");
         }
 
         const now = Date.now();
@@ -50,11 +55,22 @@ export class GeminiService {
             const ai = new GoogleGenAI({ apiKey });
             return await fn(ai);
         } catch (error: any) {
-            console.error("Gemini API Error:", error);
-            if (retries > 0 && (error.message?.includes("429") || error.message?.includes("503"))) {
-                await delay(2000);
+            console.error("Benchmark AI: Engine Communication Failure:", error);
+            
+            // Check for quota or server errors to trigger retry
+            if (retries > 0 && (error.message?.includes("429") || error.message?.includes("503") || error.message?.includes("500"))) {
+                await delay(2500);
                 return this.callWithRetry(fn, retries - 1);
             }
+            
+            // Throw descriptive error for the UI
+            if (error.message?.includes("403") || error.message?.includes("401")) {
+                throw new Error("Access Denied: The provided API Key is invalid or restricted.");
+            }
+            if (error.message?.includes("404")) {
+                throw new Error("Engine Not Found: The requested AI model is unavailable in your region.");
+            }
+            
             throw error;
         }
     }
@@ -65,7 +81,7 @@ export class GeminiService {
                 model: 'gemini-3-flash-preview',
                 contents: `Context: ${context}. Task: Provide a 1-sentence pedagogical micro-narrative for a teacher's dashboard. Be specific and action-oriented.`,
             });
-            return response.text || "Monitoring academic trajectory.";
+            return response.text || "Metrics verified. Awaiting further evidence.";
         }).catch(() => "Data parameters within standard deviations.");
     }
 
@@ -80,12 +96,11 @@ export class GeminiService {
                     Identify the #1 risk and the #1 growth opportunity.
                 `,
             });
-            return response.text || "Institutional performance data verified.";
+            return response.text || "Institutional performance data verified and recorded.";
         });
     }
 
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
-        // Extract latest scores for context
         const latest = student.assessments[student.assessments.length - 1];
         const scoreContext = latest ? Object.entries(latest.scores).map(([d, s]) => `${d}: ${s}%`).join(', ') : 'No data';
 

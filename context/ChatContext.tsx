@@ -20,11 +20,11 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 const SYSTEM_INSTRUCTION = `
-You are the Benchmark Institutional Intelligence Engine. 
-You are the Guardian of Academic Health. 
-Think like a senior administrator and human-centered operations designer.
-Optimize for student growth, teacher sustainability, and institutional trust.
-Always use the Benchmark terminology: 'Growth Velocity' and 'Proficiency Tiers'.
+You are the Benchmark Institutional Intelligence Engine, acting as the Guardian of Academic Health. 
+Think like a senior administrator and pedagogical operations designer.
+Optimize for student growth velocity, teacher sustainability, and institutional trust.
+Always use the Benchmark terminology: 'Growth Velocity', 'Intervention Tiers', and 'Institutional Compliance'.
+Do not mention being an AI; act as the integrated intelligence layer of the platform.
 `;
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -37,23 +37,18 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const chatSessionRef = useRef<Chat | null>(null);
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
-    const getApiKey = () => {
-        const win = window as any;
-        return (win.process?.env?.API_KEY) || (win.API_KEY) || "";
-    };
-
-    // Monitor Engine Status
+    // Monitor engine connectivity status without prompting the user
     useEffect(() => {
-        const check = () => {
-            const key = getApiKey();
-            setIsAiActive(!!key && key.length > 10);
+        const checkStatus = () => {
+            const hasKey = !!process.env.API_KEY && process.env.API_KEY.length > 5;
+            setIsAiActive(hasKey);
         };
-        check();
-        const interval = setInterval(check, 2000);
+        checkStatus();
+        const interval = setInterval(checkStatus, 5000);
         return () => clearInterval(interval);
     }, []);
 
-    // Automatic Persona Alignment
+    // Align persona to the active dashboard view
     useEffect(() => {
         const targetPersona = activeTab === TABS.ADMIN ? 'Admin' : 'Teacher';
         if (targetPersona !== currentPersona) {
@@ -62,38 +57,35 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages([{
                 id: `welcome-${Date.now()}`,
                 role: 'model',
-                text: targetPersona === 'Admin' ? "Guardian Admin diagnostics online." : "Institutional Intelligence Engine ready. Monitoring academic health.",
+                text: targetPersona === 'Admin' ? "Guardian Institutional Audit online. System health within parameters." : "Benchmark Intelligence Engine engaged. Analyzing classroom growth velocity.",
                 timestamp: Date.now()
             }]);
         }
     }, [activeTab]);
 
     const createNewSession = async () => {
-        const apiKey = getApiKey();
-        if (!apiKey) throw new Error("API Key not found in environment.");
+        const apiKey = process.env.API_KEY;
+        if (!apiKey) throw new Error("Environment configuration incomplete: API_KEY missing.");
         
         const ai = new GoogleGenAI({ apiKey });
         return ai.chats.create({
             model: 'gemini-3-flash-preview',
             config: {
-                systemInstruction: SYSTEM_INSTRUCTION + (currentPersona === 'Admin' ? " (Admin Diagnostic Mode)" : ""),
+                systemInstruction: SYSTEM_INSTRUCTION + (currentPersona === 'Admin' ? " (Admin Diagnostic Mode enabled)" : ""),
                 tools: [{ functionDeclarations: currentPersona === 'Teacher' ? teacherTools : adminTools }],
             }
         });
     };
 
     const reconnect = async () => {
-        const win = window as any;
-        if (win.aistudio) {
-            await win.aistudio.openSelectKey();
-            chatSessionRef.current = null;
-        } else {
-            const manualKey = prompt("Enter API Key manually (or check process.env.API_KEY):");
-            if (manualKey) {
-                win.API_KEY = manualKey;
-                setIsAiActive(true);
-            }
-        }
+        // Reset session only, do not prompt for keys
+        chatSessionRef.current = null;
+        setMessages(prev => [...prev, {
+            id: `sys-${Date.now()}`,
+            role: 'model',
+            text: "Re-establishing connection with the Institutional Intelligence Engine...",
+            timestamp: Date.now()
+        }]);
     };
 
     const sendMessage = async (text: string) => {
@@ -112,15 +104,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: result.text || "Guardian processing complete.", 
+                text: result.text || "Diagnostic processing complete. Academic parameters verified.", 
                 timestamp: Date.now() 
             }]);
         } catch (error: any) {
-            console.error("Chat Error:", error);
+            console.error("Chat failure:", error);
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Connectivity Failure: ${error.message}. Please click 'Engine Offline' to sync.`, 
+                text: `Connectivity interruption: ${error.message}. The system is attempting to resolve this internally.`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

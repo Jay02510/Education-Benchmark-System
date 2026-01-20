@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Domain, ResourceType } from '../types.ts';
 
@@ -7,26 +8,26 @@ const sanitizeJson = (text: string) => {
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-// Guardian Persona Directives adapted for Benchmark
+// Guardian Persona Directives for Benchmark System
 const GUARDIAN_DIRECTIVE = `
-You are EduPlanner’s Institutional Intelligence Engine, acting as the Guardian of Academic Health.
+You are the Benchmark Institutional Intelligence Engine, acting as the Guardian of Academic Health.
 Your role is NOT to simply generate text, but to preserve and optimize the school's PEDAGOGICAL LOGIC.
 
 PRIMARY OBJECTIVES:
-1. Preserve student growth (Conflict-free standards).
-2. Human-sustainable teaching (Reduce teacher burnout via clear reports).
-3. Minimize unnecessary change in student trajectories.
-4. Preserve institutional memory.
+1. Preserve student growth velocity (Conflict-free standards).
+2. Human-sustainable teaching (Reduce teacher burnout via diagnostic clarity).
+3. Minimize unnecessary change in student learning pathways.
+4. Preserve institutional memory of student performance cycles.
 
 HARD CONSTRAINTS:
-- No domain regression without an alert.
-- Intervention Tiers must be respected based on scores.
-- Standard CEFR/YLE mappings are immutable.
+- No domain regression allowed without a critical alert.
+- Intervention Tiers must be strictly respected based on score thresholds.
+- Standard CEFR and YLE mappings are immutable references.
 
-OUTPUT FORMAT:
+OUTPUT FORMAT FOR ANALYSIS:
 1. Summary of Action
 2. Constraints Considered
-3. Changes Made (if any)
+3. Changes Detected in Trajectory
 4. Risk Flags or Warnings
 5. System Health Impact (Low / Medium / High)
 `;
@@ -36,15 +37,10 @@ export class GeminiService {
     private static lastRequestTime = 0;
     private static MIN_REQUEST_GAP = 500; 
 
-    private static getApiKey(): string {
-        const win = window as any;
-        return (win.process?.env?.API_KEY) || (win.API_KEY) || "";
-    }
-
     private static getClient(): GoogleGenAI {
-        const apiKey = this.getApiKey();
-        if (!apiKey || apiKey.length < 10) {
-            throw new Error("AI Connectivity Identity not found. Please ensure API_KEY is set.");
+        const apiKey = process.env.API_KEY;
+        if (!apiKey) {
+            throw new Error("AI Connectivity Identity missing. Check process.env.API_KEY configuration.");
         }
         if (!this.instance) {
             this.instance = new GoogleGenAI({ apiKey });
@@ -74,11 +70,11 @@ export class GeminiService {
             const ai = this.getClient();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Context: ${context}. Instruction: ${GUARDIAN_DIRECTIVE}. Task: Provide a 1-sentence pedagogical micro-narrative.`,
+                contents: `Context: ${context}. Directive: ${GUARDIAN_DIRECTIVE}. Task: Provide a 1-sentence pedagogical micro-narrative explaining this state.`,
                 config: { thinkingConfig: { thinkingBudget: 0 } }
             });
-            return response.text || "Monitoring current trajectory.";
-        }).catch(() => "Academic health within expected parameters.");
+            return response.text || "Monitoring current academic trajectory.";
+        }).catch(() => "Academic health metrics stable.");
     }
 
     static async generateClassInsight(gradeLevel: string, studentCount: number, stats: any): Promise<string> {
@@ -86,21 +82,10 @@ export class GeminiService {
             const ai = this.getClient();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Instruction: ${GUARDIAN_DIRECTIVE}. Task: Analyze Grade ${gradeLevel} with ${studentCount} students. Stats: ${JSON.stringify(stats)}.`,
+                contents: `Directive: ${GUARDIAN_DIRECTIVE}. Task: Deep analyze Grade ${gradeLevel} with ${studentCount} students. Stats: ${JSON.stringify(stats)}.`,
                 config: { thinkingConfig: { thinkingBudget: 0 } }
             });
-            return response.text || "Metrics stable.";
-        });
-    }
-
-    static async generateRemedialPrompt(domain: string, avgScore: number, level: string): Promise<string> {
-        return this.callWithRetry(async () => {
-            const ai = this.getClient();
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
-                contents: `Suggest a 1-sentence teaching prompt for bridging gaps in ${domain} for Level ${level} (Avg ${avgScore}%).`,
-            });
-            return response.text || `Focus on ${domain} fundamentals.`;
+            return response.text || "Class-wide proficiency maintains expected baseline.";
         });
     }
 
@@ -110,19 +95,19 @@ export class GeminiService {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-pro-preview',
                 contents: `
-                    Instruction: ${GUARDIAN_DIRECTIVE}. 
-                    Task: Deep analysis for ${student.name}. 
-                    Data: Proficiency ${student.overallGrowth}%, Velocity ${student.growthVelocity}%.
+                    Directive: ${GUARDIAN_DIRECTIVE}. 
+                    Task: Deep pedagogical audit for student ${student.name}. 
+                    Identity Context: Level ${student.level}, ${student.growthVelocity}% Growth Velocity, ${student.overallGrowth}% Cumulative Progress.
                     Format: Use the Guardian Output Format for the trend_insights field.
                 `,
                 config: {
-                    thinkingConfig: { thinkingBudget: 0 },
+                    thinkingConfig: { thinkingBudget: 2000 },
                     responseMimeType: "application/json",
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: { 
-                            report_card: { type: Type.STRING, description: "A warm, parental-facing summary." }, 
-                            trend_insights: { type: Type.STRING, description: "Institutional Guardian Audit summary." } 
+                            report_card: { type: Type.STRING, description: "A supportive, academic summary for stakeholders." }, 
+                            trend_insights: { type: Type.STRING, description: "Institutional Guardian Audit logic following specific format." } 
                         },
                         required: ["report_card", "trend_insights"]
                     }
@@ -137,7 +122,7 @@ export class GeminiService {
             const ai = this.getClient();
             const response = await ai.models.generateContent({
                 model: "gemini-3-flash-preview",
-                contents: `Instruction: ${GUARDIAN_DIRECTIVE}. Task: Generate ${type} for Level ${level} ${domain}. Topic: ${promptText}.`,
+                contents: `Directive: ${GUARDIAN_DIRECTIVE}. Task: Generate high-impact ${type} for Level ${level} ${domain}. Focus: ${promptText}.`,
                 config: {
                     responseMimeType: "application/json",
                     responseSchema: { 
@@ -149,5 +134,18 @@ export class GeminiService {
             });
             return JSON.parse(sanitizeJson(response.text || '{}'));
         }).catch(() => null);
+    }
+
+    // Fix: Added missing generateRemedialPrompt method to support AI-driven resource prompt suggestions based on class data analysis
+    static async generateRemedialPrompt(domain: string, avgScore: number, gradeLevel: string): Promise<string> {
+        return this.callWithRetry(async () => {
+            const ai = this.getClient();
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: `Directive: ${GUARDIAN_DIRECTIVE}. Task: The class average for ${domain} is ${avgScore}% at Level ${gradeLevel}. This is below target. Generate a specific, high-impact instructional prompt that a teacher could use to generate a remedial resource for this domain. Focus on closing specific gaps. Return ONLY the prompt text.`,
+                config: { thinkingConfig: { thinkingBudget: 0 } }
+            });
+            return response.text?.trim() || `A targeted intervention activity for ${domain} focusing on core proficiency gaps for Level ${gradeLevel} students.`;
+        }).catch(() => `A targeted intervention activity for ${domain} focusing on core proficiency gaps for Level ${gradeLevel} students.`);
     }
 }

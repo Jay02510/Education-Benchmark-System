@@ -1,8 +1,10 @@
+
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Student } from '../../types';
 import { Icon } from '../common/Icon';
 import { GeminiService } from '../../services/geminiService';
+import { useToast } from '../../context/ToastContext';
 
 interface StudentReportModalProps {
     isOpen: boolean;
@@ -17,15 +19,23 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
     const [isReviewed, setIsReviewed] = useState(false);
     const [aiNarrative, setAiNarrative] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const { showToast } = useToast();
     const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
     const handleGenerateAudit = async () => {
+        if (student.assessments.length === 0) {
+            showToast("No assessment data available for analysis.", "error");
+            return;
+        }
+
         setIsGenerating(true);
         try {
             const result = await GeminiService.generateComprehensiveStudentAnalysis(student);
             setAiNarrative(result.report_card);
-        } catch (e) {
-            setAiNarrative("Pedagogical audit generation encountered a connectivity issue. Please ensure assessments are complete.");
+            showToast("Pedagogical audit complete.");
+        } catch (e: any) {
+            showToast("Audit failed: " + (e.message || "Connection issue"), "error");
+            setAiNarrative("Unable to generate narrative. Please verify system connectivity and assessment logs.");
         } finally {
             setIsGenerating(false);
         }
@@ -61,34 +71,45 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                         <button 
                             onClick={handleGenerateAudit}
                             disabled={isGenerating}
-                            className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
+                            className={`flex items-center gap-2 text-[9px] font-black uppercase tracking-widest transition-all ${isGenerating ? 'text-slate-400' : 'text-indigo-600 hover:text-indigo-800'}`}
                         >
-                            <Icon name="robot" className={`w-3 h-3 ${isGenerating ? 'animate-pulse' : ''}`} />
-                            {isGenerating ? 'Analyzing...' : 'Generate AI Audit'}
+                            <Icon name="robot" className={`w-3 h-3 ${isGenerating ? 'animate-spin' : ''}`} />
+                            {isGenerating ? 'Calibrating...' : 'Generate AI Audit'}
                         </button>
                     </div>
-                    <div className="p-8 bg-slate-50 border border-slate-100 rounded-[2.5rem] min-h-[150px] relative overflow-hidden">
+                    <div className="p-8 bg-slate-50 border border-slate-100 rounded-[2.5rem] min-h-[180px] relative overflow-hidden flex flex-col justify-center">
                         {isGenerating ? (
-                            <div className="space-y-3">
-                                <div className="h-3 bg-slate-200 rounded animate-pulse w-full"></div>
-                                <div className="h-3 bg-slate-200 rounded animate-pulse w-[90%]"></div>
-                                <div className="h-3 bg-slate-200 rounded animate-pulse w-[95%]"></div>
+                            <div className="space-y-4">
+                                <div className="h-3 bg-indigo-100 rounded-full w-full animate-pulse"></div>
+                                <div className="h-3 bg-indigo-100 rounded-full w-[90%] animate-pulse delay-75"></div>
+                                <div className="h-3 bg-indigo-100 rounded-full w-[95%] animate-pulse delay-150"></div>
                             </div>
                         ) : (
-                            <p className={`text-slate-700 leading-relaxed font-bold ${!aiNarrative ? 'italic text-slate-400' : ''}`}>
-                                {aiNarrative || "No narrative generated. Click 'Generate AI Audit' to analyze performance metrics."}
+                            <p className={`text-slate-700 leading-relaxed font-bold ${!aiNarrative ? 'italic text-slate-400 text-center' : 'text-left'}`}>
+                                {aiNarrative || "Performance metrics awaiting narrative generation. Click 'Generate AI Audit' to synthesize data."}
                             </p>
                         )}
-                        {aiNarrative && <div className="absolute top-4 right-4 text-[8px] font-black uppercase text-indigo-300">AI Generated • Teacher Review Req.</div>}
+                        {aiNarrative && !isGenerating && (
+                            <div className="mt-6 pt-6 border-t border-slate-200/60 flex items-center justify-between">
+                                <div className="text-[8px] font-black uppercase text-indigo-300">Analysis Engine: gemini-3-pro</div>
+                                <div className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Subject to Teacher Verification</div>
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 <div className="flex justify-between items-center mt-12 pt-8 border-t border-slate-100">
                     <div className="flex items-center gap-3">
-                        <input type="checkbox" checked={isReviewed} onChange={e => setIsReviewed(e.target.checked)} className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600" />
-                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Verified by Teacher</label>
+                        <input type="checkbox" checked={isReviewed} onChange={e => setIsReviewed(e.target.checked)} className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest cursor-pointer">Identity & Content Verified</label>
                     </div>
-                    <button onClick={() => window.print()} disabled={!isReviewed} className="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl disabled:opacity-50">Export Report</button>
+                    <button 
+                        onClick={() => window.print()} 
+                        disabled={!isReviewed} 
+                        className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-600 transition-colors"
+                    >
+                        Export PDF Report
+                    </button>
                 </div>
             </div>
         </Modal>

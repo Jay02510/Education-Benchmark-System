@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { ChatMessage } from '../types.ts';
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
@@ -20,11 +21,10 @@ interface ChatContextType {
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 const SYSTEM_INSTRUCTION = `
-You are the Benchmark Institutional Intelligence Engine, acting as the Guardian of Academic Health. 
-Think like a senior administrator or pedagogical head.
-Optimize for growth velocity and teacher sustainability.
-Always use Benchmark terminology: 'Growth Velocity', 'Intervention Tiers'.
-You have access to class data through your tools.
+You are the Benchmark Institutional Intelligence Engine. 
+You act as a pedagogical consultant for teachers and a strategic advisor for principals.
+Your goal is to optimize 'Growth Velocity' and identify 'Intervention Tier' requirements.
+Be concise, data-driven, and highly professional.
 `;
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -36,8 +36,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const chatSessionRef = useRef<Chat | null>(null);
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
+    const verifyKey = () => !!process.env.API_KEY;
+
     useEffect(() => {
-        setIsAiActive(!!process.env.API_KEY);
+        setIsAiActive(verifyKey());
     }, []);
 
     useEffect(() => {
@@ -48,7 +50,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages([{
                 id: `welcome-${Date.now()}`,
                 role: 'model',
-                text: targetPersona === 'Admin' ? "Guardian Institutional Audit online. How can I assist with system oversight?" : "Benchmark Intelligence Engine engaged. I'm ready to analyze your classroom trajectory.",
+                text: targetPersona === 'Admin' ? "Guardian Institutional Audit online. I am prepared to analyze school-wide performance metrics." : "Benchmark Intelligence Engine engaged. How can I assist with your classroom strategy today?",
                 timestamp: Date.now()
             }]);
         }
@@ -58,13 +60,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (chatSessionRef.current) return chatSessionRef.current;
         
         const apiKey = process.env.API_KEY;
-        if (!apiKey) throw new Error("API_KEY not configured.");
+        if (!apiKey) throw new Error("The Engine is currently locked. Please verify system configuration.");
         
         const ai = new GoogleGenAI({ apiKey });
         const session = ai.chats.create({
             model: 'gemini-3-flash-preview',
             config: {
-                systemInstruction: SYSTEM_INSTRUCTION + (currentPersona === 'Admin' ? " (Admin/Principal Mode: Focus on high-level institutional health)" : " (Teacher Mode: Focus on classroom outcomes)"),
+                systemInstruction: SYSTEM_INSTRUCTION + ` Current View: ${currentPersona} Mode.`,
                 tools: [{ functionDeclarations: currentPersona === 'Teacher' ? teacherTools : adminTools }],
             }
         });
@@ -74,13 +76,24 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const reconnect = async () => {
         chatSessionRef.current = null;
-        setIsAiActive(!!process.env.API_KEY);
-        setMessages(prev => [...prev, {
-            id: `sys-${Date.now()}`,
-            role: 'model',
-            text: "Re-establishing connection with the Intelligence Engine...",
-            timestamp: Date.now()
-        }]);
+        const active = verifyKey();
+        setIsAiActive(active);
+        if (!active) {
+            setMessages(prev => [...prev, {
+                id: `err-${Date.now()}`,
+                role: 'model',
+                text: "Alert: API Key not detected in environment. Intelligence features remain offline.",
+                timestamp: Date.now(),
+                isError: true
+            }]);
+        } else {
+             setMessages(prev => [...prev, {
+                id: `sys-${Date.now()}`,
+                role: 'model',
+                text: "Handshake successful. Engine re-calibrated.",
+                timestamp: Date.now()
+            }]);
+        }
     };
 
     const sendMessage = async (text: string) => {
@@ -95,14 +108,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: result.text || "Processing complete.", 
+                text: result.text || "Data inquiry complete.", 
                 timestamp: Date.now() 
             }]);
         } catch (error: any) {
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Connectivity Alert: ${error.message}. Please check API configuration.`, 
+                text: `Connectivity Alert: ${error.message}`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

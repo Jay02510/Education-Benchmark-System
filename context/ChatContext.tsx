@@ -21,15 +21,12 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 const SYSTEM_INSTRUCTION = `
 You are the Benchmark Institutional Intelligence Engine, acting as the Guardian of Academic Health. 
-Think like a senior administrator and pedagogical operations designer.
-Optimize for student growth velocity, teacher sustainability, and institutional trust.
-Always use the Benchmark terminology: 'Growth Velocity', 'Intervention Tiers', and 'Institutional Compliance'.
-Do not mention being an AI; act as the integrated intelligence layer of the platform.
+Think like a senior administrator. Optimize for growth velocity and teacher sustainability.
+Always use Benchmark terminology: 'Growth Velocity', 'Intervention Tiers'.
 `;
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { activeTab } = useNavigation();
-
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isTyping, setIsTyping] = useState(false);
@@ -37,18 +34,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const chatSessionRef = useRef<Chat | null>(null);
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
-    // Monitor engine connectivity status without prompting the user
     useEffect(() => {
         const checkStatus = () => {
-            const hasKey = !!process.env.API_KEY && process.env.API_KEY.length > 5;
-            setIsAiActive(hasKey);
+            setIsAiActive(!!process.env.API_KEY);
         };
         checkStatus();
         const interval = setInterval(checkStatus, 5000);
         return () => clearInterval(interval);
     }, []);
 
-    // Align persona to the active dashboard view
     useEffect(() => {
         const targetPersona = activeTab === TABS.ADMIN ? 'Admin' : 'Teacher';
         if (targetPersona !== currentPersona) {
@@ -57,28 +51,31 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages([{
                 id: `welcome-${Date.now()}`,
                 role: 'model',
-                text: targetPersona === 'Admin' ? "Guardian Institutional Audit online. System health within parameters." : "Benchmark Intelligence Engine engaged. Analyzing classroom growth velocity.",
+                text: targetPersona === 'Admin' ? "Guardian Institutional Audit online." : "Benchmark Intelligence Engine engaged.",
                 timestamp: Date.now()
             }]);
         }
     }, [activeTab]);
 
-    const createNewSession = async () => {
+    const getChatSession = async () => {
+        if (chatSessionRef.current) return chatSessionRef.current;
+        
         const apiKey = process.env.API_KEY;
-        if (!apiKey) throw new Error("Environment configuration incomplete: API_KEY missing.");
+        if (!apiKey) throw new Error("API_KEY environment variable is not configured.");
         
         const ai = new GoogleGenAI({ apiKey });
-        return ai.chats.create({
+        const session = ai.chats.create({
             model: 'gemini-3-flash-preview',
             config: {
-                systemInstruction: SYSTEM_INSTRUCTION + (currentPersona === 'Admin' ? " (Admin Diagnostic Mode enabled)" : ""),
+                systemInstruction: SYSTEM_INSTRUCTION + (currentPersona === 'Admin' ? " (Admin Diagnostic Mode)" : ""),
                 tools: [{ functionDeclarations: currentPersona === 'Teacher' ? teacherTools : adminTools }],
             }
         });
+        chatSessionRef.current = session;
+        return session;
     };
 
     const reconnect = async () => {
-        // Reset session only, do not prompt for keys
         chatSessionRef.current = null;
         setMessages(prev => [...prev, {
             id: `sys-${Date.now()}`,
@@ -94,17 +91,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsTyping(true);
 
         try {
-            if (!chatSessionRef.current) {
-                chatSessionRef.current = await createNewSession();
-            }
-            
-            const chat = chatSessionRef.current;
+            const chat = await getChatSession();
             const result: GenerateContentResponse = await chat.sendMessage({ message: text });
 
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: result.text || "Diagnostic processing complete. Academic parameters verified.", 
+                text: result.text || "Diagnostic processing complete.", 
                 timestamp: Date.now() 
             }]);
         } catch (error: any) {
@@ -112,7 +105,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Connectivity interruption: ${error.message}. The system is attempting to resolve this internally.`, 
+                text: `Connectivity Failure: ${error.message}. Please verify Vercel environment settings.`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

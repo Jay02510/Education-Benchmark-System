@@ -16,11 +16,20 @@
     <script>
       (function() {
         const win = window;
+        // Ensure process.env is normalized early
         win.process = win.process || { env: {} };
         win.process.env = win.process.env || {};
-        const k = win.process.env.API_KEY || win.process.env.VITE_API_KEY || win.API_KEY || (win.ENV && win.ENV.API_KEY) || "";
+        
+        // Try multiple common injection points for API keys
+        const k = win.process.env.API_KEY || 
+                  win.process.env.VITE_API_KEY || 
+                  win.API_KEY || 
+                  (win.ENV && win.ENV.API_KEY) || 
+                  "";
+
         if (k) {
           win.process.env.API_KEY = k;
+          win.process.env.VITE_API_KEY = k;
           win.API_KEY = k;
         }
       })();
@@ -66,16 +75,12 @@
       }
       @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
       
-      /* Global Smooth Scrolling */
       html { scroll-behavior: smooth; }
-      
-      /* Custom Scrollbar for Intelligence */
       ::-webkit-scrollbar { width: 6px; height: 6px; }
       ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
       ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
 
-      /* Micro-animation classes */
       .scale-hover { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
       .scale-hover:hover { transform: scale(1.02); }
       .scale-hover:active { transform: scale(0.98); }

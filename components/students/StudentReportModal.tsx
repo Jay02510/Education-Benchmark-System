@@ -1,7 +1,8 @@
-
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Student } from '../../types';
+import { Icon } from '../common/Icon';
+import { GeminiService } from '../../services/geminiService';
 
 interface StudentReportModalProps {
     isOpen: boolean;
@@ -14,7 +15,21 @@ interface StudentReportModalProps {
 
 export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, onClose, student }) => {
     const [isReviewed, setIsReviewed] = useState(false);
+    const [aiNarrative, setAiNarrative] = useState<string | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
     const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const handleGenerateAudit = async () => {
+        setIsGenerating(true);
+        try {
+            const result = await GeminiService.generateComprehensiveStudentAnalysis(student);
+            setAiNarrative(result.report_card);
+        } catch (e) {
+            setAiNarrative("Pedagogical audit generation encountered a connectivity issue. Please ensure assessments are complete.");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Academic Performance Report" size="xl">
@@ -41,9 +56,30 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                 </div>
 
                 <div className="mb-10">
-                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-4">Academic Narrative</h3>
-                    <div className="p-8 bg-slate-50 border border-slate-100 rounded-[2.5rem] min-h-[150px]">
-                        <p className="text-slate-400 italic font-bold">No narrative generated. Use the teacher log to add manual observations.</p>
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Academic Narrative</h3>
+                        <button 
+                            onClick={handleGenerateAudit}
+                            disabled={isGenerating}
+                            className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
+                        >
+                            <Icon name="robot" className={`w-3 h-3 ${isGenerating ? 'animate-pulse' : ''}`} />
+                            {isGenerating ? 'Analyzing...' : 'Generate AI Audit'}
+                        </button>
+                    </div>
+                    <div className="p-8 bg-slate-50 border border-slate-100 rounded-[2.5rem] min-h-[150px] relative overflow-hidden">
+                        {isGenerating ? (
+                            <div className="space-y-3">
+                                <div className="h-3 bg-slate-200 rounded animate-pulse w-full"></div>
+                                <div className="h-3 bg-slate-200 rounded animate-pulse w-[90%]"></div>
+                                <div className="h-3 bg-slate-200 rounded animate-pulse w-[95%]"></div>
+                            </div>
+                        ) : (
+                            <p className={`text-slate-700 leading-relaxed font-bold ${!aiNarrative ? 'italic text-slate-400' : ''}`}>
+                                {aiNarrative || "No narrative generated. Click 'Generate AI Audit' to analyze performance metrics."}
+                            </p>
+                        )}
+                        {aiNarrative && <div className="absolute top-4 right-4 text-[8px] font-black uppercase text-indigo-300">AI Generated • Teacher Review Req.</div>}
                     </div>
                 </div>
 

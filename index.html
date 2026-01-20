@@ -17,26 +17,24 @@
     <script>
       (function() {
         const win = window;
-        // Robust process.env shimming for browser context
         win.process = win.process || { env: {} };
         win.process.env = win.process.env || {};
         
-        // Vercel/Vite environment variable extraction
-        // We look for API_KEY, VITE_API_KEY, and any other common variants
-        const k = win.process.env.API_KEY || 
-                  win.process.env.VITE_API_KEY || 
-                  win.API_KEY || 
-                  (win.ENV && win.ENV.API_KEY) || 
-                  "";
+        // Search for the key in every possible injection point
+        // Vercel often hides 'API_KEY' from the client unless explicitly exposed
+        const detectedKey = 
+          win.process.env.API_KEY || 
+          win.process.env.VITE_API_KEY || 
+          win.API_KEY || 
+          (win.ENV && win.ENV.API_KEY) || 
+          "";
 
-        // If found, normalize it across all common access points
-        if (k) {
-          win.process.env.API_KEY = k;
-          win.process.env.VITE_API_KEY = k;
-          win.API_KEY = k;
-          console.log("Benchmark Core: Intelligence Engine Identity Verified.");
+        if (detectedKey && detectedKey !== "undefined") {
+          win.process.env.API_KEY = detectedKey;
+          win.process.env.VITE_API_KEY = detectedKey;
+          console.log("Benchmark Engine: Connectivity variable found.");
         } else {
-          console.warn("Benchmark Core: Intelligence Engine Identity Missing. Check Vercel Dashboard for API_KEY.");
+          console.warn("Benchmark Engine: No API_KEY detected in browser context. Searching for AI Studio session...");
         }
       })();
     </script>

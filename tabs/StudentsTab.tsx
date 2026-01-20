@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useTransition } from 'react';
 import { Student, TestPeriod, UserRole, VelocityBand } from '../types';
 import { StudentCard } from '../components/students/StudentCard';
@@ -147,7 +148,6 @@ export const StudentsTab: React.FC = () => {
 
     return (
         <div className="p-6 md:p-12 h-full max-w-[1920px] mx-auto overflow-y-auto pb-32 scrollbar-thin scrollbar-thumb-slate-200">
-            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-8">
                 <div>
                     <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2">
@@ -172,33 +172,28 @@ export const StudentsTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* Role-Specific Hero Section */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 mb-12">
                 {isTeacher ? (
-                    // TEACHER: Today's Teaching Actions
                     <div className="md:col-span-8 lg:col-span-9">
                         <InsightCard 
                             title="Today's Teaching Actions"
                             description="AI-Prioritized Classroom Strategy"
-                            contextForAi={`Class average is ${stats.classAvg}%. ${stats.interventionCount} students need tier 2/3 support. Growth velocity is ${stats.avgVelocity}%.`}
                             actionLabel="Analyze Weakness"
                             onAction={() => setActiveTab(TABS.RESOURCE_BANK)}
                         >
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 <DashboardWidget title="Risk Protocol" value={stats.interventionCount} subtext="Requires Attention" icon="alert" gradient="from-rose-500 to-pink-600" textColor="text-white" onClick={() => setIsAtRiskModalOpen(true)} />
                                 <DashboardWidget title="Class Velocity" value={`+${stats.avgVelocity}%`} subtext="Growth Speed" icon="trendUp" gradient="from-indigo-600 to-violet-700" textColor="text-white" onClick={() => setActiveTab(TABS.ANALYTICS)} />
-                                <DashboardWidget title="Classroom Avg" value={`${stats.classAvg}%`} subtext="Proficiency" icon="analytics" gradient="from-blue-500 to-indigo-600" textColor="text-white" />
+                                <DashboardWidget title="Classroom Avg" value={`${stats.classAvg}%`} subtext="Proficiency" icon="analytics" gradient="from-blue-500 to-indigo-600" textColor="text-white" onClick={() => setActiveTab(TABS.ANALYTICS)} />
                             </div>
                         </InsightCard>
                     </div>
                 ) : (
-                    // ADMIN: Institutional Health
                     <div className="md:col-span-8 lg:col-span-9">
                         <InsightCard 
                             title="Institutional Performance Briefing"
                             description="Executive Oversight"
-                            contextForAi={`Institutional average is ${stats.classAvg}%. Tier 3 students represent ${Math.round((stats.tiers[2].value / students.length) * 100)}% of population.`}
-                            actionLabel="Download Briefing"
+                            actionLabel="Strategic Analytics"
                             onAction={() => setActiveTab(TABS.ANALYTICS)}
                             variant="intelligence"
                         >
@@ -216,7 +211,6 @@ export const StudentsTab: React.FC = () => {
                     </div>
                 )}
 
-                {/* Shared Profile Card */}
                 <div className="md:col-span-4 lg:col-span-3 bg-white rounded-[2.8rem] p-10 shadow-2xl border border-slate-100 flex flex-col items-center text-center relative overflow-hidden group">
                     <button onClick={() => setIsEditClassModalOpen(true)} className="absolute top-6 right-6 p-2.5 rounded-2xl bg-slate-50 text-slate-400 hover:text-indigo-600 transition shadow-inner border border-slate-100"><Icon name="settings" className="w-5 h-5" /></button>
                     <div className="relative z-10 mt-2 mb-8 scale-hover">
@@ -233,7 +227,6 @@ export const StudentsTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* Roster Section */}
             <div className="flex flex-col sm:flex-row justify-between items-end mb-12 gap-6">
                 <div>
                     <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Student Roster</h2>
@@ -241,7 +234,7 @@ export const StudentsTab: React.FC = () => {
                 </div>
                 <div className="flex gap-4 w-full sm:w-auto">
                     <button onClick={() => setBulkEntryOpen(true)} className="flex-1 sm:flex-none px-8 py-4 bg-white border border-slate-200 text-slate-800 rounded-2xl font-black hover:bg-slate-50 transition flex items-center justify-center gap-3 shadow-sm active:scale-95 border-b-4"><Icon name="benchmark" className="w-5 h-5 text-indigo-500" /><span className="text-xs uppercase tracking-widest">Bulk Entry</span></button>
-                    <button onClick={() => setIsAddStudentModalOpen(true)} className="flex-1 sm:flex-none px-8 py-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-indigo-600 hover:shadow-indigo-200 transition shadow-2xl flex items-center justify-center gap-3 active:scale-95 border-b-4 border-slate-950"><Icon name="plus" className="w-5 h-5" /><span className="text-xs uppercase tracking-widest">New Roster</span></button>
+                    <button onClick={() => setIsAddStudentModalOpen(true)} className="flex-1 sm:flex-none px-8 py-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-indigo-600 hover:shadow-indigo-200 transition shadow-2xl flex items-center justify-center gap-3 active:scale-95 border-b-4 border-slate-950"><Icon name="plus" className="w-5 h-5" /><span className="text-xs uppercase tracking-widest">New Student</span></button>
                 </div>
             </div>
             

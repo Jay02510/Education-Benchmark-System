@@ -20,6 +20,8 @@ import { LoginScreen } from './components/auth/LoginScreen.tsx';
 import { PlatformGuideModal } from './components/common/PlatformGuideModal.tsx';
 import { BulkAssessmentModal } from './components/students/BulkAssessmentModal.tsx';
 import { CommandCenter } from './components/common/CommandCenter.tsx';
+import { ChatWidget } from './components/chat/ChatWidget.tsx';
+import { AICoach } from './components/common/AICoach.tsx';
 
 type TabName = typeof TABS[keyof typeof TABS];
 
@@ -98,7 +100,7 @@ const MainAppLayout: React.FC = () => {
                     ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'}
                 `}>
                     <div className={`flex items-center gap-3 mb-10 mt-4 transition-all duration-300 ${isSidebarCollapsed ? 'justify-center px-0' : 'px-3'}`}>
-                        <div className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-200">
+                        <div className="w-8 h-8 shrink-0 rounded-lg bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-200">
                             <Icon name="benchmark" className="w-5 h-5 text-white" strokeWidth={2.5} />
                         </div>
                         <div className={`transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
@@ -174,6 +176,9 @@ const MainAppLayout: React.FC = () => {
                         {renderTab()}
                      </div>
                      <BulkAssessmentModal isOpen={isBulkEntryOpen} onClose={() => setBulkEntryOpen(false)} />
+                     <PlatformGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+                     <ChatWidget />
+                     <AICoach />
                 </main>
             </div>
         </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { StudentsTab } from './tabs/StudentsTab.tsx';
 import { BenchmarkFrameworkTab } from './tabs/BenchmarkFrameworkTab.tsx';
@@ -10,17 +11,15 @@ import { Icon } from './components/common/Icon.tsx';
 import { StudentProvider, useStudents } from './context/StudentContext.tsx';
 import { ResourceProvider } from './context/ResourceContext.tsx';
 import { BenchmarkProvider } from './context/BenchmarkContext.tsx';
-import { ToastProvider, useToast } from './context/ToastContext.tsx';
+import { ToastProvider } from './context/ToastContext.tsx';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { NavigationProvider, useNavigation } from './context/NavigationContext.tsx';
 import { ChatProvider } from './context/ChatContext.tsx';
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard.tsx';
 import { LoginScreen } from './components/auth/LoginScreen.tsx';
-import { ChatWidget } from './components/chat/ChatWidget.tsx';
 import { PlatformGuideModal } from './components/common/PlatformGuideModal.tsx';
 import { BulkAssessmentModal } from './components/students/BulkAssessmentModal.tsx';
 import { CommandCenter } from './components/common/CommandCenter.tsx';
-import { AICoach } from './components/common/AICoach.tsx';
 
 type TabName = typeof TABS[keyof typeof TABS];
 
@@ -53,29 +52,6 @@ const NavItem: React.FC<{
     </li>
 );
 
-const ConnectivityBanner: React.FC = () => {
-    const [isOnline, setIsOnline] = useState(navigator.onLine);
-    
-    useEffect(() => {
-        const handleStatus = () => setIsOnline(navigator.onLine);
-        window.addEventListener('online', handleStatus);
-        window.addEventListener('offline', handleStatus);
-        return () => {
-            window.removeEventListener('online', handleStatus);
-            window.removeEventListener('offline', handleStatus);
-        };
-    }, []);
-
-    if (isOnline) return null;
-
-    return (
-        <div className="bg-rose-600 text-white text-[11px] font-bold py-1.5 px-4 text-center animate-in slide-in-from-top duration-300 flex items-center justify-center gap-2 z-[100] sticky top-0">
-            <Icon name="alert" className="w-3 h-3" />
-            OFFLINE MODE — AI Features Disabled.
-        </div>
-    );
-};
-
 const MainAppLayout: React.FC = () => {
     const { user, logout } = useAuth();
     const { activeTab, setActiveTab, isBulkEntryOpen, setBulkEntryOpen } = useNavigation();
@@ -107,8 +83,6 @@ const MainAppLayout: React.FC = () => {
 
     return (
         <div className="flex flex-col h-screen bg-[#F8FAFC] font-sans overflow-hidden text-slate-800 print:h-auto print:overflow-visible">
-            <ConnectivityBanner />
-            
             <div className="flex flex-1 overflow-hidden relative">
                 {(!classProfile && !user?.isDemo) && <OnboardingWizard />}
                 <CommandCenter />
@@ -129,9 +103,6 @@ const MainAppLayout: React.FC = () => {
                         </div>
                         <div className={`transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
                             <h1 className="text-lg font-extrabold text-slate-900 tracking-tight leading-none">Benchmark</h1>
-                            <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mt-0.5">
-                                {user?.isDemo ? 'Live Demo Mode' : 'Educator Pro'}
-                            </p>
                         </div>
                     </div>
                     
@@ -164,41 +135,9 @@ const MainAppLayout: React.FC = () => {
                                 </li>
                             </ul>
                         </div>
-
-                        <div>
-                            {!isSidebarCollapsed && <p className="px-3 ml-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">System</p>}
-                             <ul className="space-y-1">
-                                <NavItem 
-                                    label={TABS.SETTINGS} 
-                                    iconName="settings" 
-                                    isActive={activeTab === TABS.SETTINGS} 
-                                    isCollapsed={isSidebarCollapsed} 
-                                    isDisabled={user?.isDemo}
-                                    onClick={() => handleTabChange(TABS.SETTINGS)} 
-                                />
-                                <NavItem 
-                                    label={TABS.ADMIN} 
-                                    iconName="admin" 
-                                    isActive={activeTab === TABS.ADMIN} 
-                                    isCollapsed={isSidebarCollapsed} 
-                                    isDisabled={user?.isDemo}
-                                    onClick={() => handleTabChange(TABS.ADMIN)} 
-                                />
-                             </ul>
-                         </div>
                     </nav>
 
                     <div className={`pt-4 border-t border-slate-100 ${isSidebarCollapsed ? 'flex flex-col items-center gap-4' : 'px-2'}`}>
-                        <div 
-                            className={`flex items-center justify-center gap-2 mb-4 py-1.5 rounded-lg border transition-all ${isSidebarCollapsed ? 'px-2' : 'w-full'} ${navigator.onLine ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-amber-600 bg-amber-50 border-amber-100'}`}
-                        >
-                            <div className="relative flex h-2 w-2">
-                              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${navigator.onLine ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
-                              <span className={`relative inline-flex rounded-full h-2 w-2 ${navigator.onLine ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
-                            </div>
-                            {!isSidebarCollapsed && <span className="text-[10px] font-bold uppercase tracking-wider">{navigator.onLine ? 'Sync Active' : 'Offline'}</span>}
-                        </div>
-
                         <button 
                             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                             className={`hidden lg:flex items-center justify-center rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-50 transition-colors mb-4 ${isSidebarCollapsed ? 'w-10 h-10' : 'w-full py-2 gap-2'}`}
@@ -229,19 +168,11 @@ const MainAppLayout: React.FC = () => {
                              <span className="font-bold text-sm">Menu</span>
                          </button>
                          <span className="font-bold text-slate-800 text-sm">{activeTab}</span>
-                         <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-700 font-bold text-xs">
-                             {user?.name.charAt(0)}
-                         </div>
                      </div>
 
                      <div className="flex-1 overflow-y-auto relative z-10 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent print:overflow-visible print:h-auto">
                         {renderTab()}
                      </div>
-
-                     <ChatWidget />
-                     <AICoach />
-                     <PlatformGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
-                     
                      <BulkAssessmentModal isOpen={isBulkEntryOpen} onClose={() => setBulkEntryOpen(false)} />
                 </main>
             </div>

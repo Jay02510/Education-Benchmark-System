@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Modal } from '../common/Modal';
 import { Student } from '../../types';
 import { Icon } from '../common/Icon';
+import { useNavigation } from '../../context/NavigationContext';
 
 interface AtRiskDetailsModalProps {
     isOpen: boolean;
@@ -12,82 +12,81 @@ interface AtRiskDetailsModalProps {
 }
 
 export const AtRiskDetailsModal: React.FC<AtRiskDetailsModalProps> = ({ isOpen, onClose, atRiskStudents, domainCount }) => {
+    const { navigateToStudent } = useNavigation();
+
+    const handleViewStudent = (id: string) => {
+        navigateToStudent(id);
+        onClose();
+    };
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Intervention Required: At-Risk Students" size="lg">
             <div className="space-y-4">
-                <p className="text-gray-500 text-sm">
-                    The following students have been flagged by the system due to low average scores (below 65%) or significant negative growth trends.
+                <p className="text-slate-500 text-sm font-medium">
+                    The system identifies students requiring Tier 2/3 protocols based on negative velocity or scoring gaps.
                 </p>
                 
                 {atRiskStudents.length > 0 ? (
-                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
                         <table className="w-full text-left border-collapse">
-                            <thead className="bg-rose-50 border-b border-rose-100">
+                            <thead className="bg-rose-50/50 border-b border-rose-100">
                                 <tr>
-                                    <th className="py-3 px-4 text-xs font-bold text-rose-800 uppercase">Student</th>
-                                    <th className="py-3 px-4 text-xs font-bold text-rose-800 uppercase">Alert Reason</th>
-                                    <th className="py-3 px-4 text-xs font-bold text-rose-800 uppercase">Growth</th>
-                                    <th className="py-3 px-4 text-xs font-bold text-rose-800 uppercase text-right">Action</th>
+                                    <th className="py-4 px-6 text-[10px] font-black text-rose-800 uppercase tracking-widest">Student</th>
+                                    <th className="py-4 px-6 text-[10px] font-black text-rose-800 uppercase tracking-widest">Logic Trigger</th>
+                                    <th className="py-4 px-6 text-[10px] font-black text-rose-800 uppercase tracking-widest text-right">Action</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {atRiskStudents.map(student => {
-                                    const latest = student.assessments[student.assessments.length - 1];
-                                    const avg = latest 
-                                        ? Math.round((Object.values(latest.scores) as number[]).reduce((a, b) => a + b, 0) / domainCount)
-                                        : 0;
-                                    
-                                    return (
-                                        <tr key={student.id} className="hover:bg-gray-50">
-                                            <td className="py-3 px-4">
-                                                <div className="flex items-center gap-3">
-                                                    <img src={student.photoUrl} className="w-8 h-8 rounded-full bg-gray-200" alt=""/>
-                                                    <div>
-                                                        <span className="font-bold text-slate-800 block">{student.name}</span>
-                                                        <span className="text-xs text-slate-500">{student.level}</span>
-                                                    </div>
+                            <tbody className="divide-y divide-slate-50 bg-white">
+                                {atRiskStudents.map(student => (
+                                    <tr key={student.id} className="group hover:bg-slate-50/50 transition-colors">
+                                        <td className="py-4 px-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-2xl bg-slate-100 overflow-hidden border border-slate-200 shadow-sm">
+                                                    <img src={student.photoUrl} className="w-full h-full object-cover" alt=""/>
                                                 </div>
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-xs font-bold text-rose-600 bg-rose-100 px-2 py-0.5 rounded-md inline-block w-fit">
-                                                        {student.interventionStatus?.triggerReason || 'General Alert'}
-                                                    </span>
-                                                    <span className="text-[10px] text-gray-400 mt-1">Tier {student.interventionStatus?.tier || 1} Intervention</span>
+                                                <div>
+                                                    <span className="font-black text-slate-800 block leading-none mb-1">{student.name}</span>
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Level {student.level}</span>
                                                 </div>
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <div className={`flex items-center font-semibold ${student.overallGrowth < 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                                                    <Icon name={student.overallGrowth >= 0 ? 'trendUp' : 'trendDown'} className="w-4 h-4 mr-1"/>
-                                                    {student.overallGrowth > 0 ? '+' : ''}{student.overallGrowth}%
-                                                </div>
-                                            </td>
-                                            <td className="py-3 px-4 text-right">
-                                                <button className="text-sm font-bold text-indigo-600 hover:text-indigo-800 hover:underline">
-                                                    View Profile
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-100 inline-block w-fit mb-1">
+                                                    {student.interventionStatus?.triggerReason || 'Velocity Drop'}
+                                                </span>
+                                                <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic">Tier {student.interventionStatus?.tier || 2} Priority</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 px-6 text-right">
+                                            <button 
+                                                onClick={() => handleViewStudent(student.id)}
+                                                className="px-5 py-2.5 bg-white border border-slate-200 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all shadow-sm active:scale-95"
+                                            >
+                                                Open 360
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>
                 ) : (
-                    <div className="text-center py-10 bg-gray-50 rounded-lg">
-                        <div className="bg-emerald-100 p-3 rounded-full inline-block mb-3">
-                             <Icon name="check" className="w-6 h-6 text-emerald-600" />
+                    <div className="text-center py-16 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200">
+                        <div className="bg-emerald-100 p-4 rounded-full inline-block mb-4 text-emerald-600 shadow-xl shadow-emerald-200">
+                             <Icon name="check" className="w-8 h-8" strokeWidth={3} />
                         </div>
-                        <p className="text-gray-700 font-medium">No students currently flagged.</p>
+                        <h4 className="text-xl font-black text-slate-900 mb-1">Operational Safety</h4>
+                        <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">No Active Risk Protocols Found</p>
                     </div>
                 )}
 
-                <div className="flex justify-end pt-2">
+                <div className="flex justify-end pt-6">
                     <button 
                         onClick={onClose}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition"
+                        className="px-10 py-4 text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] hover:text-slate-600 transition"
                     >
-                        Close
+                        Dismiss
                     </button>
                 </div>
             </div>

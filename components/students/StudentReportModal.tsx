@@ -16,9 +16,8 @@ interface StudentReportModalProps {
 }
 
 export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, onClose, student, insight, initialTeacherComment, className }) => {
-    const { benchmarks, domains } = useBenchmarks();
-    const { saveAiAnalysis } = useStudents();
-    const [teacherComment, setTeacherComment] = useState(initialTeacherComment);
+    const { domains } = useBenchmarks();
+    const { saveAiAnalysis, aiInsights } = useStudents();
     const [isGenerating, setIsGenerating] = useState(false);
     const [isReviewed, setIsReviewed] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -30,8 +29,8 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
     const date = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
     const handleGenerateInsight = async () => {
-        if (!latestAssessment) {
-            setError("You must record at least one assessment to generate an AI report.");
+        if (student.assessments.length === 0) {
+            setError("Cannot run Guardian Audit without evidence points. Record an assessment first.");
             return;
         }
         
@@ -39,149 +38,100 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
         setError(null);
         try {
             const result = await GeminiService.generateComprehensiveStudentAnalysis(student);
-            if (result && (result.report_card || result.trend_insights)) {
-                saveAiAnalysis(student.id, result);
-            } else {
-                throw new Error("Received an empty response from AI.");
-            }
+            saveAiAnalysis(student.id, result);
         } catch (e: any) {
-            console.error("Report generation error:", e);
-            setError(e.message || "An unexpected error occurred during analysis.");
+            console.error("Audit error:", e);
+            setError("Engine Connectivity Interrupted. Please check API settings.");
         } finally {
             setIsGenerating(false);
         }
     };
 
-    const renderMarkdownBold = (text: string) => {
-         const parts = text.split(/\*\*(.*?)\*\*/g);
-         return parts.map((part, index) =>
-             index % 2 === 1 ? <strong key={index} className="text-slate-900 font-bold">{part}</strong> : part
-         );
-     };
+    const renderAuditText = (text: string) => {
+        if (!text) return null;
+        return text.split('\n').map((line, i) => (
+            <p key={i} className="mb-2 last:mb-0">
+                {line.startsWith('1.') || line.startsWith('2.') || line.startsWith('3.') || line.startsWith('4.') || line.startsWith('5.') 
+                    ? <strong className="text-slate-900 block mt-4 mb-1">{line}</strong>
+                    : line
+                }
+            </p>
+        ));
+    };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Student Progress Report" size="xl">
-            <div className="bg-white p-8 border border-gray-200 shadow-sm mx-auto max-w-3xl print:border-0 print:shadow-none print:p-0">
+        <Modal isOpen={isOpen} onClose={onClose} title="Guardian Academic Audit" size="xl">
+            <div className="bg-white p-8 border border-gray-200 shadow-sm mx-auto max-w-3xl print:border-0 print:shadow-none print:p-0 rounded-[2rem]">
                 
                 {/* Header */}
                 <div className="flex justify-between items-end border-b-2 border-gray-800 pb-4 mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900 tracking-tight uppercase">Progress Protocol</h1>
-                        <p className="text-gray-600 mt-1 font-medium italic">Confidential Institutional Briefing</p>
+                        <h1 className="text-3xl font-black text-gray-900 tracking-tight uppercase">Academic Health Audit</h1>
+                        <p className="text-gray-600 mt-1 font-medium italic">Institutional Intelligence Report</p>
                     </div>
                     <div className="text-right">
-                        <div className="text-2xl font-black text-indigo-900 tracking-tighter italic">Benchmark AI</div>
+                        <div className="text-2xl font-black text-indigo-900 tracking-tighter italic">Guardian AI</div>
                         <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{date}</p>
                     </div>
                 </div>
 
-                {/* Identity Bar */}
-                <div className="flex items-center justify-between mb-8 p-6 bg-slate-50 border border-slate-100 rounded-[2rem] print:bg-white print:border-gray-200">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 rounded-[1.5rem] bg-white p-1 shadow-lg border border-slate-200 overflow-hidden">
-                            <img src={student.photoUrl} alt="" className="w-full h-full object-cover rounded-[1.2rem]" />
-                        </div>
-                        <div>
-                            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Student Candidate</p>
-                            <p className="text-2xl font-black text-slate-900">{student.name}</p>
-                        </div>
+                {/* Status */}
+                <div className="grid grid-cols-2 gap-4 mb-10">
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Growth Velocity</span>
+                        <p className={`text-2xl font-black ${student.growthVelocity >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>{student.growthVelocity}%</p>
                     </div>
-                    <div className="text-right">
-                        <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Velocity Performance</p>
-                        <div className={`text-xl font-black ${student.growthVelocity >= 10 ? 'text-emerald-500' : student.growthVelocity < 0 ? 'text-rose-500' : 'text-indigo-500'}`}>
-                            {student.growthVelocity > 0 ? '+' : ''}{student.growthVelocity}% 
-                        </div>
+                    <div className="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                        <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Protocol Tier</span>
+                        <p className="text-2xl font-black text-indigo-600">Tier {student.interventionStatus?.tier || 1}</p>
                     </div>
                 </div>
 
-                {/* Narrative Summary (Insight First) */}
+                {/* Audit Narrative */}
                 <div className="mb-10">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] flex items-center gap-2">
-                             <Icon name="brain" className="w-3 h-3 text-purple-500" />
-                             Pedagogical Narrative
+                             <Icon name="shield" className="w-3 h-3 text-indigo-500" />
+                             Guardian Analysis
                         </h3>
-                        {insight && (
-                            <div className="flex items-center gap-2 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
-                                <Icon name="check" className="w-3 h-3 text-indigo-600" />
-                                <span className="text-[8px] font-black text-indigo-600 uppercase tracking-widest">AI Assisted • Teacher Reviewed</span>
-                            </div>
-                        )}
                     </div>
-                    <div className="p-8 bg-purple-50/30 border border-purple-100 rounded-[2.5rem] relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 rotate-12"><Icon name="robot" className="w-24 h-24" /></div>
+                    
+                    <div className="p-8 bg-indigo-50/30 border border-indigo-100 rounded-[2.5rem] min-h-[200px]">
                         {isGenerating ? (
-                            <div className="space-y-3 animate-pulse">
-                                <div className="h-2.5 bg-purple-200 rounded-full w-full"></div>
-                                <div className="h-2.5 bg-purple-200 rounded-full w-4/5"></div>
-                                <div className="h-2.5 bg-purple-200 rounded-full w-5/6"></div>
+                            <div className="flex flex-col items-center justify-center py-10 gap-4">
+                                <Icon name="refresh" className="w-8 h-8 text-indigo-500 animate-spin" />
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Guardian is analyzing institutional health...</p>
                             </div>
-                        ) : insight ? (
-                            <div className="prose prose-slate prose-sm max-w-none text-slate-700 leading-relaxed font-medium italic text-lg">
-                                {renderMarkdownBold(insight)}
+                        ) : aiInsights[student.id] ? (
+                            <div className="text-slate-700 leading-relaxed text-sm">
+                                <div className="mb-6 pb-6 border-b border-indigo-100/50">
+                                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3">Report Card Narrative</h4>
+                                    <p className="italic text-lg font-bold text-slate-800">"{aiInsights[student.id].report_card}"</p>
+                                </div>
+                                <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3">Full Guardian Audit</h4>
+                                <div className="font-medium text-slate-600">
+                                    {renderAuditText(aiInsights[student.id].trend_insights)}
+                                </div>
                             </div>
                         ) : (
-                            <div className="text-center py-6">
-                                <p className="text-slate-400 text-sm font-bold mb-6">Awaiting intelligence analysis cycle.</p>
-                                <button onClick={handleGenerateInsight} className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-indigo-700 transition">Initialize AI Analysis</button>
+                            <div className="text-center py-12">
+                                <Icon name="brain" className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                                <p className="text-slate-400 font-bold mb-6">Pedagogical audit cycle pending.</p>
+                                <button onClick={handleGenerateInsight} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition">Initialize Audit</button>
                             </div>
                         )}
+                        {error && <p className="mt-4 text-xs font-bold text-rose-500 text-center">{error}</p>}
                     </div>
                 </div>
 
-                {/* Score Grid (Collapsed/Secondary) */}
-                <div className="mb-10">
-                    <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-4">Domain Metrics ({latestAssessment?.type || 'Baseline'})</h3>
-                    {latestAssessment ? (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {domains.map(d => {
-                                const score = (latestAssessment.scores as any)[d] || 0;
-                                return (
-                                    <div key={d} className="p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
-                                        <p className="text-[8px] font-black uppercase text-slate-400 mb-1">{d}</p>
-                                        <div className="flex items-end justify-between">
-                                            <span className="text-xl font-black text-slate-800">{score}%</span>
-                                            <div className={`h-1 w-12 rounded-full ${score >= 80 ? 'bg-emerald-400' : score >= 60 ? 'bg-indigo-400' : 'bg-rose-400'}`}></div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <div className="p-10 text-center bg-slate-50 border-2 border-dashed border-slate-100 rounded-[2.5rem]">
-                            <p className="text-slate-400 text-sm font-bold">Quantitative data stream inactive.</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Verification Layer */}
-                <div className="mt-12 pt-8 border-t border-slate-100 flex justify-between items-center px-4">
+                {/* Footer Controls */}
+                <div className="flex justify-between items-center mt-12 pt-8 border-t border-slate-100">
                     <div className="flex items-center gap-3">
-                        <input 
-                            type="checkbox" 
-                            id="review-toggle" 
-                            checked={isReviewed}
-                            onChange={e => setIsReviewed(e.target.checked)}
-                            className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500 print:hidden"
-                        />
-                        <label htmlFor="review-toggle" className="text-[10px] font-black uppercase text-slate-500 tracking-widest cursor-pointer print:hidden">I verify this narrative as accurate</label>
-                        <p className="hidden print:block text-[10px] font-black uppercase text-slate-800 tracking-widest">Teacher Verification: ELECTRONICALLY SIGNED</p>
+                        <input type="checkbox" checked={isReviewed} onChange={e => setIsReviewed(e.target.checked)} className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600" />
+                        <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Audit Verified by Teacher</label>
                     </div>
-                    <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
-                        System Integrity Checked • 2025
-                    </div>
+                    <button onClick={() => window.print()} disabled={!isReviewed || !aiInsights[student.id]} className="px-10 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-indigo-700 transition disabled:opacity-50">Export Report</button>
                 </div>
-            </div>
-
-            <div className="mt-10 flex justify-end gap-4 px-4 print:hidden">
-                <button onClick={onClose} className="px-8 py-3 text-slate-400 font-bold hover:text-slate-600 transition text-[10px] uppercase tracking-widest">Close</button>
-                <button 
-                    onClick={() => window.print()}
-                    disabled={!isReviewed && insight.length > 0}
-                    className="px-12 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition shadow-2xl disabled:opacity-50 active:scale-95"
-                >
-                    Print Institutional Report
-                </button>
             </div>
         </Modal>
     );

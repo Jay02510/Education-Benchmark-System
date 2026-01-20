@@ -19,7 +19,13 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-const TEACHER_INSTRUCTION = `You are the Benchmark Institutional Assistant. Refer to 'Growth Velocity' and 'Proficiency Tiers'. Be professional, data-driven, and focused on learning outcomes.`;
+const SYSTEM_INSTRUCTION = `
+You are the Benchmark Institutional Intelligence Engine. 
+You are the Guardian of Academic Health. 
+Think like a senior administrator and human-centered operations designer.
+Optimize for student growth, teacher sustainability, and institutional trust.
+Always use the Benchmark terminology: 'Growth Velocity' and 'Proficiency Tiers'.
+`;
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { activeTab } = useNavigation();
@@ -31,17 +37,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const chatSessionRef = useRef<Chat | null>(null);
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
-    // Robust Engine Status Monitor
+    const getApiKey = () => {
+        const win = window as any;
+        return (win.process?.env?.API_KEY) || (win.API_KEY) || "";
+    };
+
+    // Monitor Engine Status
     useEffect(() => {
-        const monitor = setInterval(() => {
-            const win = window as any;
-            const key = (win.process && win.process.env && win.process.env.API_KEY) || 
-                       (typeof process !== 'undefined' ? process.env.API_KEY : '') || 
-                       win.API_KEY;
-            // Verify key is non-empty and has plausible length
-            setIsAiActive(!!key && String(key).length > 10);
-        }, 1500);
-        return () => clearInterval(monitor);
+        const check = () => {
+            const key = getApiKey();
+            setIsAiActive(!!key && key.length > 10);
+        };
+        check();
+        const interval = setInterval(check, 2000);
+        return () => clearInterval(interval);
     }, []);
 
     // Automatic Persona Alignment
@@ -53,28 +62,21 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages([{
                 id: `welcome-${Date.now()}`,
                 role: 'model',
-                text: targetPersona === 'Admin' ? "Admin diagnostics protocol online." : "Benchmark Assistant ready for institutional analysis.",
+                text: targetPersona === 'Admin' ? "Guardian Admin diagnostics online." : "Institutional Intelligence Engine ready. Monitoring academic health.",
                 timestamp: Date.now()
             }]);
         }
-    }, [activeTab, currentPersona]);
+    }, [activeTab]);
 
     const createNewSession = async () => {
-        const win = window as any;
-        if (win.aistudio) {
-            const hasKey = await win.aistudio.hasSelectedApiKey();
-            if (!hasKey) await win.aistudio.openSelectKey();
-        }
-
-        const apiKey = (win.process && win.process.env && win.process.env.API_KEY) || win.API_KEY;
-
-        if (!apiKey) throw new Error("Connectivity identity missing. Please re-deploy or reconnect.");
+        const apiKey = getApiKey();
+        if (!apiKey) throw new Error("API Key not found in environment.");
         
         const ai = new GoogleGenAI({ apiKey });
         return ai.chats.create({
             model: 'gemini-3-flash-preview',
             config: {
-                systemInstruction: currentPersona === 'Teacher' ? TEACHER_INSTRUCTION : "Admin maintenance mode.",
+                systemInstruction: SYSTEM_INSTRUCTION + (currentPersona === 'Admin' ? " (Admin Diagnostic Mode)" : ""),
                 tools: [{ functionDeclarations: currentPersona === 'Teacher' ? teacherTools : adminTools }],
             }
         });
@@ -86,14 +88,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await win.aistudio.openSelectKey();
             chatSessionRef.current = null;
         } else {
-            // Manual fallback if environment fails
-            const manualKey = prompt("Enter Benchmark API Key (Leave blank to use environment):");
+            const manualKey = prompt("Enter API Key manually (or check process.env.API_KEY):");
             if (manualKey) {
                 win.API_KEY = manualKey;
-                win.process.env.API_KEY = manualKey;
                 setIsAiActive(true);
             }
-            chatSessionRef.current = null;
         }
     };
 
@@ -103,7 +102,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsTyping(true);
 
         try {
-            if (!chatSessionRef.current) chatSessionRef.current = await createNewSession();
+            if (!chatSessionRef.current) {
+                chatSessionRef.current = await createNewSession();
+            }
             
             const chat = chatSessionRef.current;
             const result: GenerateContentResponse = await chat.sendMessage({ message: text });
@@ -111,16 +112,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: result.text || "Protocols complete. No further insights found.", 
+                text: result.text || "Guardian processing complete.", 
                 timestamp: Date.now() 
             }]);
         } catch (error: any) {
-            console.error("Chat Protocol Error:", error);
-            
+            console.error("Chat Error:", error);
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Identity Failure: ${error.message}. Please click 'Engine Offline' to manually connect.`, 
+                text: `Connectivity Failure: ${error.message}. Please click 'Engine Offline' to sync.`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

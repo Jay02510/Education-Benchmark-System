@@ -47,6 +47,47 @@ export class GeminiService {
         }
     }
 
+    static async generateExecutiveBriefing(students: Student[], className: string): Promise<{ 
+        executiveSummary: string, 
+        riskAssessment: string, 
+        leadershipActions: string[] 
+    }> {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const dataSummary = students.map(s => ({
+            name: s.name,
+            velocity: s.growthVelocity,
+            tier: s.interventionStatus?.tier || 1,
+            anomaly: s.hasAnomaly
+        }));
+
+        try {
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-pro-preview',
+                contents: `As a school consultant, analyze this class data for a Principal: ${JSON.stringify(dataSummary)}. 
+                Provide: 1. Executive Summary of ROI and growth. 2. Critical risk assessment (retention/parental concern). 3. Three concrete leadership actions.`,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            executiveSummary: { type: Type.STRING },
+                            riskAssessment: { type: Type.STRING },
+                            leadershipActions: { type: Type.ARRAY, items: { type: Type.STRING } }
+                        },
+                        required: ['executiveSummary', 'riskAssessment', 'leadershipActions']
+                    }
+                }
+            });
+            return JSON.parse(response.text || '{}');
+        } catch (e) {
+            return { 
+                executiveSummary: "Data sync required for executive synthesis.", 
+                riskAssessment: "Risk protocols stable.", 
+                leadershipActions: ["Ensure all test scores are logged.", "Review student velocity bands."] 
+            };
+        }
+    }
+
     static async generateSmartGroups(students: Student[], domains: string[]): Promise<{ groupName: string, studentIds: string[], focus: string }[]> {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const data = students.map(s => ({ id: s.id, name: s.name, weakDomains: Object.entries(s.assessments[s.assessments.length-1]?.scores || {}).filter(([_, v]) => v < 70).map(([d]) => d) }));

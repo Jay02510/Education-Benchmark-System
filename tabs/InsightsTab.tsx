@@ -9,6 +9,7 @@ import { Domain, Student } from '../types';
 import { InsightCard } from '../components/common/InsightCard';
 import { AtRiskDetailsModal } from '../components/students/AtRiskDetailsModal';
 import { GeminiService } from '../services/geminiService';
+import { ExecutiveBriefingModal } from '../components/common/ExecutiveBriefingModal';
 
 const DashboardWidget: React.FC<{ title: string; value: string | number; subtext: string; icon: string; gradient: string; onClick?: () => void; }> = ({ title, value, subtext, icon, gradient, onClick }) => (
     <button 
@@ -34,6 +35,9 @@ export const InsightsTab: React.FC = () => {
     const { domains, benchmarks } = useBenchmarks();
     const [chartType, setChartType] = useState<'radar' | 'bar'>('radar');
     const [isAtRiskModalOpen, setIsAtRiskModalOpen] = useState(false);
+    const [isBriefingModalOpen, setIsBriefingModalOpen] = useState(false);
+    const [briefingData, setBriefingData] = useState<any>(null);
+    const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
     const [smartGroups, setSmartGroups] = useState<{ groupName: string, studentIds: string[], focus: string }[]>([]);
     const [isGrouping, setIsGrouping] = useState(false);
 
@@ -68,8 +72,19 @@ export const InsightsTab: React.FC = () => {
         });
 
         const avgVelocity = Math.round(students.reduce((a, b) => a + b.growthVelocity, 0) / students.length);
+        
+        // Institutional Health Metric: Weighted blend of velocity, compliance, and score
+        const compliance = Math.min(100, students.reduce((acc, s) => acc + (s.assessments.length * 15), 0) / students.length);
+        const healthScore = Math.round((avgVelocity * 2 + compliance + (domainData.reduce((a,b) => a+b.score, 0) / domainData.length)) / 4);
 
-        return { domainData, tiers, atRiskList, avgVelocity, classAvg: Math.round(domainData.reduce((a,b) => a+b.score, 0) / domainData.length) };
+        return { 
+            domainData, 
+            tiers, 
+            atRiskList, 
+            avgVelocity, 
+            healthScore,
+            classAvg: Math.round(domainData.reduce((a,b) => a+b.score, 0) / domainData.length) 
+        };
     }, [students, domains, benchmarks, classProfile]);
 
     const handleGenerateGroups = async () => {
@@ -77,6 +92,14 @@ export const InsightsTab: React.FC = () => {
         const groups = await GeminiService.generateSmartGroups(students, domains);
         setSmartGroups(groups);
         setIsGrouping(false);
+    };
+
+    const handleGenerateBriefing = async () => {
+        setIsGeneratingBrief(true);
+        const briefing = await GeminiService.generateExecutiveBriefing(students, classProfile?.className || 'General Cohort');
+        setBriefingData(briefing);
+        setIsGeneratingBrief(false);
+        setIsBriefingModalOpen(true);
     };
 
     if (!students.length) {
@@ -94,74 +117,27 @@ export const InsightsTab: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-end gap-8">
                 <div>
                     <h1 className="text-7xl font-black text-slate-900 tracking-tighter mb-2 uppercase italic leading-[0.85]">Strategic <br/>Intelligence</h1>
-                    <p className="text-slate-400 font-bold text-2xl italic tracking-tight">Active Insight Layer: <span className="text-indigo-600">Global Standards Mode</span></p>
+                    <p className="text-slate-400 font-bold text-2xl italic tracking-tight">Active Insight Layer: <span className="text-indigo-600">Institutional Mode</span></p>
                 </div>
+                <button 
+                    onClick={handleGenerateBriefing}
+                    disabled={isGeneratingBrief}
+                    className="group relative px-12 py-6 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:bg-indigo-600 transition-all active:scale-95 disabled:opacity-50 border-b-8 border-slate-950 flex items-center gap-4"
+                >
+                    {isGeneratingBrief ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="brain" className="w-5 h-5 text-indigo-400" />}
+                    Leadership Briefing
+                    <div className="absolute -top-3 -right-3 px-2 py-1 bg-indigo-500 rounded-lg text-[8px] animate-pulse">DIRECTOR ACCESS</div>
+                </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <DashboardWidget title="Risk Protocol" value={analytics?.atRiskList.length || 0} subtext="Tier 2/3 Triggers" icon="alert" gradient="from-rose-500 to-pink-600" onClick={() => setIsAtRiskModalOpen(true)} />
-                <DashboardWidget title="Growth Velocity" value={`+${analytics?.avgVelocity}%`} subtext="Avg learning speed" icon="trendUp" gradient="from-indigo-600 to-violet-700" />
+                <DashboardWidget title="Institutional Health" value={`${analytics?.healthScore}%`} subtext="Operational efficiency" icon="shield" gradient="from-indigo-600 to-violet-700" />
                 <DashboardWidget title="Mastery Median" value={`${analytics?.classAvg}%`} subtext="Institutional aggregate" icon="analytics" gradient="from-slate-800 to-slate-950" />
             </div>
 
-            {/* 🧬 SMART INSTRUCTIONAL PODS */}
-            <Card className="p-12 bg-white border border-slate-100 shadow-2xl rounded-[4rem]">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12 border-b border-slate-50 pb-8">
-                    <div className="flex items-center gap-6">
-                        <div className="p-4 bg-indigo-600 text-white rounded-3xl shadow-xl shadow-indigo-100"><Icon name="brain" className="w-8 h-8" /></div>
-                        <div>
-                            <h2 className="text-3xl font-black text-slate-800 tracking-tight">Instructional Clustering</h2>
-                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em] mt-1">AI-Powered Intervention Pods</p>
-                        </div>
-                    </div>
-                    <button 
-                        onClick={handleGenerateGroups}
-                        disabled={isGrouping}
-                        className="px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-3 border-b-4 border-indigo-900"
-                    >
-                        {isGrouping ? <Icon name="refresh" className="w-4 h-4 animate-spin" /> : <Icon name="plus" className="w-4 h-4" />}
-                        {smartGroups.length > 0 ? 'Regenerate Clusters' : 'Auto-Cluster Class'}
-                    </button>
-                </div>
-
-                {smartGroups.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {smartGroups.map((group, idx) => (
-                            <div key={idx} className="p-8 bg-slate-50 rounded-[3rem] border border-slate-100 group hover:bg-white hover:border-indigo-100 transition-all shadow-sm hover:shadow-xl">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h4 className="font-black text-indigo-600 uppercase tracking-widest text-sm">{group.groupName}</h4>
-                                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{group.studentIds.length} Units</span>
-                                </div>
-                                <div className="space-y-3 mb-8">
-                                    {group.studentIds.map(sid => {
-                                        const s = students.find(item => item.id === sid);
-                                        return (
-                                            <div key={sid} className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow-sm bg-white">
-                                                    <img src={s?.photoUrl} className="w-full h-full object-cover" alt="" />
-                                                </div>
-                                                <span className="text-sm font-bold text-slate-700">{s?.name || 'Unknown'}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                <div className="pt-6 border-t border-slate-200">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tactical Focus:</p>
-                                    <p className="text-xs font-bold text-slate-600 leading-relaxed italic">"{group.focus}"</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="py-24 text-center border-4 border-dashed border-slate-100 rounded-[3.5rem] bg-slate-50/50">
-                        <Icon name="students" className="w-16 h-16 text-slate-200 mx-auto mb-6" />
-                        <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs">Run clustering engine to group students by shared skill gaps.</p>
-                    </div>
-                )}
-            </Card>
-
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10 pt-10">
-                <div className="xl:col-span-8">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+                <div className="xl:col-span-8 space-y-10">
                     <InsightCard title="Domain Competency Matrix" description="Comparing class medians against target protocols">
                         <div className="flex justify-end mb-6">
                             <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner border border-slate-200">
@@ -173,6 +149,61 @@ export const InsightsTab: React.FC = () => {
                             {chartType === 'radar' ? <RadarPerformanceChart data={analytics?.domainData || []} /> : <DomainPerformanceChart data={analytics?.domainData || []} />}
                         </div>
                     </InsightCard>
+
+                    <Card className="p-12 bg-white border border-slate-100 shadow-2xl rounded-[4rem]">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12 border-b border-slate-50 pb-8">
+                            <div className="flex items-center gap-6">
+                                <div className="p-4 bg-indigo-600 text-white rounded-3xl shadow-xl shadow-indigo-100"><Icon name="brain" className="w-8 h-8" /></div>
+                                <div>
+                                    <h2 className="text-3xl font-black text-slate-800 tracking-tight">Instructional Clustering</h2>
+                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em] mt-1">AI-Powered Intervention Pods</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={handleGenerateGroups}
+                                disabled={isGrouping}
+                                className="px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-3 border-b-4 border-indigo-900"
+                            >
+                                {isGrouping ? <Icon name="refresh" className="w-4 h-4 animate-spin" /> : <Icon name="plus" className="w-4 h-4" />}
+                                {smartGroups.length > 0 ? 'Regenerate Clusters' : 'Auto-Cluster Class'}
+                            </button>
+                        </div>
+
+                        {smartGroups.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {smartGroups.map((group, idx) => (
+                                    <div key={idx} className="p-8 bg-slate-50 rounded-[3rem] border border-slate-100 group hover:bg-white hover:border-indigo-100 transition-all shadow-sm hover:shadow-xl">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <h4 className="font-black text-indigo-600 uppercase tracking-widest text-sm">{group.groupName}</h4>
+                                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{group.studentIds.length} Units</span>
+                                        </div>
+                                        <div className="space-y-3 mb-8">
+                                            {group.studentIds.map(sid => {
+                                                const s = students.find(item => item.id === sid);
+                                                return (
+                                                    <div key={sid} className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow-sm bg-white">
+                                                            <img src={s?.photoUrl} className="w-full h-full object-cover" alt="" />
+                                                        </div>
+                                                        <span className="text-sm font-bold text-slate-700">{s?.name || 'Unknown'}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="pt-6 border-t border-slate-200">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tactical Focus:</p>
+                                            <p className="text-xs font-bold text-slate-600 leading-relaxed italic">"{group.focus}"</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-24 text-center border-4 border-dashed border-slate-100 rounded-[3.5rem] bg-slate-50/50">
+                                <Icon name="students" className="w-16 h-16 text-slate-200 mx-auto mb-6" />
+                                <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs">Run clustering engine to group students by shared skill gaps.</p>
+                            </div>
+                        )}
+                    </Card>
                 </div>
                 
                 <div className="xl:col-span-4 space-y-10">
@@ -201,6 +232,7 @@ export const InsightsTab: React.FC = () => {
             </div>
 
             <AtRiskDetailsModal isOpen={isAtRiskModalOpen} onClose={() => setIsAtRiskModalOpen(false)} atRiskStudents={analytics?.atRiskList || []} domainCount={domains.length} />
+            <ExecutiveBriefingModal isOpen={isBriefingModalOpen} onClose={() => setIsBriefingModalOpen(false)} data={briefingData} className={classProfile?.className || 'General'} />
         </div>
     );
 };

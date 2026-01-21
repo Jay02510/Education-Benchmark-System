@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card } from '../components/common/Card';
 import { DomainPerformanceChart, RadarPerformanceChart, ProficiencyDistributionChart, SupportTierChart } from '../components/charts/Charts';

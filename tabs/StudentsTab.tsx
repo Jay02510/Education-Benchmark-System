@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo, useTransition } from 'react';
 import { Student, TestPeriod, UserRole, VelocityBand } from '../types';
 import { StudentCard } from '../components/students/StudentCard';
@@ -154,7 +153,7 @@ export const StudentsTab: React.FC = () => {
                         {isTeacher ? `Teaching Today: ${user?.name.split(' ')[0]}` : "Institutional Intelligence"}
                     </h1>
                     <p className="text-slate-400 font-bold text-lg">
-                        {isTeacher ? "Your classroom strategy co-pilot." : "System-wide growth and risk monitoring."}
+                        {isTeacher ? "Classroom growth and performance summary." : "System-wide tracking and risk monitoring."}
                     </p>
                 </div>
                 <div className="mt-4 md:mt-0 flex items-center bg-white p-3 rounded-full shadow-xl shadow-slate-200/50 border border-slate-100 ring-8 ring-slate-50 transition-all focus-within:ring-indigo-50">
@@ -176,8 +175,8 @@ export const StudentsTab: React.FC = () => {
                 {isTeacher ? (
                     <div className="md:col-span-8 lg:col-span-9">
                         <InsightCard 
-                            title="Today's Teaching Actions"
-                            description="AI-Prioritized Classroom Strategy"
+                            title="Active Support Protocols"
+                            description="Prioritized Classroom Strategy"
                             actionLabel="Analyze Weakness"
                             onAction={() => setActiveTab(TABS.RESOURCE_BANK)}
                         >
@@ -191,7 +190,7 @@ export const StudentsTab: React.FC = () => {
                 ) : (
                     <div className="md:col-span-8 lg:col-span-9">
                         <InsightCard 
-                            title="Institutional Performance Briefing"
+                            title="Institutional Performance Overview"
                             description="Executive Oversight"
                             actionLabel="Strategic Analytics"
                             onAction={() => setActiveTab(TABS.ANALYTICS)}

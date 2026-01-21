@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '../common/Card';
 import { Icon } from '../common/Icon';
@@ -16,13 +15,11 @@ const ConceptCard: React.FC<{ icon: string; title: string; text: string; color: 
 
 export const OnboardingWizard: React.FC = () => {
     const { registerClass, addStudentsBulk, loadDemoData } = useStudents();
-    const [step, setStep] = useState(0); // Start at 0 for "Concepts"
+    const [step, setStep] = useState(0); 
     
-    // Step 1 State
     const [className, setClassName] = useState('');
     const [gradeLevel, setGradeLevel] = useState('5');
     
-    // Step 2 State
     const [studentNames, setStudentNames] = useState('');
 
     const handleComplete = () => {
@@ -43,7 +40,6 @@ export const OnboardingWizard: React.FC = () => {
         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="w-full max-w-3xl">
                 <Card className="p-8 shadow-2xl border-0">
-                    {/* Progress Steps */}
                     <div className="flex items-center justify-center mb-8 gap-2">
                         {[0, 1, 2].map(i => (
                             <div key={i} className={`h-1.5 w-12 rounded-full transition-all duration-500 ${step >= i ? 'bg-indigo-600' : 'bg-slate-200'}`}></div>
@@ -57,26 +53,26 @@ export const OnboardingWizard: React.FC = () => {
                                     <Icon name="brain" className="w-10 h-10" />
                                 </div>
                                 <h1 className="text-3xl font-black text-slate-900 mb-2">The Benchmark Method</h1>
-                                <p className="text-slate-500 font-medium">Before we start, let's look at how we measure success.</p>
+                                <p className="text-slate-500 font-medium">Measure success with professional pedagogical tracking.</p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <ConceptCard 
                                     icon="trendUp" 
                                     title="Growth Velocity" 
-                                    text="We don't just look at scores. Velocity tracks the SPEED of student improvement over time." 
+                                    text="Tracks the SPEED of student improvement over time, moving beyond static scores." 
                                     color="indigo" 
                                 />
                                 <ConceptCard 
                                     icon="alert" 
-                                    title="RTI Interventions" 
-                                    text="Tier 1 (Class), Tier 2 (Group), or Tier 3 (Critical). We flag students who need targeted support." 
+                                    title="Automated RTI" 
+                                    text="System flags students needing support across Tiers 1, 2, or 3 based on performance gaps." 
                                     color="rose" 
                                 />
                                 <ConceptCard 
                                     icon="benchmark" 
                                     title="Global Standards" 
-                                    text="Your scores are automatically mapped to CEFR (A1-B2) and Cambridge standards." 
+                                    text="Scores automatically map to international CEFR (A1-B2) and Cambridge standards." 
                                     color="emerald" 
                                 />
                             </div>
@@ -157,7 +153,7 @@ export const OnboardingWizard: React.FC = () => {
                                     disabled={!studentNames.trim()}
                                     className="px-10 py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-xl shadow-emerald-200 flex items-center space-x-2 active:scale-95 transition-all"
                                 >
-                                    <Icon name="check" className="w-5 h-5" />
+                                    <Icon name="check" className="check" />
                                     <span>Create Classroom</span>
                                 </button>
                             </div>

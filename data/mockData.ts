@@ -1,4 +1,3 @@
-
 import { Student, Benchmark, Domain, TestPeriod, Trend, TeacherStrategy, Resource, ResourceType, VelocityBand } from '../types';
 
 let bCounter = 0;
@@ -25,7 +24,6 @@ export const mockStudents: Student[] = [
         photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex',
         overallGrowth: 12,
         growthVelocity: 4,
-        // Fix: Added missing required velocityBand property
         velocityBand: VelocityBand.Stable,
         hasAnomaly: true,
         assessments: [
@@ -55,7 +53,6 @@ export const mockStudents: Student[] = [
         photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bella',
         overallGrowth: 18,
         growthVelocity: 6,
-        // Fix: Added missing required velocityBand property
         velocityBand: VelocityBand.Stable,
         hasAnomaly: false,
         assessments: [
@@ -73,7 +70,6 @@ export const mockStudents: Student[] = [
         photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Chris',
         overallGrowth: -3,
         growthVelocity: -2,
-        // Fix: Added missing required velocityBand property
         velocityBand: VelocityBand.AtRisk,
         hasAnomaly: true,
         assessments: [
@@ -86,7 +82,6 @@ export const mockStudents: Student[] = [
 ];
 
 export const mockBenchmarkFramework: Benchmark[] = [
-    // ================= LEVEL 5 (5Y) =================
     createBench("5", TestPeriod.Baseline, Domain.Reading, 80, "Recognizes letter names; matches CVC words", "Pre-A1", "Pre-Starters"),
     createBench("5", TestPeriod.Baseline, Domain.Phonics, 80, "Identifies sounds; blends simple CVC", "Pre-A1", "Pre-Starters"),
     createBench("5", TestPeriod.Baseline, Domain.Vocabulary, 80, "~10 sight words", "Pre-A1", "Pre-Starters"),
@@ -95,29 +90,11 @@ export const mockBenchmarkFramework: Benchmark[] = [
     createBench("5", TestPeriod.Baseline, Domain.Listening, 80, "Responds to yes/no questions", "Pre-A1", "Pre-Starters"),
     createBench("5", TestPeriod.Baseline, Domain.Speaking, 80, "Names familiar items", "Pre-A1", "Pre-Starters"),
     createBench("5", TestPeriod.Baseline, Domain.DataLiteracy, 80, "Reads simple colors/shapes in charts", "Pre-A1", "Pre-Starters"),
-
-    createBench("5", TestPeriod.Midline, Domain.Reading, 70, "Decodes CVC words (~70% accuracy)", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Midline, Domain.Phonics, 70, "Blends CVC + beginning blends", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Midline, Domain.Vocabulary, 70, "~20 sight words", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Midline, Domain.Writing, 70, "Labels pictures", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Midline, Domain.Grammar, 70, "Understands basic plurals", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Midline, Domain.Listening, 70, "Follows 1-step directions", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Midline, Domain.Speaking, 70, "Short responses ('I see a...')", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Midline, Domain.DataLiteracy, 70, "Answers 'Which has more?'", "Pre-A1", "Pre-Starters"),
-
-    // ================= LEVEL 6-1 =================
     createBench("6-1", TestPeriod.Baseline, Domain.Reading, 80, "Decodes CVC + common blends; short sentences", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Baseline, Domain.Writing, 80, "Writes 1-2 simple sentences", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Baseline, Domain.Grammar, 80, "Uses I/you/he/she + present tense", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Baseline, Domain.Vocabulary, 80, "25 sight words", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Baseline, Domain.Phonics, 80, "Beginning digraphs (sh, ch, th)", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Baseline, Domain.Listening, 80, "Answers WH-questions with support", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Baseline, Domain.Speaking, 80, "1-2 sentence responses", "Mid Pre-A1", "Starters"),
-    createBench("6-1", TestPeriod.Baseline, Domain.DataLiteracy, 80, "Answers 'how many' questions", "Mid Pre-A1", "Starters"),
 ];
 
 export const mockStrategies: TeacherStrategy[] = [
-    { id: 'ts1', author: 'Jane Doe', domain: Domain.Reading, problemArea: 'Inferential Comprehension', tier: 1, title: 'Question-Answer Relationship (QAR)', description: 'Teach students to identify where to find answers to questions (in the text or in their head). Practice with short passages.' },
+    { id: 'ts1', author: 'Jane Doe', domain: Domain.Reading, problemArea: 'Inferential Comprehension', tier: 1, title: 'Question-Answer Relationship (QAR)', description: 'Teach students to identify where to find answers to questions.' },
 ];
 
 export const mockResources: Resource[] = [
@@ -129,32 +106,7 @@ export const mockResources: Resource[] = [
         period: TestPeriod.Midline,
         type: ResourceType.MicroLesson,
         title: 'Clue Collector',
-        description: 'A 3-minute activity where students read short sentences and circle the "clue" word that suggests a character\'s feeling.',
-        content: 'Character: "Maria slammed the door."\nQuestion: Which word tells you Maria might be angry? Why?',
-        aiGenerated: true,
-    },
-    {
-        id: 'r2',
-        domain: Domain.Phonics,
-        subdomain: 'Blending',
-        level: '5',
-        period: TestPeriod.Baseline,
-        type: ResourceType.QuickPractice,
-        title: 'Sound Slider',
-        description: 'Practice blending CVC words by sliding sounds together.',
-        content: 'C-A-T... CAT! Practice with: M-A-P, D-O-G, S-I-T.',
-        aiGenerated: true,
-    },
-    {
-        id: 'r3',
-        domain: Domain.Grammar,
-        subdomain: 'Tenses',
-        level: '6-1',
-        period: TestPeriod.Baseline,
-        type: ResourceType.MiniReading,
-        title: 'Daily Routines',
-        description: 'A short passage using present simple tense.',
-        content: 'Every morning, I wake up at 7:00. I eat breakfast and then I go to school.',
-        aiGenerated: true,
+        description: 'A 3-minute activity where students read short sentences and circle "clue" words.',
+        content: 'Character: "Maria slammed the door."\nQuestion: Which word tells you Maria might be angry?',
     }
 ];

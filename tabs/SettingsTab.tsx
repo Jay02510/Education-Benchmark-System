@@ -28,7 +28,7 @@ export const SettingsTab: React.FC = () => {
                     </div>
                     <div>
                         <h1 className="text-4xl font-black text-slate-900 tracking-tight">System Settings</h1>
-                        <p className="text-slate-400 font-medium mt-1">Configure your personal workspace and AI preferences</p>
+                        <p className="text-slate-400 font-medium mt-1">Configure your personal workspace and preferences</p>
                     </div>
                 </div>
                 
@@ -42,10 +42,7 @@ export const SettingsTab: React.FC = () => {
                 </SettingsSection>
 
                 <SettingsSection title="Automated Alerts">
-                    <FormRow label="Enable AI Proactive Alerts">
-                        <input type="checkbox" defaultChecked className="h-6 w-6 rounded-lg border-slate-200 text-indigo-600 focus:ring-indigo-500"/>
-                    </FormRow>
-                    <FormRow label="Assessment Cycle Reminders">
+                    <FormRow label="Enable Assessment Reminders">
                          <input type="checkbox" defaultChecked className="h-6 w-6 rounded-lg border-slate-200 text-indigo-600 focus:ring-indigo-500"/>
                     </FormRow>
                      <FormRow label="Parent Notification Sync">
@@ -53,16 +50,13 @@ export const SettingsTab: React.FC = () => {
                     </FormRow>
                 </SettingsSection>
                 
-                 <SettingsSection title="AI Intelligence Config">
-                    <FormRow label="Flagging Sensitivity">
+                 <SettingsSection title="Platform Calibration">
+                    <FormRow label="RTI Sensitivity">
                         <select className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl w-64 font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
                             <option>Standard (-5% deviation)</option>
                             <option>High Sensitivity (-3% deviation)</option>
                             <option>Performance Only (-8% deviation)</option>
                         </select>
-                    </FormRow>
-                     <FormRow label="Share Diagnostic Metadata">
-                        <input type="checkbox" defaultChecked className="h-6 w-6 rounded-lg border-slate-200 text-indigo-600 focus:ring-indigo-500"/>
                     </FormRow>
                 </SettingsSection>
 

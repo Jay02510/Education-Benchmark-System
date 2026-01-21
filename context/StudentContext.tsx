@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Student, ClassProfile, Assessment, Resource, Intervention, Trend, Domain, StudentLogEntry, TestPeriod, SubdomainMetadata, VelocityBand } from '../types.ts';
+import { Student, ClassProfile, Assessment, Intervention, Trend, Domain, StudentLogEntry, TestPeriod, SubdomainMetadata, VelocityBand } from '../types.ts';
 import { mockStudents } from '../data/mockData.ts';
 import { useToast } from './ToastContext.tsx';
 import { useAuth } from './AuthContext.tsx';
@@ -32,32 +33,19 @@ interface StudentContextType {
     updateClassProfile: (updates: Partial<ClassProfile>) => Promise<void>;
     addLogEntry: (studentId: string, entry: Omit<StudentLogEntry, 'id'>) => Promise<void>;
     loadDemoData: () => void;
-    
-    aiInsights: Record<string, { report_card: string, trend_insights: string }>;
-    aiSuggestions: Record<string, Resource[]>;
-    saveAiAnalysis: (studentId: string, data: { report_card: string, trend_insights: string }) => void;
-    saveAiSuggestions: (studentId: string, resources: Resource[]) => void;
 }
 
 const StudentContext = createContext<StudentContextType | undefined>(undefined);
 
 const getStorageKey = (userId: string, type: 'students' | 'profile') => `benchmark_${type}_${userId}`;
 
-/**
- * Accuracy Fix: Calculates the intuitive average of TESTED domains.
- * This ensures that if only one domain is tested, the score reflects that domain's performance.
- */
 const getTrueProficiency = (assessment: Assessment | undefined, frameworkSubdomains: Record<string, SubdomainMetadata[]>): number => {
     if (!assessment) return 0;
-    
     const domainPercentages: number[] = [];
-
-    // Calculate actual percentage for each domain that has at least one subdomain score
     Object.entries(frameworkSubdomains).forEach(([domain, subs]) => {
         let earned = 0;
         let possible = 0;
         let hasData = false;
-
         subs.forEach(s => {
             const val = assessment.subdomainScores?.[`${domain}:${s.name}`];
             if (typeof val === 'number') {
@@ -66,17 +54,13 @@ const getTrueProficiency = (assessment: Assessment | undefined, frameworkSubdoma
                 hasData = true;
             }
         });
-
         if (hasData && possible > 0) {
             domainPercentages.push((earned / possible) * 100);
         }
     });
-
     if (domainPercentages.length > 0) {
         return Math.round(domainPercentages.reduce((a, b) => a + b, 0) / domainPercentages.length);
     }
-
-    // Fallback: Average of the 'scores' object if subdomain metadata is somehow unavailable
     const scores = Object.values(assessment.scores).filter(s => typeof s === 'number' && s > 0);
     if (scores.length === 0) return 0;
     return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
@@ -87,14 +71,11 @@ const calculateVelocity = (assessments: Assessment[], frameworkSubdomains: Recor
     const sorted = [...assessments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const latest = sorted[sorted.length - 1];
     const previous = sorted[sorted.length - 2];
-    
     const latestAvg = getTrueProficiency(latest, frameworkSubdomains);
     const prevAvg = getTrueProficiency(previous, frameworkSubdomains);
-    
     return latestAvg - prevAvg;
 };
 
-// Fix: Determination logic for VelocityBand based on growthVelocity
 const calculateVelocityBand = (velocity: number): VelocityBand => {
     if (velocity >= 10) return VelocityBand.Fast;
     if (velocity < 0) return VelocityBand.AtRisk;
@@ -108,9 +89,7 @@ const calculateRTIStatus = (assessments: Assessment[], thresholds: Record<TestPe
     const previous = sorted.length > 1 ? sorted[sorted.length - 2] : null;
     const avg = getTrueProficiency(latest, frameworkSubdomains);
     const domainEntries = Object.entries(latest.scores) as [Domain, number][];
-    
     const currentPeriodThreshold = thresholds[latest.type] || 70;
-
     const weakDomains = domainEntries
         .filter(([_, s]) => s < currentPeriodThreshold && s > 0)
         .map(([d]) => d);
@@ -125,7 +104,6 @@ const calculateRTIStatus = (assessments: Assessment[], thresholds: Record<TestPe
             dateIdentified: new Date().toISOString() 
         };
     }
-    
     if (weakDomains.length > 0) {
         return { 
             tier: 2, 
@@ -136,7 +114,6 @@ const calculateRTIStatus = (assessments: Assessment[], thresholds: Record<TestPe
             dateIdentified: new Date().toISOString() 
         };
     }
-
     if (previous) {
         const prevAvg = getTrueProficiency(previous, frameworkSubdomains);
         if (avg < prevAvg - 8) {
@@ -150,7 +127,6 @@ const calculateRTIStatus = (assessments: Assessment[], thresholds: Record<TestPe
             };
         }
     }
-    
     return null;
 };
 
@@ -158,22 +134,15 @@ const sortByName = (list: Student[]) => [...list].sort((a, b) => a.name.localeCo
 
 export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user } = useAuth();
-    // Fix: Destructure 'subdomains' from useBenchmarks and alias it to 'frameworkSubdomains' for use in internal logic
     const { thresholds, subdomains: frameworkSubdomains } = useBenchmarks(); 
     const [students, setStudents] = useState<Student[]>([]);
     const [classProfile, setClassProfile] = useState<ClassProfile | null>(null);
     const { showToast } = useToast();
-    const [aiInsights, setAiInsights] = useState<Record<string, { report_card: string, trend_insights: string }>>({});
-    const [aiSuggestions, setAiSuggestions] = useState<Record<string, Resource[]>>({});
-
-    const saveAiAnalysis = (studentId: string, data: { report_card: string, trend_insights: string }) => setAiInsights(prev => ({ ...prev, [studentId]: data }));
-    const saveAiSuggestions = (studentId: string, resources: Resource[]) => setAiSuggestions(prev => ({ ...prev, [studentId]: resources }));
 
     useEffect(() => {
         if (!user) { setStudents([]); setClassProfile(null); return; }
         const sKey = getStorageKey(user.id, 'students');
         const pKey = getStorageKey(user.id, 'profile');
-
         if (user.isDemo) {
             const localStudents = localStorage.getItem(sKey);
             const localProfile = localStorage.getItem(pKey);
@@ -240,20 +209,17 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             photoUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name.trim()}`,
             overallGrowth: 0,
             growthVelocity: 0,
-            // Fix: Initial velocity band for new students
             velocityBand: VelocityBand.Stable,
             hasAnomaly: false,
             assessments: [],
             interventionStatus: null,
             actionLog: [],
         })) as Student[];
-
         if (user.isDemo) {
             syncStudents([...students, ...newStudents]);
             showToast(`${names.length} students added.`);
             return;
         }
-
         const batch = writeBatch(db);
         newStudents.forEach(s => {
             const { id, ...data } = s;
@@ -287,32 +253,25 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!user) return;
         const student = students.find(s => s.id === studentId);
         if (!student) return;
-
         let assessments = [...student.assessments];
         const idx = assessments.findIndex(a => a.id === assessment.id || (a.type === assessment.type && a.date === assessment.date));
-        
         if (idx > -1) assessments[idx] = assessment;
         else assessments.push(assessment);
-
         assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-        
         const velocity = calculateVelocity(assessments, frameworkSubdomains);
-        // Fix: Determine velocity band
         const velocityBand = calculateVelocityBand(velocity);
         const rti = calculateRTIStatus(assessments, thresholds, frameworkSubdomains);
         const latestAvg = getTrueProficiency(assessments[assessments.length-1], frameworkSubdomains);
         const firstAvg = getTrueProficiency(assessments[0], frameworkSubdomains);
         const growth = assessments.length >= 2 ? latestAvg - firstAvg : 0;
-
         const payload = { 
             assessments, 
             overallGrowth: Math.round(growth), 
             growthVelocity: velocity, 
-            velocityBand, // Fix: Include in payload
+            velocityBand,
             interventionStatus: rti, 
             hasAnomaly: !!rti 
         };
-
         if (user.isDemo) syncStudents(students.map(s => s.id === studentId ? { ...s, ...payload } : s));
         else await updateDoc(doc(db, 'students', studentId), payload);
         showToast("Assessment recorded.");
@@ -322,23 +281,19 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!user) return;
         const student = students.find(s => s.id === studentId);
         if (!student) return;
-
         const assessments = student.assessments.filter(a => a.id !== assessmentId);
         const velocity = calculateVelocity(assessments, frameworkSubdomains);
-        // Fix: Recalculate band
         const velocityBand = calculateVelocityBand(velocity);
         const rti = calculateRTIStatus(assessments, thresholds, frameworkSubdomains);
         const growth = assessments.length >= 2 ? getTrueProficiency(assessments[assessments.length-1], frameworkSubdomains) - getTrueProficiency(assessments[0], frameworkSubdomains) : 0;
-
         const payload = { 
             assessments, 
             overallGrowth: Math.round(growth), 
             growthVelocity: velocity, 
-            velocityBand, // Fix: Include in payload
+            velocityBand,
             interventionStatus: rti, 
             hasAnomaly: !!rti 
         };
-
         if (user.isDemo) syncStudents(students.map(s => s.id === studentId ? { ...s, ...payload } : s));
         else await updateDoc(doc(db, 'students', studentId), payload);
         showToast("Assessment deleted.");
@@ -348,15 +303,12 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!user) return;
         const batch = user.isDemo ? null : writeBatch(db);
         const updatedStudents = [...students];
-
         items.forEach(item => {
             const sIdx = updatedStudents.findIndex(s => s.id === item.studentId);
             if (sIdx === -1) return;
             const s = updatedStudents[sIdx];
-            
             let assessments = [...s.assessments];
             const idx = assessments.findIndex(a => a.type === item.assessment.type);
-            
             if (idx !== -1) {
                 const existing = assessments[idx];
                 assessments[idx] = {
@@ -367,30 +319,24 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
                     subdomainScores: { ...existing.subdomainScores, ...item.assessment.subdomainScores }
                 };
             } else assessments.push(item.assessment);
-
             assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-            
             const vel = calculateVelocity(assessments, frameworkSubdomains);
-            // Fix: Band calculation for bulk entries
             const velocityBand = calculateVelocityBand(vel);
             const latestAvg = getTrueProficiency(assessments[assessments.length-1], frameworkSubdomains);
             const firstAvg = getTrueProficiency(assessments[0], frameworkSubdomains);
             const growth = assessments.length >= 2 ? latestAvg - firstAvg : 0;
             const rti = calculateRTIStatus(assessments, thresholds, frameworkSubdomains);
-            
             const payload = { 
                 assessments, 
                 overallGrowth: Math.round(growth), 
                 growthVelocity: vel, 
-                velocityBand, // Fix: Include in payload
+                velocityBand,
                 interventionStatus: rti, 
                 hasAnomaly: !!rti 
             };
-
             if (batch) batch.update(doc(db, 'students', s.id), payload);
             updatedStudents[sIdx] = { ...s, ...payload };
         });
-
         if (batch) await batch.commit();
         else syncStudents(updatedStudents);
         showToast(`Batch sync complete.`);
@@ -421,8 +367,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         <StudentContext.Provider value={{ 
             students, classProfile, registerClass, addStudent, addStudentsBulk, 
             updateStudent, deleteStudent, addAssessmentBulk, updateAssessmentForStudent, 
-            deleteAssessmentForStudent, updateClassProfile, addLogEntry, loadDemoData,
-            aiInsights, aiSuggestions, saveAiAnalysis, saveAiSuggestions
+            deleteAssessmentForStudent, updateClassProfile, addLogEntry, loadDemoData
         }}>
             {children}
         </StudentContext.Provider>

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { StudentsTab } from './tabs/StudentsTab.tsx';
 import { BenchmarkFrameworkTab } from './tabs/BenchmarkFrameworkTab.tsx';
 import { AnalyticsTab } from './tabs/AnalyticsTab.tsx';
@@ -14,14 +14,11 @@ import { BenchmarkProvider } from './context/BenchmarkContext.tsx';
 import { ToastProvider } from './context/ToastContext.tsx';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { NavigationProvider, useNavigation } from './context/NavigationContext.tsx';
-import { ChatProvider } from './context/ChatContext.tsx';
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard.tsx';
 import { LoginScreen } from './components/auth/LoginScreen.tsx';
 import { PlatformGuideModal } from './components/common/PlatformGuideModal.tsx';
 import { BulkAssessmentModal } from './components/students/BulkAssessmentModal.tsx';
 import { CommandCenter } from './components/common/CommandCenter.tsx';
-import { ChatWidget } from './components/chat/ChatWidget.tsx';
-import { AICoach } from './components/common/AICoach.tsx';
 
 type TabName = typeof TABS[keyof typeof TABS];
 
@@ -177,8 +174,6 @@ const MainAppLayout: React.FC = () => {
                      </div>
                      <BulkAssessmentModal isOpen={isBulkEntryOpen} onClose={() => setBulkEntryOpen(false)} />
                      <PlatformGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
-                     <ChatWidget />
-                     <AICoach />
                 </main>
             </div>
         </div>
@@ -193,9 +188,7 @@ const App: React.FC = () => {
                     <StudentProvider>
                         <ResourceProvider>
                             <NavigationProvider>
-                                <ChatProvider>
-                                    <MainAppLayout />
-                                </ChatProvider>
+                                <MainAppLayout />
                             </NavigationProvider>
                         </ResourceProvider>
                     </StudentProvider>

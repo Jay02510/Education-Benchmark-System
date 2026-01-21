@@ -1,24 +1,21 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '../components/common/Card';
 import { useBenchmarks } from '../context/BenchmarkContext';
 import { useStudents } from '../context/StudentContext';
-import { useAuth } from '../context/AuthContext';
 import { Icon } from '../components/common/Icon';
-import { GeminiService } from '../services/geminiService';
 import { Student, SubdomainMetadata, TestPeriod } from '../types';
 import { AddStudentModal } from '../components/students/AddStudentModal';
-import { useToast } from '../context/ToastContext';
 
 export const AdminPanel: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'Configuration' | 'Users' | 'Diagnostics'>('Configuration');
+    const [activeTab, setActiveTab] = useState<'Configuration' | 'Users'>('Configuration');
 
     return (
         <div className="p-8 h-full overflow-y-auto">
             <h1 className="text-3xl font-extrabold text-slate-900 mb-6 tracking-tight">System Administration</h1>
             
             <div className="flex space-x-8 border-b border-gray-100 mb-8 overflow-x-auto">
-                {(['Configuration', 'Users', 'Diagnostics'] as const).map((tab) => (
+                {(['Configuration', 'Users'] as const).map((tab) => (
                     <button 
                         key={tab}
                         onClick={() => setActiveTab(tab)}
@@ -32,88 +29,6 @@ export const AdminPanel: React.FC = () => {
 
             {activeTab === 'Configuration' && <ConfigSection />}
             {activeTab === 'Users' && <UserManagementSection />}
-            {activeTab === 'Diagnostics' && <DiagnosticsSection />}
-        </div>
-    );
-};
-
-const DiagnosticsSection: React.FC = () => {
-    const [status, setStatus] = useState<string>("Checking...");
-    const [testResult, setTestResult] = useState<string | null>(null);
-    const [isTesting, setIsTesting] = useState(false);
-
-    useEffect(() => {
-        setStatus(GeminiService.getConnectivityStatus());
-    }, []);
-
-    const runTest = async () => {
-        setIsTesting(true);
-        try {
-            const res = await GeminiService.generateMicroNarrative("System Diagnostic Ping");
-            setTestResult(`SUCCESS: ${res}`);
-        } catch (e: any) {
-            setTestResult(`FAILED: ${e.message}`);
-        } finally {
-            setIsTesting(false);
-        }
-    };
-
-    return (
-        <div className="space-y-6">
-            <Card className="p-8 border-l-8 border-indigo-600 bg-white">
-                <h2 className="text-2xl font-black text-slate-900 mb-4">Intelligence Engine Diagnostics</h2>
-                <div className="space-y-4">
-                    <div className="p-4 bg-slate-50 rounded-2xl">
-                        <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Engine Connection Status</p>
-                        <p className={`font-mono text-sm font-bold ${status.includes('ONLINE') ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            {status}
-                        </p>
-                    </div>
-                    
-                    <div className="p-4 bg-slate-50 rounded-2xl">
-                        <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Environment Check</p>
-                        <ul className="text-xs space-y-2 font-medium text-slate-600">
-                            <li>• Vercel API_KEY Visibility: <span className={process.env.API_KEY ? 'text-emerald-600' : 'text-rose-600'}>{process.env.API_KEY ? 'EXPOSED' : 'HIDDEN'}</span></li>
-                            <li>• Browser Shim Status: <span className="text-emerald-600">ACTIVE</span></li>
-                            <li>• Model Access: <span className="text-slate-400 italic">Determined during test...</span></li>
-                        </ul>
-                    </div>
-
-                    <div className="pt-4">
-                        <button 
-                            onClick={runTest}
-                            disabled={isTesting}
-                            className="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-indigo-600 transition disabled:opacity-50"
-                        >
-                            {isTesting ? 'Testing Connectivity...' : 'Run Live API Test'}
-                        </button>
-                    </div>
-
-                    {testResult && (
-                        <div className={`mt-4 p-4 rounded-2xl border text-xs font-bold ${testResult.includes('SUCCESS') ? 'bg-emerald-50 border-emerald-100 text-emerald-800' : 'bg-rose-50 border-rose-100 text-rose-800'}`}>
-                            {testResult}
-                        </div>
-                    )}
-                </div>
-            </Card>
-            
-            <Card className="p-8 bg-amber-50 border border-amber-100">
-                <div className="flex gap-4">
-                    <Icon name="info" className="w-6 h-6 text-amber-600 shrink-0" />
-                    <div>
-                        <h3 className="font-black text-amber-900 mb-2">Debugging Vercel Connectivity</h3>
-                        <p className="text-sm text-amber-800 leading-relaxed mb-4">
-                            If the status above is <strong>OFFLINE</strong>, your <code>API_KEY</code> variable in Vercel is hidden from the browser. 
-                        </p>
-                        <ol className="text-xs text-amber-800 space-y-2 list-decimal ml-4 font-bold">
-                            <li>Go to Vercel Dashboard → Settings → Environment Variables.</li>
-                            <li>Ensure <code>API_KEY</code> exists.</li>
-                            <li>Try adding a second variable named <code>VITE_API_KEY</code> with the same value (Vite requires this prefix for browser access).</li>
-                            <li>Redeploy your application for changes to take effect.</li>
-                        </ol>
-                    </div>
-                </div>
-            </Card>
         </div>
     );
 };
@@ -121,8 +36,7 @@ const DiagnosticsSection: React.FC = () => {
 const ConfigSection: React.FC = () => {
     const { 
         domains, subdomains, thresholds, 
-        addDomain, deleteDomain, addSubdomain, deleteSubdomain, 
-        updateSubdomain, updateThreshold, resetBenchmarks 
+        addDomain, deleteDomain, addSubdomain, updateSubdomain, updateThreshold 
     } = useBenchmarks();
     
     const [newDomain, setNewDomain] = useState('');

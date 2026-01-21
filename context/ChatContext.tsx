@@ -30,13 +30,19 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [isAiActive, setIsAiActive] = useState(false);
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
-    const verifyKey = () => {
-        const k = process.env.API_KEY;
-        return !!k && k !== "undefined" && k !== "";
+    const verifyKeyStatus = async () => {
+        const envKey = process.env.API_KEY;
+        if (envKey && envKey !== "undefined" && envKey !== "") return true;
+        
+        // If env key is missing, check if one was selected via aistudio protocol
+        if ((window as any).aistudio) {
+            return await (window as any).aistudio.hasSelectedApiKey();
+        }
+        return false;
     };
 
     useEffect(() => {
-        setIsAiActive(verifyKey());
+        verifyKeyStatus().then(setIsAiActive);
     }, []);
 
     const sendMessage = async (text: string) => {
@@ -45,20 +51,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsTyping(true);
 
         try {
-            let apiKey = process.env.API_KEY;
-
-            // Trigger selector if key is missing
-            if (!apiKey || apiKey === "undefined" || apiKey === "") {
-                if (window.aistudio) {
-                    await window.aistudio.openSelectKey();
-                    apiKey = process.env.API_KEY;
+            // Guidelines: Check selection and trigger if missing
+            if ((window as any).aistudio) {
+                const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+                if (!hasKey) {
+                    await (window as any).aistudio.openSelectKey();
                 }
             }
 
+            const apiKey = process.env.API_KEY;
             if (!apiKey || apiKey === "undefined" || apiKey === "") {
-                throw new Error("CREDENTIALS_REQUIRED: Please click the 'Connect Engine' button to authorize the AI.");
+                throw new Error("AUTHORIZATION_REQUIRED: API Key not detected in environment. Please click 'Connect Engine'.");
             }
 
+            // Guidelines: Create instance right before use
             const ai = new GoogleGenAI({ apiKey });
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
@@ -72,36 +78,47 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: response.text || "Processing complete.", 
+                text: response.text || "Diagnostic complete.", 
                 timestamp: Date.now() 
             }]);
             setIsAiActive(true);
         } catch (error: any) {
-            setMessages(prev => [...prev, { 
-                id: Date.now().toString(), 
-                role: 'model', 
-                text: `Authorization Alert: ${error.message}`, 
-                timestamp: Date.now(), 
-                isError: true 
-            }]);
+            // Guidelines: Handle Requested entity was not found
+            if (error.message?.includes("Requested entity was not found") && (window as any).aistudio) {
+                await (window as any).aistudio.openSelectKey();
+                setMessages(prev => [...prev, { 
+                    id: Date.now().toString(), 
+                    role: 'model', 
+                    text: "Connectivity reset. Please resend your last message.", 
+                    timestamp: Date.now() 
+                }]);
+            } else {
+                setMessages(prev => [...prev, { 
+                    id: Date.now().toString(), 
+                    role: 'model', 
+                    text: `Connectivity Alert: ${error.message}`, 
+                    timestamp: Date.now(), 
+                    isError: true 
+                }]);
+            }
         } finally {
             setIsTyping(false);
         }
     };
 
     const reconnect = async () => {
-        if (window.aistudio) {
-            await window.aistudio.openSelectKey();
-            // Assume success and update state
+        if ((window as any).aistudio) {
+            await (window as any).aistudio.openSelectKey();
             setIsAiActive(true);
             setMessages(prev => [...prev, {
                 id: `sys-${Date.now()}`,
                 role: 'model',
-                text: "Handshake successful. Engine re-synchronized.",
+                text: "Engine handshake successful. Strategic analysis online.",
                 timestamp: Date.now()
             }]);
         } else {
-            setIsAiActive(verifyKey());
+            const active = !!process.env.API_KEY && process.env.API_KEY !== "undefined";
+            setIsAiActive(active);
         }
     };
 

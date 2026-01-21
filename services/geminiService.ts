@@ -32,27 +32,27 @@ export class GeminiService {
     }
 
     /**
-     * Obtains a valid AI instance by checking for environment variables
-     * and falling back to the AI Studio selection protocol if necessary.
+     * Guidelines: Create a new instance right before making an API call.
+     * This ensures we always use the most up-to-date key from the aistudio selector.
      */
     private static async getAIInstance(): Promise<GoogleGenAI> {
+        // First check if the key is already in the environment
         let apiKey = process.env.API_KEY;
 
-        // If environment variable is missing (common in browser builds), 
-        // check if a key has been selected via the AI Studio protocol.
+        // If Vite blocked it or it's missing, check the AI Studio selection protocol
         if (!apiKey || apiKey === "undefined" || apiKey === "") {
-            if (window.aistudio) {
-                const hasKey = await window.aistudio.hasSelectedApiKey();
+            if ((window as any).aistudio) {
+                const hasKey = await (window as any).aistudio.hasSelectedApiKey();
                 if (!hasKey) {
-                    await window.aistudio.openSelectKey();
+                    await (window as any).aistudio.openSelectKey();
                 }
-                // The key is injected into process.env.API_KEY by the environment after selection
+                // Assume the key selection was successful as per guidelines
                 apiKey = process.env.API_KEY;
             }
         }
 
         if (!apiKey || apiKey === "undefined" || apiKey === "") {
-            throw new Error("API_KEY_MISSING: Credentials not found. Please click 'Connect Engine'.");
+            throw new Error("CREDENTIALS_REQUIRED: No API key found. Please use the 'Connect Engine' button.");
         }
 
         return new GoogleGenAI({ apiKey });
@@ -68,14 +68,11 @@ export class GeminiService {
             const ai = await this.getAIInstance();
             return await fn(ai);
         } catch (error: any) {
-            // If the key is invalid or missing, trigger the selection dialog
-            if (error.message?.includes("entity was not found") || error.message?.includes("API_KEY_MISSING")) {
-                if (window.aistudio) {
-                    await window.aistudio.openSelectKey();
-                    // After selection, we assume success as per guidelines
-                    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-                    return await fn(ai);
-                }
+            // Guidelines: If entity not found, reset key selection state
+            if (error.message?.includes("Requested entity was not found") && (window as any).aistudio) {
+                await (window as any).aistudio.openSelectKey();
+                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                return await fn(ai);
             }
 
             if (retries > 0 && (error.message?.includes("429") || error.message?.includes("503"))) {
@@ -124,9 +121,9 @@ export class GeminiService {
         return this.callWithRetry(async (ai) => {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Perform an institutional audit: ${JSON.stringify(analytics)}. Provide a strategic briefing.`,
+                contents: `Perform an institutional audit: ${JSON.stringify(analytics)}. Provide a strategic briefing for school leadership.`,
             });
-            return response.text || "Briefing pending.";
+            return response.text || "Briefing pending data synthesis.";
         });
     }
 }

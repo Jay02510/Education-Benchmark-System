@@ -7,7 +7,6 @@ interface InsightCardProps {
     title: string;
     description?: string;
     children: React.ReactNode;
-    contextForAi?: string;
     actionLabel?: string;
     onAction?: () => void;
     variant?: 'default' | 'glass' | 'intelligence';

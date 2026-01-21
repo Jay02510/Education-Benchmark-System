@@ -1,3 +1,4 @@
+
 export enum Domain {
     Reading = "Reading",
     Writing = "Writing",
@@ -71,7 +72,6 @@ export interface Student {
     assessments: Assessment[];
     interventionStatus: Intervention | null;
     actionLog: StudentLogEntry[];
-    aiMicroNarrative?: string;
 }
 
 export interface Assessment {
@@ -114,6 +114,7 @@ export interface User {
     isDemo?: boolean;
 }
 
+// Added aiGenerated property to fix property 'aiGenerated' does not exist in type 'Resource' errors
 export interface Resource {
     id: string;
     domain: Domain;
@@ -124,7 +125,7 @@ export interface Resource {
     title: string;
     description: string;
     content: string;
-    aiGenerated: boolean;
+    aiGenerated?: boolean;
 }
 
 export interface TeacherStrategy {
@@ -137,6 +138,7 @@ export interface TeacherStrategy {
     description: string;
 }
 
+// Added ChatMessage interface to resolve missing export member error in ChatContext.tsx
 export interface ChatMessage {
     id: string;
     role: 'user' | 'model';

@@ -1,11 +1,10 @@
-import React, { useState, useMemo, useEffect } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { Card } from '../components/common/Card';
 import { DomainPerformanceChart, RadarPerformanceChart, ProficiencyDistributionChart, SupportTierChart } from '../components/charts/Charts';
 import { Icon } from '../components/common/Icon';
 import { useStudents } from '../context/StudentContext';
 import { useBenchmarks } from '../context/BenchmarkContext';
-import { useNavigation } from '../context/NavigationContext';
-import { GeminiService } from '../services/geminiService';
 import { Domain, TestPeriod, SubdomainMetadata, Student } from '../types';
 
 const KPICard: React.FC<{ 
@@ -13,10 +12,8 @@ const KPICard: React.FC<{
     subtitle: string; 
     value: string | number; 
     icon: string; 
-    trend?: 'up' | 'down' | 'neutral'; 
-    subtext?: string; 
     theme: 'blue' | 'purple' | 'orange' | 'rose' 
-}> = ({ title, subtitle, value, icon, trend, subtext, theme }) => {
+}> = ({ title, value, icon, theme }) => {
     const themes = {
         blue: 'from-blue-600 to-indigo-700 shadow-blue-200/50',
         purple: 'from-indigo-600 to-violet-800 shadow-indigo-200/50',
@@ -34,9 +31,6 @@ const KPICard: React.FC<{
                     <span className="text-[11px] font-black uppercase tracking-[0.25em] text-white/90">{title}</span>
                 </div>
                 <h3 className="text-5xl font-black tracking-tighter drop-shadow-md">{value}</h3>
-                <div className="mt-8 flex items-end justify-between">
-                    {subtext && <p className="text-xs font-black uppercase tracking-widest opacity-80">{subtext}</p>}
-                </div>
             </div>
         </div>
     );
@@ -46,12 +40,10 @@ export const AnalyticsTab: React.FC = () => {
     const { students, classProfile } = useStudents();
     const { domains, benchmarks, subdomains: frameworkSubdomains } = useBenchmarks();
     const [chartType, setChartType] = useState<'radar' | 'bar'>('radar');
-    const [briefing, setBriefing] = useState<string | null>(null);
-    const [isGenerating, setIsGenerating] = useState(false);
 
     const hasData = useMemo(() => students.some(s => s.assessments.length > 0), [students]);
 
-    const getStudentProficiency = (student: Student, subdomains: Record<string, SubdomainMetadata[]>) => {
+    const getStudentProficiency = (student: Student, _subdomains: Record<string, SubdomainMetadata[]>) => {
         const latest = student.assessments[student.assessments.length - 1];
         if (!latest) return 0;
         const fallback = Object.values(latest.scores).filter(s => typeof s === 'number' && s > 0) as number[];
@@ -124,38 +116,11 @@ export const AnalyticsTab: React.FC = () => {
         };
     }, [students, domains, benchmarks, classProfile, frameworkSubdomains]);
 
-    const handleGenerateBriefing = async () => {
-        if (!analytics) return;
-        setIsGenerating(true);
-        try {
-            const result = await GeminiService.generateInstitutionalBriefing(analytics);
-            setBriefing(result);
-        } catch (e) {
-            setBriefing("Briefing generation failed. Please check AI connectivity.");
-        } finally {
-            setIsGenerating(false);
-        }
-    };
-
-    useEffect(() => {
-        if (hasData && !briefing) handleGenerateBriefing();
-    }, [hasData]);
-
     return (
         <div className="p-6 md:p-10 space-y-10 max-w-[1600px] mx-auto pb-20">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-                <div>
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Institutional Analytics</h1>
-                    <p className="text-slate-400 font-bold mt-1">High-level pedagogical oversight and health monitoring.</p>
-                </div>
-                <button 
-                    onClick={handleGenerateBriefing}
-                    disabled={isGenerating}
-                    className="flex items-center gap-3 px-6 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl disabled:opacity-50"
-                >
-                    <Icon name="refresh" className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
-                    {isGenerating ? 'Analyzing...' : 'Recalculate Briefing'}
-                </button>
+            <div>
+                <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Institutional Analytics</h1>
+                <p className="text-slate-400 font-bold mt-1">High-level pedagogical oversight and health monitoring.</p>
             </div>
 
             {!hasData ? (
@@ -166,35 +131,6 @@ export const AnalyticsTab: React.FC = () => {
                 </div>
             ) : (
                 <>
-                    <Card className="p-10 border-t-[10px] border-indigo-600 shadow-2xl bg-white relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full blur-3xl -z-0 translate-x-32 -translate-y-32 opacity-50"></div>
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-4 mb-8">
-                                <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-200">
-                                    <Icon name="robot" className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Institutional Performance Briefing</h2>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">AI-Grounded Strategic Summary</p>
-                                </div>
-                            </div>
-
-                            <div className="prose prose-slate max-w-none">
-                                {isGenerating ? (
-                                    <div className="space-y-4">
-                                        <div className="h-4 bg-slate-100 rounded-lg w-full animate-pulse"></div>
-                                        <div className="h-4 bg-slate-100 rounded-lg w-[95%] animate-pulse"></div>
-                                        <div className="h-4 bg-slate-100 rounded-lg w-[90%] animate-pulse"></div>
-                                    </div>
-                                ) : (
-                                    <div className="text-slate-700 leading-relaxed font-medium whitespace-pre-wrap">
-                                        {briefing || "Recalculate to generate institutional insight."}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </Card>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                         <KPICard title="Institutional Growth" subtitle="" value={`+${analytics?.avgVelocity || 0}%`} icon="trendUp" theme="blue" />
                         <KPICard title="Operational Risk" subtitle="" value={analytics?.atRiskCount || 0} icon="alert" theme="rose" />

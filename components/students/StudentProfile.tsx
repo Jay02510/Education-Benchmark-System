@@ -1,17 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Student, Resource, Domain, Assessment, StudentLogEntry, SubdomainMetadata, ResourceType } from '../../types';
-import { GeminiService } from '../../services/geminiService';
+
+import React, { useState, useMemo } from 'react';
+import { Student, Assessment, StudentLogEntry, SubdomainMetadata } from '../../types';
 import { Card } from '../common/Card';
 import { Icon } from '../common/Icon';
 import { LongitudinalGrowthChart, RadarPerformanceChart } from '../charts/Charts';
-import { DOMAINS, TABS } from '../../constants';
+import { DOMAINS } from '../../constants';
 import { useStudents } from '../../context/StudentContext';
 import { useResources } from '../../context/ResourceContext';
 import { useBenchmarks } from '../../context/BenchmarkContext';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigation } from '../../context/NavigationContext';
 import { AddAssessmentModal } from './AddAssessmentModal';
-import { StudentReportModal } from './StudentReportModal';
 import { AddStudentModal } from './AddStudentModal';
 import { Tooltip } from '../common/Tooltip';
 import { InsightCard } from '../common/InsightCard';
@@ -56,14 +54,12 @@ const ProfileStatWidget: React.FC<{ title: string; value: string | number; subte
 );
 
 export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }> = ({ student, onBack }) => {
-    const { updateAssessmentForStudent, deleteAssessmentForStudent, aiInsights, classProfile, addLogEntry } = useStudents();
+    const { updateAssessmentForStudent, deleteAssessmentForStudent, addLogEntry } = useStudents();
     const { resources } = useResources();
-    const { subdomains: frameworkSubdomains } = useBenchmarks();
     const { user } = useAuth();
     
     const [activeSection, setActiveSection] = useState<'Overview' | 'Assessments' | 'Log' | 'Resources'>('Overview');
     const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
-    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
     const [assessmentToEdit, setAssessmentToEdit] = useState<Assessment | null>(null);
     const [logText, setLogText] = useState('');
@@ -81,16 +77,13 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
     }, [student.assessments]);
     
     const projectionData = useMemo(() => {
-        // Fix: Explicitly type history to allow string names (like 'Proj') for chart display
         const history: { name: string; score: number; date: string }[] = sortedAssessments.map(a => ({
             name: a.type as string,
-            // Fixed: Explicitly typed reduce parameters to avoid arithmetic type errors
             score: Math.round((Object.values(a.scores) as number[]).reduce((sum: number, v: number) => sum + v, 0) / Object.values(a.scores).length),
             date: a.date
         }));
         if (history.length > 0) {
             const last = history[history.length - 1];
-            // Fixed: Cast last.score to number to resolve operator '+' cannot be applied to unknown error
             history.push({ name: 'Proj', score: Math.min(100, Math.max(0, (last.score as number) + Number(student.growthVelocity || 0))), date: 'Future' });
         }
         return history;
@@ -149,7 +142,6 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                         </div>
                     </div>
                     <div className="flex gap-4">
-                        <button onClick={() => setIsReportModalOpen(true)} className="px-8 py-4 bg-white border-2 border-slate-100 text-slate-800 rounded-2xl font-black shadow-sm hover:bg-slate-50 active:scale-95 transition-all text-xs uppercase tracking-widest">Draft Report</button>
                         <button onClick={() => { setAssessmentToEdit(null); setIsAssessmentModalOpen(true); }} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-2xl shadow-indigo-200/40 hover:bg-indigo-600 active:scale-95 transition-all flex items-center gap-3 text-xs uppercase tracking-widest border-b-4 border-slate-950">
                             <Icon name="plus" className="w-5 h-5" /> Log Score
                         </button>
@@ -171,8 +163,7 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
                             <InsightCard 
                                 title="Growth DNA Analysis"
-                                description="AI-Interpreted Performance Cycle"
-                                contextForAi={`Student ${student.name} at Level ${student.level} has ${student.growthVelocity}% velocity.`}
+                                description="Institutional Performance Cycle"
                                 actionLabel="View Assessments"
                                 onAction={() => setActiveSection('Assessments')}
                             >
@@ -184,7 +175,6 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                             <InsightCard 
                                 title="Domain Competency"
                                 description="Skill Mapping vs Standards"
-                                contextForAi={`Analyze domain balance for student with average proficiency of ${currentProficiency}%.`}
                             >
                                 <div className="min-h-[350px]">
                                     <RadarPerformanceChart data={DOMAINS.map(d => ({ domain: d, score: student.assessments[student.assessments.length-1]?.scores[d] || 0, target: 80 }))} />
@@ -219,7 +209,6 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                                             <div className="flex items-center gap-10">
                                                 <div className="text-right">
                                                     <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Aggregate</p>
-                                                    {/* Fixed: Explicitly typed reduce parameters to avoid arithmetic type errors */}
                                                     <p className="text-xl font-black text-slate-800">{Math.round((Object.values(a.scores) as number[]).reduce((s: number, v: number) => s + v, 0) / DOMAINS.length)}%</p>
                                                 </div>
                                                 <div className="flex gap-2">
@@ -287,7 +276,6 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
             </main>
 
             <AddAssessmentModal isOpen={isAssessmentModalOpen} onClose={() => { setIsAssessmentModalOpen(false); setAssessmentToEdit(null); }} onSave={(a) => updateAssessmentForStudent(student.id, a)} assessmentToEdit={assessmentToEdit} />
-            <StudentReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} student={student} insight={aiInsights[student.id]?.report_card || ''} initialTeacherComment={student.actionLog?.[0]?.content || ''} className={classProfile?.className} />
             <AddStudentModal isOpen={isEditProfileModalOpen} onClose={() => setIsEditProfileModalOpen(false)} studentToEdit={student} />
         </div>
     );

@@ -21,11 +21,11 @@ const MaterialDownloadCard: React.FC<MaterialCardProps> = ({ title, type, size, 
         setIsDownloading(true);
         // Simulated Secure Asset Delivery
         setTimeout(() => {
-            const blob = new Blob([`Benchmark Asset: ${title}`], { type: 'text/plain' });
+            const blob = new Blob([`Benchmark Asset: ${title}\nCategory: ${category}\nStandard: Academic Protocol`], { type: 'text/plain' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${title.replace(/\s+/g, '_')}.${type.toLowerCase()}`;
+            a.download = `${title.replace(/\s+/g, '_')}_Standard.${type.toLowerCase()}`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -62,7 +62,6 @@ const BenchmarkRow: React.FC<any> = ({ id, domain, target, actual, descriptor, c
     const [editTarget, setEditTarget] = useState(target);
     const [editDescriptor, setEditDescriptor] = useState(descriptor);
     
-    // Reset internal edit state when standard changes externally
     useEffect(() => {
         setEditTarget(target);
         setEditDescriptor(descriptor);
@@ -105,7 +104,7 @@ const BenchmarkRow: React.FC<any> = ({ id, domain, target, actual, descriptor, c
                             {hasData && <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">|</span>}
                             {hasData && <span className="text-[9px] font-black text-indigo-600 uppercase tracking-[0.2em]">Class Median: {actual}%</span>}
                         </div>
-                    </>
+                    </div>
                 )}
             </div>
             <div className="md:col-span-3 flex justify-end">
@@ -184,21 +183,21 @@ export const BenchmarkFrameworkTab: React.FC = () => {
                 <div className="xl:col-span-4 space-y-8">
                     <Card className="p-10 bg-slate-900 text-white rounded-[3.5rem] shadow-[0_40px_100px_rgba(15,23,42,0.5)] border-0">
                          <div className="flex items-center gap-4 mb-10">
-                            <div className="p-3 bg-white/10 rounded-2xl text-indigo-400 shadow-inner"><Icon name="library" className="w-6 h-6" /></div>
-                            <h3 className="text-2xl font-black tracking-tight">Core Assets</h3>
+                            <div className="p-3 bg-white/10 rounded-2xl text-indigo-400 shadow-inner"><Icon name="book" className="w-6 h-6" /></div>
+                            <h3 className="text-2xl font-black tracking-tight">Standard Downloads</h3>
                          </div>
                          <div className="space-y-6">
-                            <MaterialDownloadCard title={`Standard Exam - ${selectedPeriod}`} category="Logic Packet" type="PDF" size="1.2 MB" icon="book" />
-                            <MaterialDownloadCard title="Master Rubric" category="Scoring Protocol" type="PDF" size="450 KB" icon="shield" />
-                            <MaterialDownloadCard title="Class Aggregate Log" category="Intelligence Export" type="XLS" size="28 KB" icon="analytics" />
+                            <MaterialDownloadCard title={`Assessment Kit - ${selectedPeriod}`} category="Testing Protocol" type="PDF" size="2.4 MB" icon="book" />
+                            <MaterialDownloadCard title="Scoring Rubrics" category="Evaluation Guide" type="PDF" size="850 KB" icon="shield" />
+                            <MaterialDownloadCard title="Class Data Entry Sheet" category="Asset" type="XLS" size="42 KB" icon="analytics" />
                          </div>
                          
                          <div className="mt-12 p-8 bg-white/5 rounded-[2.5rem] border border-white/5">
                             <div className="flex items-center gap-3 mb-4">
                                 <Icon name="brain" className="w-5 h-5 text-indigo-400" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Pedagogical Insight</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Calibration Insight</span>
                             </div>
-                            <p className="text-sm font-bold leading-relaxed text-slate-400 italic">"The system is currently calibrated for Level {levelToUse}. Any custom domains added will require manual descriptor entry for accurate AI reporting."</p>
+                            <p className="text-sm font-bold leading-relaxed text-slate-400 italic">"The system is currently configured for Grade {levelToUse}. Changing targets here will affect the RTI trigger sensitivity for all students in this cohort."</p>
                          </div>
                     </Card>
                 </div>

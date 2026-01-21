@@ -5,6 +5,7 @@ import { Domain, TestPeriod, Resource } from '../types';
 import { useStudents } from '../context/StudentContext';
 import { useBenchmarks } from '../context/BenchmarkContext';
 import { useResources } from '../context/ResourceContext';
+import { useChat } from '../context/ChatContext';
 import { Icon } from '../components/common/Icon';
 import { DOMAINS, RESOURCE_TYPES } from '../constants';
 import { Modal } from '../components/common/Modal';
@@ -32,6 +33,7 @@ export const LibraryTab: React.FC = () => {
     const { classProfile } = useStudents();
     const { benchmarks, domains } = useBenchmarks();
     const { resources } = useResources();
+    const { sendMessage, toggleChat } = useChat();
     const [selectedPeriod, setSelectedPeriod] = useState<TestPeriod>(TestPeriod.Baseline);
     const [selectedDomain, setSelectedDomain] = useState<Domain | 'All'>('All');
     const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
@@ -47,12 +49,17 @@ export const LibraryTab: React.FC = () => {
         return { domain, target: benchData?.target_percent || 70, descriptor: benchData?.descriptor_short || 'No defined protocol.' };
     });
 
+    const handleAIGen = () => {
+        toggleChat();
+        sendMessage(`I need to generate a new instructional resource for Grade ${levelToUse}. Please suggest a Micro-Lesson for the domain of ${selectedDomain === 'All' ? 'Reading' : selectedDomain}.`);
+    };
+
     return (
         <div className="p-6 md:p-12 space-y-12 max-w-[1600px] mx-auto pb-32">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
                 <div>
-                    <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2 uppercase italic">Curriculum Library</h1>
-                    <p className="text-slate-400 font-bold text-lg italic">Calibrating excellence for <span className="text-indigo-600 underline">Level {levelToUse}</span>.</p>
+                    <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2 uppercase italic leading-none">Framework Library</h1>
+                    <p className="text-slate-400 font-bold text-lg italic">Logic bank for <span className="text-indigo-600 underline">Level {levelToUse}</span>.</p>
                 </div>
                 
                 <div className="bg-white p-2 rounded-[2rem] shadow-xl border border-slate-100 flex gap-1 ring-8 ring-slate-50">
@@ -70,8 +77,8 @@ export const LibraryTab: React.FC = () => {
                         <div className="flex items-center gap-5 mb-10 pb-6 border-b border-slate-50">
                             <div className="p-3.5 bg-indigo-50 text-indigo-600 rounded-2xl shadow-inner"><Icon name="benchmark" className="w-6 h-6" /></div>
                             <div>
-                                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Active Protocols</h2>
-                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.25em] mt-1">{selectedPeriod} Standards Matrix</p>
+                                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Active Standards</h2>
+                                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.25em] mt-1">{selectedPeriod} Protocol Matrix</p>
                             </div>
                         </div>
 
@@ -98,7 +105,7 @@ export const LibraryTab: React.FC = () => {
                             <div className="flex items-center justify-between mb-8">
                                 <div className="flex items-center gap-4">
                                     <div className="p-3 bg-white/10 rounded-2xl text-indigo-400"><Icon name="library" className="w-6 h-6" /></div>
-                                    <h3 className="text-xl font-black tracking-tight">Instructional Tools</h3>
+                                    <h3 className="text-xl font-black tracking-tight">Logic Bank</h3>
                                 </div>
                                 <select 
                                     value={selectedDomain} 
@@ -116,13 +123,16 @@ export const LibraryTab: React.FC = () => {
                                 ) : (
                                     <div className="py-20 text-center bg-white/5 border-2 border-dashed border-white/10 rounded-3xl">
                                         <Icon name="search" className="w-12 h-12 text-white/10 mx-auto mb-4" />
-                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No matching resources</p>
+                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No segments found</p>
                                     </div>
                                 )}
                             </div>
 
-                            <button className="w-full mt-10 py-5 bg-indigo-600 rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] hover:bg-indigo-500 transition-all shadow-2xl shadow-indigo-900/40">
-                                Launch Resource Generator
+                            <button 
+                                onClick={handleAIGen}
+                                className="w-full mt-10 py-5 bg-indigo-600 rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] hover:bg-indigo-500 transition-all shadow-2xl shadow-indigo-900/40 active:scale-95 border-b-8 border-indigo-900"
+                            >
+                                Launch AI Resource Engine
                             </button>
                         </div>
                     </Card>
@@ -139,7 +149,7 @@ export const LibraryTab: React.FC = () => {
                             {selectedResource.content}
                         </div>
                         <div className="flex justify-end gap-3 pt-6 border-t border-slate-50">
-                            <button className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all">Print Resource</button>
+                            <button onClick={() => window.print()} className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all">Export Protocol PDF</button>
                         </div>
                     </div>
                 )}

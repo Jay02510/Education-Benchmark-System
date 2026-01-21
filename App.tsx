@@ -19,6 +19,7 @@ import { BulkAssessmentModal } from './components/students/BulkAssessmentModal.t
 import { CommandCenter } from './components/common/CommandCenter.tsx';
 import { ChatWidget } from './components/chat/ChatWidget.tsx';
 import { ChatProvider } from './context/ChatContext.tsx';
+import { FeedbackModal } from './components/common/FeedbackModal.tsx';
 
 type TabName = typeof TABS[keyof typeof TABS];
 
@@ -56,6 +57,7 @@ const MainAppLayout: React.FC = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
     const handleTabChange = (tab: TabName) => {
         setActiveTab(tab);
@@ -113,6 +115,16 @@ const MainAppLayout: React.FC = () => {
                     </nav>
 
                     <div className={`pt-6 border-t border-slate-50 ${isSidebarCollapsed ? 'flex flex-col items-center gap-6' : 'px-2'}`}>
+                        {/* Feedback Trigger */}
+                        <button 
+                            onClick={() => setIsFeedbackOpen(true)}
+                            className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all mb-4 ${isSidebarCollapsed ? 'justify-center px-0 w-12' : ''}`}
+                            title="Feedback"
+                        >
+                            <Icon name="chat" className="w-5 h-5" />
+                            {!isSidebarCollapsed && <span className="text-[10px] font-black uppercase tracking-widest">Feedback</span>}
+                        </button>
+
                         <button 
                             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                             className={`hidden lg:flex items-center justify-center rounded-xl text-slate-300 hover:text-slate-900 hover:bg-slate-50 transition-colors mb-6 ${isSidebarCollapsed ? 'w-12 h-12' : 'w-full py-3 gap-2'}`}
@@ -151,6 +163,7 @@ const MainAppLayout: React.FC = () => {
                      </div>
                      <BulkAssessmentModal isOpen={isBulkEntryOpen} onClose={() => setBulkEntryOpen(false)} />
                      <PlatformGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+                     <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
                 </main>
             </div>
         </div>

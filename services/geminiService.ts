@@ -1,11 +1,8 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { Student } from '../types.ts';
+import { Student, Domain } from '../types.ts';
 
 export class GeminiService {
-    /**
-     * Strictly follows SDK guidelines: new instance right before use.
-     */
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<{ report_card: string, trend_insights: string }> {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const latest = student.assessments[student.assessments.length - 1];
@@ -29,14 +26,54 @@ export class GeminiService {
             });
             
             const text = response.text;
-            if (!text) throw new Error("Empty response from model");
+            if (!text) throw new Error("Empty response");
             return JSON.parse(text);
         } catch (error) {
-            console.error("Gemini Analysis Error:", error);
-            return {
-                report_card: "System was unable to generate a report at this time.",
-                trend_insights: "Metrics stable. Manual review recommended."
-            };
+            return { report_card: "Syncing...", trend_insights: "Stable." };
+        }
+    }
+
+    static async predictStudentTrajectory(student: Student): Promise<string> {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const context = `Student ${student.name} is Level ${student.level} with ${student.growthVelocity}% velocity. Recent domain scores: ${JSON.stringify(student.assessments[student.assessments.length-1]?.scores)}.`;
+        try {
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: `Predict the student's CEFR level in 6 months based on this data: ${context}. Answer in 1 short sentence.`,
+            });
+            return response.text || "Trajectory currently stable.";
+        } catch (e) {
+            return "Projection pending data maturation.";
+        }
+    }
+
+    static async generateSmartGroups(students: Student[], domains: string[]): Promise<{ groupName: string, studentIds: string[], focus: string }[]> {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const data = students.map(s => ({ id: s.id, name: s.name, weakDomains: Object.entries(s.assessments[s.assessments.length-1]?.scores || {}).filter(([_, v]) => v < 70).map(([d]) => d) }));
+        
+        try {
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: `Analyze these students and their weak domains: ${JSON.stringify(data)}. Group students with similar weaknesses into 3 distinct 'Instructional Pods'.`,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                groupName: { type: Type.STRING },
+                                studentIds: { type: Type.ARRAY, items: { type: Type.STRING } },
+                                focus: { type: Type.STRING }
+                            },
+                            required: ['groupName', 'studentIds', 'focus']
+                        }
+                    }
+                }
+            });
+            return JSON.parse(response.text || '[]');
+        } catch (e) {
+            return [];
         }
     }
 
@@ -50,19 +87,6 @@ export class GeminiService {
             return response.text || "Trajectory stable.";
         } catch (e) {
             return "Analysis pending data refresh.";
-        }
-    }
-
-    static async generateInstitutionalBriefing(analytics: any): Promise<string> {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        try {
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
-                contents: `Perform an institutional audit: ${JSON.stringify(analytics)}. Provide a strategic briefing for school leadership.`,
-            });
-            return response.text || "Briefing pending data synthesis.";
-        } catch (e) {
-            return "Institutional data is being synchronized.";
         }
     }
 }

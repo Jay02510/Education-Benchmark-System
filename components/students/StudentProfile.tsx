@@ -1,42 +1,21 @@
 
-import React, { useState, useMemo } from 'react';
-import { Student, Assessment, StudentLogEntry, SubdomainMetadata } from '../../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Student, Assessment, StudentLogEntry } from '../../types';
 import { Card } from '../common/Card';
 import { Icon } from '../common/Icon';
 import { LongitudinalGrowthChart, RadarPerformanceChart } from '../charts/Charts';
 import { DOMAINS } from '../../constants';
 import { useStudents } from '../../context/StudentContext';
 import { useResources } from '../../context/ResourceContext';
-import { useBenchmarks } from '../../context/BenchmarkContext';
 import { useAuth } from '../../context/AuthContext';
+import { GeminiService } from '../../services/geminiService';
 import { AddAssessmentModal } from './AddAssessmentModal';
 import { AddStudentModal } from './AddStudentModal';
 import { Tooltip } from '../common/Tooltip';
 import { InsightCard } from '../common/InsightCard';
 
-const LogEntryView: React.FC<{ entry: StudentLogEntry }> = ({ entry }) => (
-    <div className="flex gap-4 p-6 bg-white rounded-[2rem] border border-slate-100 mb-4 shadow-sm hover:shadow-md transition-all animate-in fade-in slide-in-from-left duration-300">
-        <div className={`shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${
-            entry.category === 'Intervention' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-            entry.category === 'Goal Met' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
-        }`}>
-            <Icon name={entry.category === 'Goal Met' ? 'check' : entry.category === 'Intervention' ? 'alert' : 'chat'} className="w-7 h-7" />
-        </div>
-        <div className="flex-1">
-            <div className="flex justify-between items-start mb-2">
-                <div>
-                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">{entry.category} Protocol</span>
-                    <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">{new Date(entry.date).toLocaleDateString()}</p>
-                </div>
-                <span className="text-[9px] font-black text-indigo-400 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 uppercase tracking-widest">Verified by {entry.author}</span>
-            </div>
-            <p className="text-md text-slate-700 leading-relaxed font-bold italic">"{entry.content}"</p>
-        </div>
-    </div>
-);
-
 const ProfileStatWidget: React.FC<{ title: string; value: string | number; subtext: string; icon: string; gradient: string; tooltip: string; }> = ({ title, value, subtext, icon, gradient, tooltip }) => (
-    <div className={`relative overflow-hidden p-8 rounded-[2.5rem] bg-gradient-to-br ${gradient} shadow-2xl shadow-indigo-200/20 transition-all hover:-translate-y-2 group active:scale-95`}>
+    <div className={`relative overflow-hidden p-8 rounded-[2.5rem] bg-gradient-to-br ${gradient} shadow-2xl transition-all hover:-translate-y-2 group active:scale-95`}>
         <div className="relative z-10 text-white">
             <div className="flex justify-between items-start mb-6">
                 <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-xl shadow-inner border border-white/10 group-hover:bg-white/30 transition-all">
@@ -53,6 +32,26 @@ const ProfileStatWidget: React.FC<{ title: string; value: string | number; subte
     </div>
 );
 
+const LogEntryView: React.FC<{ entry: StudentLogEntry }> = ({ entry }) => (
+    <div className="flex gap-4 p-6 bg-white rounded-[2rem] border border-slate-100 mb-4 shadow-sm hover:shadow-md transition-all">
+        <div className={`shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${
+            entry.category === 'Intervention' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
+            entry.category === 'Goal Met' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
+        }`}>
+            <Icon name={entry.category === 'Goal Met' ? 'check' : entry.category === 'Intervention' ? 'alert' : 'chat'} className="w-7 h-7" />
+        </div>
+        <div className="flex-1">
+            <div className="flex justify-between items-start mb-2">
+                <div>
+                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">{entry.category}</span>
+                    <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">{new Date(entry.date).toLocaleDateString()}</p>
+                </div>
+            </div>
+            <p className="text-md text-slate-700 leading-relaxed font-bold italic">"{entry.content}"</p>
+        </div>
+    </div>
+);
+
 export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }> = ({ student, onBack }) => {
     const { updateAssessmentForStudent, deleteAssessmentForStudent, addLogEntry } = useStudents();
     const { resources } = useResources();
@@ -64,6 +63,15 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
     const [assessmentToEdit, setAssessmentToEdit] = useState<Assessment | null>(null);
     const [logText, setLogText] = useState('');
     const [logCategory, setLogCategory] = useState<StudentLogEntry['category']>('Observation');
+    const [prediction, setPrediction] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchPrediction = async () => {
+            const res = await GeminiService.predictStudentTrajectory(student);
+            setPrediction(res);
+        };
+        fetchPrediction();
+    }, [student]);
 
     const sortedAssessments = useMemo(() => {
         return [...student.assessments].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -123,7 +131,7 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                                     <Icon name="alert" className="w-5 h-5 text-white" strokeWidth={3} />
                                 </div>
                             )}
-                            <div className="w-24 h-24 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white transition-all group-hover:scale-110 group-hover:rotate-3 z-10 bg-slate-100">
+                            <div className="w-24 h-24 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white transition-all group-hover:scale-110 z-10 bg-slate-100">
                                 <img src={student.photoUrl} className="w-full h-full object-cover" alt="" />
                             </div>
                             <button onClick={() => setIsEditProfileModalOpen(true)} className="absolute -bottom-2 -right-2 p-2 bg-white border border-slate-100 rounded-2xl shadow-xl text-slate-400 hover:text-indigo-600 transition-all z-20"><Icon name="settings" className="w-4 h-4" /></button>
@@ -159,23 +167,43 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
 
             <main className="flex-1 p-8 md:p-12 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
                 {activeSection === 'Overview' && (
-                    <div className="space-y-12 animate-in fade-in duration-700">
+                    <div className="space-y-10 animate-in fade-in duration-700">
+                        {/* 🔮 AI TRAJECTORY CARD */}
+                        <Card className="p-8 bg-slate-900 text-white rounded-[3.5rem] shadow-2xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 blur-[100px] rounded-full translate-x-20 -translate-y-20"></div>
+                            <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
+                                <div className="flex items-center gap-6">
+                                    <div className="w-16 h-16 bg-white/10 rounded-[1.8rem] flex items-center justify-center text-indigo-400 shadow-inner border border-white/5 group-hover:scale-110 transition-transform duration-500">
+                                        <Icon name="brain" className="w-8 h-8" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-black tracking-tight mb-1">AI Predictive Pathfinder</h3>
+                                        <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest">Active Velocity Synthesis</p>
+                                    </div>
+                                </div>
+                                <div className="flex-1 max-w-xl">
+                                    <div className="p-6 bg-white/5 rounded-[2rem] border border-white/5 backdrop-blur-sm shadow-xl">
+                                        {prediction ? (
+                                            <p className="text-lg font-bold leading-relaxed italic text-slate-200">"{prediction}"</p>
+                                        ) : (
+                                            <div className="flex items-center gap-3 py-2 text-slate-400">
+                                                <Icon name="refresh" className="w-5 h-5 animate-spin" />
+                                                <span className="text-xs font-black uppercase tracking-widest">Calculating Trajectory...</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                            <InsightCard 
-                                title="Growth DNA Analysis"
-                                description="Institutional Performance Cycle"
-                                actionLabel="View Assessments"
-                                onAction={() => setActiveSection('Assessments')}
-                            >
+                            <InsightCard title="Growth DNA Analysis" description="Institutional Performance Cycle">
                                 <div className="min-h-[350px]">
                                     <LongitudinalGrowthChart data={projectionData} lines={[{ key: 'score', color: '#4f46e5' }]} type="area" />
                                 </div>
                             </InsightCard>
 
-                            <InsightCard 
-                                title="Domain Competency"
-                                description="Skill Mapping vs Standards"
-                            >
+                            <InsightCard title="Domain Competency" description="Skill Mapping vs Standards">
                                 <div className="min-h-[350px]">
                                     <RadarPerformanceChart data={DOMAINS.map(d => ({ domain: d, score: student.assessments[student.assessments.length-1]?.scores[d] || 0, target: 80 }))} />
                                 </div>
@@ -186,7 +214,7 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                             <ProfileStatWidget title="Weighted Mastery" value={`${currentProficiency}%`} subtext="Standards Met" icon="analytics" gradient="from-blue-600 to-indigo-700" tooltip="Mastery across all domains." />
                             <ProfileStatWidget title="Growth Speed" value={`${student.growthVelocity}%`} subtext={student.growthVelocity >= 10 ? "Fast Track" : "Steady"} icon="trendUp" gradient={student.growthVelocity >= 10 ? "from-emerald-500 to-teal-600" : student.growthVelocity < 0 ? "from-rose-500 to-pink-600" : "from-indigo-400 to-blue-500"} tooltip="Improvement speed." />
                             <ProfileStatWidget title="Identity Records" value={student.actionLog?.length || 0} subtext="Logged Notes" icon="chat" gradient="from-slate-800 to-slate-950" tooltip="Teacher observations." />
-                            <ProfileStatWidget title="Compliance" value="Starters" subtext="CEFR Mapping" icon="benchmark" gradient="from-purple-600 to-indigo-600" tooltip="Framework alignment." />
+                            <ProfileStatWidget title="Alignment" value="A1 Starters" subtext="CEFR Mapping" icon="benchmark" gradient="from-purple-600 to-indigo-600" tooltip="Framework alignment." />
                         </div>
                     </div>
                 )}
@@ -231,7 +259,7 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                 {activeSection === 'Log' && (
                     <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-500">
                         <div className="bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-100">
-                            <h2 className="text-2xl font-black text-slate-900 mb-8 tracking-tight">Institutional Action Log</h2>
+                            <h2 className="text-2xl font-black text-slate-900 mb-8 tracking-tight">Identity & Observation Log</h2>
                             <div className="flex gap-4 mb-10">
                                 <div className="flex-1 space-y-4">
                                     <div className="flex gap-4">

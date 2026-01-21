@@ -14,6 +14,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
+    <!-- Environment Shim -->
+    <script type="module">
+      window.process = window.process || { env: {} };
+      // Bridge Vite's environment to the expected process.env.API_KEY
+      const key = (import.meta.env && import.meta.env.VITE_API_KEY) || "";
+      if (key) window.process.env.API_KEY = key;
+    </script>
+
     <script type="importmap">
 {
   "imports": {
@@ -39,11 +47,10 @@
         background-color: #f8fafc; 
         overflow-x: hidden; 
         -webkit-font-smoothing: antialiased;
-        transition: background-color 0.3s ease;
       }
       #root { min-height: 100vh; }
       #root:empty::before {
-        content: 'Benchmark Core Initializing...';
+        content: 'Benchmark Intelligence Booting...';
         display: flex;
         align-items: center;
         justify-content: center;
@@ -51,19 +58,11 @@
         font-weight: 800;
         color: #6366f1;
         letter-spacing: -0.025em;
-        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        animation: pulse 2s infinite;
       }
       @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
-      
-      html { scroll-behavior: smooth; }
       ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-track { background: transparent; }
       ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-      ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
-
-      .scale-hover { transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-      .scale-hover:hover { transform: scale(1.02); }
-      .scale-hover:active { transform: scale(0.98); }
     </style>
   </head>
   <body class="text-gray-800 antialiased">

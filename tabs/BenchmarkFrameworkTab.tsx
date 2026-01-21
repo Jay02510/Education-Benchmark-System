@@ -20,9 +20,9 @@ const MaterialDownloadCard: React.FC<MaterialCardProps> = ({ title, type, size, 
         <div className="w-14 h-14 shrink-0 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
             <Icon name={icon} className="w-7 h-7" />
         </div>
-        <div className="flex-1">
+        <div className="flex-1 overflow-hidden">
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 block">{category}</span>
-            <h4 className="font-black text-slate-800 text-sm">{title}</h4>
+            <h4 className="font-black text-slate-800 text-sm truncate">{title}</h4>
             <div className="flex items-center gap-2 mt-1">
                 <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${type === 'PDF' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>{type}</span>
                 <span className="text-[10px] text-slate-300 font-bold">{size}</span>
@@ -30,7 +30,7 @@ const MaterialDownloadCard: React.FC<MaterialCardProps> = ({ title, type, size, 
         </div>
         <button 
             className="p-3 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-            onClick={() => window.alert(`Initiating download for ${title}...`)}
+            onClick={() => window.alert(`Preparing ${title} for download...`)}
         >
             <Icon name="arrowDown" className="w-5 h-5" />
         </button>
@@ -318,7 +318,7 @@ export const BenchmarkFrameworkTab: React.FC = () => {
                             </div>
 
                             <button className="w-full mt-10 py-5 bg-indigo-600 rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] hover:bg-indigo-500 transition-all shadow-2xl shadow-indigo-900/40">
-                                Bundle & Archive Kit
+                                Download Level {levelToUse} Pack
                             </button>
                         </div>
                     </Card>
@@ -331,7 +331,7 @@ export const BenchmarkFrameworkTab: React.FC = () => {
                             <div>
                                 <h4 className="font-black text-indigo-900 text-sm mb-2 uppercase tracking-widest">Logic Advisory</h4>
                                 <p className="text-xs text-indigo-700/80 leading-relaxed font-medium">
-                                    Benchmarking is performed longitudinally. Ensure that "Baseline" scores are entered before "Midline" to accurately calculate the **Growth Velocity Protocol**.
+                                    Benchmarks are CEFR-aligned. Ensure scores are entered within 7 days of the assessment date to preserve the accuracy of the **Growth Velocity Protocol**.
                                 </p>
                             </div>
                         </div>

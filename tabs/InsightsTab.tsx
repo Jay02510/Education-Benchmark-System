@@ -73,7 +73,6 @@ export const InsightsTab: React.FC = () => {
 
         const avgVelocity = Math.round(students.reduce((a, b) => a + b.growthVelocity, 0) / students.length);
         
-        // Institutional Health Metric: Weighted blend of velocity, compliance, and score
         const compliance = Math.min(100, students.reduce((acc, s) => acc + (s.assessments.length * 15), 0) / students.length);
         const healthScore = Math.round((avgVelocity * 2 + compliance + (domainData.reduce((a,b) => a+b.score, 0) / domainData.length)) / 4);
 
@@ -89,17 +88,27 @@ export const InsightsTab: React.FC = () => {
 
     const handleGenerateGroups = async () => {
         setIsGrouping(true);
-        const groups = await GeminiService.generateSmartGroups(students, domains);
-        setSmartGroups(groups);
-        setIsGrouping(false);
+        try {
+            const groups = await GeminiService.generateSmartGroups(students, domains);
+            setSmartGroups(groups);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsGrouping(false);
+        }
     };
 
     const handleGenerateBriefing = async () => {
         setIsGeneratingBrief(true);
-        const briefing = await GeminiService.generateExecutiveBriefing(students, classProfile?.className || 'General Cohort');
-        setBriefingData(briefing);
-        setIsGeneratingBrief(false);
-        setIsBriefingModalOpen(true);
+        try {
+            const briefing = await GeminiService.generateExecutiveBriefing(students, classProfile?.className || 'General Cohort');
+            setBriefingData(briefing);
+            setIsBriefingModalOpen(true);
+        } catch (e) {
+            console.error("Briefing synchronization failed:", e);
+        } finally {
+            setIsGeneratingBrief(false);
+        }
     };
 
     if (!students.length) {
@@ -122,10 +131,10 @@ export const InsightsTab: React.FC = () => {
                 <button 
                     onClick={handleGenerateBriefing}
                     disabled={isGeneratingBrief}
-                    className="group relative px-12 py-6 bg-slate-900 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:bg-indigo-600 transition-all active:scale-95 disabled:opacity-50 border-b-8 border-slate-950 flex items-center gap-4"
+                    className={`group relative px-12 py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 disabled:opacity-80 border-b-8 flex items-center gap-4 ${isGeneratingBrief ? 'bg-slate-700 text-slate-300 border-slate-900' : 'bg-slate-900 text-white hover:bg-indigo-600 border-slate-950'}`}
                 >
                     {isGeneratingBrief ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="brain" className="w-5 h-5 text-indigo-400" />}
-                    Leadership Briefing
+                    {isGeneratingBrief ? 'Synchronizing Briefing...' : 'Leadership Briefing'}
                     <div className="absolute -top-3 -right-3 px-2 py-1 bg-indigo-500 rounded-lg text-[8px] animate-pulse">DIRECTOR ACCESS</div>
                 </button>
             </div>

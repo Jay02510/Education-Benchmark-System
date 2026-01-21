@@ -1,3 +1,4 @@
+
 import { Student, Benchmark, Domain, TestPeriod, Trend, TeacherStrategy, Resource, ResourceType, VelocityBand } from '../types';
 
 let bCounter = 0;
@@ -61,36 +62,44 @@ export const mockStudents: Student[] = [
         ],
         interventionStatus: null,
         actionLog: [],
-    },
-    {
-        id: 's3',
-        name: 'Chris Lee',
-        level: '5',
-        class: 'Class B',
-        photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Chris',
-        overallGrowth: -3,
-        growthVelocity: -2,
-        velocityBand: VelocityBand.AtRisk,
-        hasAnomaly: true,
-        assessments: [
-            { id: 'a5', type: TestPeriod.Baseline, date: '2023-09-15', scores: { [Domain.Reading]: 55, [Domain.Writing]: 50, [Domain.Grammar]: 60, [Domain.Vocabulary]: 58, [Domain.Phonics]: 65, [Domain.Listening]: 52, [Domain.Speaking]: 50, [Domain.DataLiteracy]: 45 }, subdomainScores: {} },
-            { id: 'a6', type: TestPeriod.Midline, date: '2023-12-05', scores: { [Domain.Reading]: 52, [Domain.Writing]: 51, [Domain.Grammar]: 58, [Domain.Vocabulary]: 60, [Domain.Phonics]: 63, [Domain.Listening]: 50, [Domain.Speaking]: 48, [Domain.DataLiteracy]: 48 }, subdomainScores: {} },
-        ],
-        interventionStatus: { tier: 2, domain: Domain.Writing, goal: 'Improve organization in writing by 10% in 4 weeks', trend: Trend.Down, triggerReason: 'Regression in scores', dateIdentified: '2023-11-15' },
-        actionLog: [],
-    },
+    }
 ];
 
+// 🌍 COMPREHENSIVE INTERNATIONAL FRAMEWORK SEED
 export const mockBenchmarkFramework: Benchmark[] = [
-    createBench("5", TestPeriod.Baseline, Domain.Reading, 80, "Recognizes letter names; matches CVC words", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Baseline, Domain.Phonics, 80, "Identifies sounds; blends simple CVC", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Baseline, Domain.Vocabulary, 80, "~10 sight words", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Baseline, Domain.Writing, 80, "Copies letters; traces simple words", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Baseline, Domain.Grammar, 80, "Identifies nouns/verbs in images", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Baseline, Domain.Listening, 80, "Responds to yes/no questions", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Baseline, Domain.Speaking, 80, "Names familiar items", "Pre-A1", "Pre-Starters"),
-    createBench("5", TestPeriod.Baseline, Domain.DataLiteracy, 80, "Reads simple colors/shapes in charts", "Pre-A1", "Pre-Starters"),
-    createBench("6-1", TestPeriod.Baseline, Domain.Reading, 80, "Decodes CVC + common blends; short sentences", "Mid Pre-A1", "Starters"),
+    // --- LEVEL 5: PRE-A1 (STARTERS EQUIVALENT) ---
+    createBench("5", TestPeriod.Baseline, Domain.Reading, 75, "Recognizes capital/lowercase letters; matches 15+ high-frequency CVC word shapes.", "Pre-A1", "Pre-Starters"),
+    createBench("5", TestPeriod.Baseline, Domain.Phonics, 80, "Identifies individual letter sounds (S-A-T-P-I-N); demonstrates initial sound isolation.", "Pre-A1", "Pre-Starters"),
+    createBench("5", TestPeriod.Baseline, Domain.Speaking, 70, "Responds to basic 'What is your name?' and 'How are you?' with 1-2 word phrases.", "Pre-A1", "Pre-Starters"),
+    createBench("5", TestPeriod.Baseline, Domain.Listening, 75, "Follows 1-step physical instructions (e.g., 'Pick up the pencil') with visual aid.", "Pre-A1", "Pre-Starters"),
+    createBench("5", TestPeriod.Baseline, Domain.Writing, 70, "Demonstrates correct pencil grip; copies vertical lines, circles, and own name.", "Pre-A1", "Pre-Starters"),
+    createBench("5", TestPeriod.Baseline, Domain.Grammar, 70, "Distinguishes between singular and plural objects using 'a' and 's' endings.", "Pre-A1", "Pre-Starters"),
+    createBench("5", TestPeriod.Baseline, Domain.Vocabulary, 80, "Recognizes 20+ basic nouns (Colors, Animals, Classroom Objects).", "Pre-A1", "Pre-Starters"),
+    createBench("5", TestPeriod.Baseline, Domain.DataLiteracy, 70, "Identifies simple patterns in a 3-object sequence with visual prompts.", "Pre-A1", "Pre-Starters"),
+
+    createBench("5", TestPeriod.Midline, Domain.Reading, 80, "Decodes CVC words with 90% accuracy; reads 3-word sight-phrase sentences.", "Pre-A1", "Pre-Starters"),
+    createBench("5", TestPeriod.Midline, Domain.Phonics, 85, "Blends sounds into words (C-A-T); recognizes basic digraphs (SH, CH, TH).", "Pre-A1", "Pre-Starters"),
+    createBench("5", TestPeriod.Midline, Domain.Speaking, 75, "Names 10+ objects in a picture; uses 'It is a...' sentence pattern.", "Pre-A1", "Pre-Starters"),
+
+    createBench("5", TestPeriod.Endline, Domain.Reading, 85, "Answers literal 'Who' and 'What' questions about a 2-sentence illustrated story.", "Pre-A1", "Starters"),
+    createBench("5", TestPeriod.Endline, Domain.Speaking, 80, "Describes a simple picture using 3+ sentences with basic adjectives (big, small, red).", "Pre-A1", "Starters"),
+
+    // --- LEVEL 6-1: A1 (CAMBRIDGE STARTERS) ---
+    createBench("6-1", TestPeriod.Baseline, Domain.Reading, 80, "Reads short paragraphs; identifies main character and setting in simple fiction.", "A1", "Starters"),
+    createBench("6-1", TestPeriod.Baseline, Domain.Grammar, 80, "Uses Present Simple (am/is/are) correctly in 1st and 3rd person singular.", "A1", "Starters"),
+    createBench("6-1", TestPeriod.Baseline, Domain.Phonics, 85, "Decodes CVCC/CCVC words; recognizes long vowel sounds (silent E).", "A1", "Starters"),
+
+    // --- LEVEL 6-2: A1+ (CAMBRIDGE MOVERS) ---
+    createBench("6-2", TestPeriod.Baseline, Domain.Reading, 80, "Understands simple descriptions of people/places; follows 3-part written instructions.", "A1+", "Movers"),
+    createBench("6-2", TestPeriod.Baseline, Domain.Speaking, 75, "Asks/answers questions about habits; explains differences between two pictures.", "A1+", "Movers"),
+
+    // --- LEVEL 7-2: A2 (CAMBRIDGE FLYERS) ---
+    createBench("7-2", TestPeriod.Baseline, Domain.Reading, 80, "Identifies specific information in factual texts; summarizes a 150-word story.", "A2", "Flyers"),
+    createBench("7-2", TestPeriod.Baseline, Domain.Writing, 75, "Writes a short story (30-50 words) based on a sequence of 3 pictures.", "A2", "Flyers"),
+
+    // --- LEVEL 7-3: A2+ (CAMBRIDGE KET) ---
+    createBench("7-3", TestPeriod.Baseline, Domain.Reading, 80, "Extracts key info from public notices/emails; identifies writer's purpose.", "A2+", "KET"),
+    createBench("7-3", TestPeriod.Baseline, Domain.Grammar, 75, "Uses Present Perfect and Past Continuous with 80% accuracy in context.", "A2+", "KET")
 ];
 
 export const mockStrategies: TeacherStrategy[] = [

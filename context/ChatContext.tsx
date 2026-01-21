@@ -1,10 +1,9 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { ChatMessage, Domain } from '../types.ts';
+import React, { createContext, useContext, useState } from 'react';
+import { ChatMessage } from '../types.ts';
 import { GoogleGenAI } from "@google/genai";
 import { teacherTools } from '../services/agentTools.ts';
 import { useStudents } from './StudentContext.tsx';
-import { useBenchmarks } from './BenchmarkContext.tsx';
 
 interface ChatContextType {
     isOpen: boolean;
@@ -13,8 +12,6 @@ interface ChatContextType {
     isTyping: boolean;
     sendMessage: (text: string) => Promise<void>;
     clearHistory: () => void;
-    isAiActive: boolean;
-    reconnect: () => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -22,24 +19,14 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 const SYSTEM_INSTRUCTION = `You are the Benchmark AI Co-pilot, an elite pedagogical intelligence engine for ESL schools.
 You have access to real-time classroom data through tools. 
 When asked about students or performance, ALWAYS use a tool first to get accurate data.
-Be concise, professional, and focus on "Growth Velocity" and "Intervention Tiers".
-If a student is regressing, suggest specific domains for focus.`;
+Be concise, professional, and focus on "Growth Velocity" and "Intervention Tiers".`;
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { students, classProfile } = useStudents();
-    const { domains } = useBenchmarks();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isTyping, setIsTyping] = useState(false);
-    const [isAiActive, setIsAiActive] = useState(false);
 
-    // Verify if API Key is present on boot
-    useEffect(() => {
-        const key = process.env.API_KEY;
-        setIsAiActive(!!key && key !== "undefined" && key !== "");
-    }, []);
-
-    // Tool Implementation Logic
     const executeTool = (name: string, args: any) => {
         switch (name) {
             case 'get_class_summary':
@@ -56,15 +43,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     .map(s => ({ name: s.name, reason: s.interventionStatus?.triggerReason, tier: s.interventionStatus?.tier }));
             case 'get_student_details':
                 const student = students.find(s => s.name.toLowerCase().includes(args.studentName.toLowerCase()));
-                if (!student) return { error: "Student not found in roster." };
+                if (!student) return { error: "Student not found." };
                 return {
                     name: student.name,
                     velocity: `${student.growthVelocity}%`,
-                    latestScores: student.assessments[student.assessments.length - 1]?.scores || "No assessments recorded",
+                    latestScores: student.assessments[student.assessments.length - 1]?.scores || "No data",
                     tier: student.interventionStatus?.tier || 1
                 };
             default:
-                return { error: "Tool not implemented" };
+                return { error: "Tool not found" };
         }
     };
 
@@ -76,7 +63,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             
-            // Initial call to see if model wants to use tools
+            // First turn: check for tool calls
             let response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: text,
@@ -88,7 +75,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             let finalContent = response.text;
 
-            // Handle Function Calls (Loop for potential multi-turn tools)
             if (response.functionCalls && response.functionCalls.length > 0) {
                 const toolResults = response.functionCalls.map(fc => ({
                     id: fc.id,
@@ -96,7 +82,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     response: { result: executeTool(fc.name, fc.args) }
                 }));
 
-                // Get final text response with the tool data
+                // Second turn: generate text with tool output
                 const secondResponse = await ai.models.generateContent({
                     model: 'gemini-3-flash-preview',
                     contents: [
@@ -122,7 +108,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Engine Offline: ${error.message || "Ensure VITE_API_KEY is configured."}`, 
+                text: `Request failed. Please verify your connection or API key settings.`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);
@@ -131,26 +117,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const reconnect = async () => {
-        const key = process.env.API_KEY;
-        if (key && key !== "undefined") {
-            setIsAiActive(true);
-            showSystemMessage("Engine synchronized successfully.");
-        } else if ((window as any).aistudio) {
-            await (window as any).aistudio.openSelectKey();
-            setIsAiActive(true);
-        }
-    };
-
-    const showSystemMessage = (text: string) => {
-        setMessages(prev => [...prev, { id: `sys-${Date.now()}`, role: 'model', text, timestamp: Date.now() }]);
-    };
-
     const toggleChat = () => setIsOpen(!isOpen);
     const clearHistory = () => setMessages([]);
 
     return (
-        <ChatContext.Provider value={{ isOpen, toggleChat, messages, isTyping, sendMessage, clearHistory, isAiActive, reconnect }}>
+        <ChatContext.Provider value={{ isOpen, toggleChat, messages, isTyping, sendMessage, clearHistory }}>
             {children}
         </ChatContext.Provider>
     );

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Icon } from './Icon';
 import { useStudents } from '../../context/StudentContext';
@@ -56,7 +57,8 @@ export const CommandCenter: React.FC = () => {
                                 <div className="p-2 bg-indigo-100 text-indigo-600 rounded-xl"><Icon name="students" className="w-5 h-5" /></div>
                                 <span className="font-bold text-slate-700">Go to Roster</span>
                             </button>
-                            <button onClick={() => { setActiveTab(TABS.ANALYTICS); setIsOpen(false); }} className="flex items-center gap-3 p-4 rounded-2xl border border-slate-50 hover:bg-purple-50 hover:border-purple-100 transition-all text-left">
+                            {/* FIX: Changed TABS.ANALYTICS to TABS.INSIGHTS as ANALYTICS does not exist on TABS */}
+                            <button onClick={() => { setActiveTab(TABS.INSIGHTS); setIsOpen(false); }} className="flex items-center gap-3 p-4 rounded-2xl border border-slate-50 hover:bg-purple-50 hover:border-purple-100 transition-all text-left">
                                 <div className="p-2 bg-purple-100 text-purple-600 rounded-xl"><Icon name="analytics" className="w-5 h-5" /></div>
                                 <span className="font-bold text-slate-700">Class Insights</span>
                             </button>

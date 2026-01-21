@@ -55,11 +55,9 @@ export const SUBDOMAINS: Record<Domain, SubdomainMetadata[]> = {
 
 export const TABS = {
     STUDENTS: "Students",
-    BENCHMARK: "Benchmark Framework",
-    RESOURCE_BANK: "Resource Bank",
-    ANALYTICS: "Analytics",
-    SETTINGS: "Settings",
-    ADMIN: "Admin Panel",
+    INSIGHTS: "Insights",
+    LIBRARY: "Library",
+    SYSTEM: "System",
 } as const;
 
 export const RESOURCE_TYPES = [

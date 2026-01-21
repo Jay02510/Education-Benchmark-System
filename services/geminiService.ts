@@ -9,12 +9,11 @@ const extractJson = (text: string) => {
         const lastBracket = sanitized.lastIndexOf('}');
         if (firstBracket !== -1 && lastBracket !== -1) {
             sanitized = sanitized.substring(firstBracket, lastBracket + 1);
-            return JSON.parse(sanitized);
         }
         return JSON.parse(sanitized);
     } catch (e) {
         console.error("AI Parse Failure:", text);
-        throw new Error("Invalid Engine Response: Metadata synthesis failed.");
+        return {};
     }
 };
 
@@ -24,29 +23,38 @@ export class GeminiService {
     private static lastRequestTime = 0;
     private static MIN_REQUEST_GAP = 1000;
 
-    /**
-     * Diagnostic: Check if key is available to the browser.
-     */
     static getConnectivityStatus() {
-        const key = process.env.API_KEY || (window as any).process?.env?.API_KEY;
-        if (!key || key === "undefined") return "OFFLINE: No Key Detected";
-        return `ONLINE: Key Detected (${key.substring(0, 4)}...${key.substring(key.length - 4)})`;
+        const key = process.env.API_KEY;
+        if (!key || key === "undefined" || key === "") {
+            return "OFFLINE: Authorized Credentials Required";
+        }
+        return "ONLINE: Engine Synchronized";
     }
 
+    /**
+     * Obtains a valid AI instance by checking for environment variables
+     * and falling back to the AI Studio selection protocol if necessary.
+     */
     private static async getAIInstance(): Promise<GoogleGenAI> {
-        // Handle AI Studio environment
-        if ((window as any).aistudio) {
-            const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-            if (!hasKey) {
-                console.log("Requesting key via AI Studio protocol...");
-                await (window as any).aistudio.openSelectKey();
+        let apiKey = process.env.API_KEY;
+
+        // If environment variable is missing (common in browser builds), 
+        // check if a key has been selected via the AI Studio protocol.
+        if (!apiKey || apiKey === "undefined" || apiKey === "") {
+            if (window.aistudio) {
+                const hasKey = await window.aistudio.hasSelectedApiKey();
+                if (!hasKey) {
+                    await window.aistudio.openSelectKey();
+                }
+                // The key is injected into process.env.API_KEY by the environment after selection
+                apiKey = process.env.API_KEY;
             }
         }
 
-        const apiKey = process.env.API_KEY || (window as any).process?.env?.API_KEY;
-        if (!apiKey || apiKey === "undefined") {
-            throw new Error("Missing Identity: The AI Engine is not configured in Vercel. Please check API_KEY settings.");
+        if (!apiKey || apiKey === "undefined" || apiKey === "") {
+            throw new Error("API_KEY_MISSING: Credentials not found. Please click 'Connect Engine'.");
         }
+
         return new GoogleGenAI({ apiKey });
     }
 
@@ -60,12 +68,14 @@ export class GeminiService {
             const ai = await this.getAIInstance();
             return await fn(ai);
         } catch (error: any) {
-            console.warn("AI Engine Attempt Failed:", error.message);
-            
-            // Handle specific key errors
-            if (error.message?.includes("Requested entity was not found") && (window as any).aistudio) {
-                await (window as any).aistudio.openSelectKey();
-                throw new Error("System recalibrating. Please retry your request.");
+            // If the key is invalid or missing, trigger the selection dialog
+            if (error.message?.includes("entity was not found") || error.message?.includes("API_KEY_MISSING")) {
+                if (window.aistudio) {
+                    await window.aistudio.openSelectKey();
+                    // After selection, we assume success as per guidelines
+                    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                    return await fn(ai);
+                }
             }
 
             if (retries > 0 && (error.message?.includes("429") || error.message?.includes("503"))) {
@@ -81,37 +91,22 @@ export class GeminiService {
         const scoreContext = latest ? Object.entries(latest.scores).map(([d, s]) => `${d}: ${s}%`).join(', ') : 'No data';
 
         return this.callWithRetry(async (ai) => {
-            try {
-                // Try Pro Model first for deep reasoning
-                const response = await ai.models.generateContent({
-                    model: 'gemini-3-pro-preview',
-                    contents: `Audit student: ${student.name}. Lvl: ${student.level}, Velocity: ${student.growthVelocity}%, Scores: ${scoreContext}. Return JSON {report_card, trend_insights}.`,
-                    config: {
-                        thinkingConfig: { thinkingBudget: 4000 },
-                        responseMimeType: "application/json"
-                    }
-                });
-                return extractJson(response.text || '{}');
-            } catch (e) {
-                console.warn("Pro Model Unavailable. Falling back to Flash Engine...");
-                // Fallback to Flash for reliability
-                const response = await ai.models.generateContent({
-                    model: 'gemini-3-flash-preview',
-                    contents: `Audit student: ${student.name}. Lvl: ${student.level}, Velocity: ${student.growthVelocity}%, Scores: ${scoreContext}. Return JSON {report_card, trend_insights}.`,
-                    config: { responseMimeType: "application/json" }
-                });
-                return extractJson(response.text || '{}');
-            }
-        });
-    }
-
-    static async generateInstitutionalBriefing(stats: any): Promise<string> {
-        return this.callWithRetry(async (ai) => {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Generate a Principal Briefing for these stats: ${JSON.stringify(stats)}. Identify risk and growth.`,
+                contents: `Audit student: ${student.name}. Lvl: ${student.level}, Velocity: ${student.growthVelocity}%, Scores: ${scoreContext}.`,
+                config: { 
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            report_card: { type: Type.STRING },
+                            trend_insights: { type: Type.STRING }
+                        },
+                        required: ['report_card', 'trend_insights']
+                    }
+                }
             });
-            return response.text || "Metrics verified.";
+            return extractJson(response.text || '{}');
         });
     }
 
@@ -121,7 +116,17 @@ export class GeminiService {
                 model: 'gemini-3-flash-preview',
                 contents: `Generate 1-sentence pedagogical insight for: ${context}.`,
             });
-            return response.text || "Monitoring academic trajectory.";
-        }).catch(() => "Data parameters stable.");
+            return response.text || "Trajectory stable.";
+        });
+    }
+
+    static async generateInstitutionalBriefing(analytics: any): Promise<string> {
+        return this.callWithRetry(async (ai) => {
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: `Perform an institutional audit: ${JSON.stringify(analytics)}. Provide a strategic briefing.`,
+            });
+            return response.text || "Briefing pending.";
+        });
     }
 }

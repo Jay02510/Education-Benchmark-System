@@ -81,8 +81,9 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
     }, [student.assessments]);
     
     const projectionData = useMemo(() => {
-        const history = sortedAssessments.map(a => ({
-            name: a.type,
+        // Fix: Explicitly type history to allow string names (like 'Proj') for chart display
+        const history: { name: string; score: number; date: string }[] = sortedAssessments.map(a => ({
+            name: a.type as string,
             // Fixed: Explicitly typed reduce parameters to avoid arithmetic type errors
             score: Math.round((Object.values(a.scores) as number[]).reduce((sum: number, v: number) => sum + v, 0) / Object.values(a.scores).length),
             date: a.date

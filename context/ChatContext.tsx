@@ -20,12 +20,7 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-const SYSTEM_INSTRUCTION = `
-You are the Benchmark Institutional Intelligence Engine. 
-You act as a pedagogical consultant for teachers and a strategic advisor for principals.
-Your goal is to optimize 'Growth Velocity' and identify 'Intervention Tier' requirements.
-Be concise, data-driven, and highly professional.
-`;
+const SYSTEM_INSTRUCTION = "You are the Benchmark Institutional Intelligence Engine. Be concise, data-driven, and highly professional.";
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { activeTab } = useNavigation();
@@ -33,12 +28,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isTyping, setIsTyping] = useState(false);
     const [isAiActive, setIsAiActive] = useState(false);
-    const chatSessionRef = useRef<Chat | null>(null);
     const [currentPersona, setCurrentPersona] = useState<'Teacher' | 'Admin'>('Teacher');
 
-    // Robust verification looking at both shimmed and native process objects
     const verifyKey = () => {
-        const k = process.env.API_KEY || (window as any).process?.env?.API_KEY;
+        const k = process.env.API_KEY;
         return !!k && k !== "undefined" && k !== "";
     };
 
@@ -46,98 +39,74 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsAiActive(verifyKey());
     }, []);
 
-    useEffect(() => {
-        const targetPersona = activeTab === TABS.ADMIN ? 'Admin' : 'Teacher';
-        if (targetPersona !== currentPersona) {
-            setCurrentPersona(targetPersona);
-            chatSessionRef.current = null;
-            setMessages([{
-                id: `welcome-${Date.now()}`,
-                role: 'model',
-                text: targetPersona === 'Admin' ? "Guardian Institutional Audit online. I am prepared to analyze school-wide performance metrics." : "Benchmark Intelligence Engine engaged. How can I assist with your classroom strategy today?",
-                timestamp: Date.now()
-            }]);
-        }
-    }, [activeTab]);
-
-    const getChatSession = async () => {
-        if (chatSessionRef.current) return chatSessionRef.current;
-        
-        const apiKey = process.env.API_KEY || (window as any).process?.env?.API_KEY;
-        if (!apiKey || apiKey === "undefined") {
-            console.error("Benchmark AI: Chat Initialization Aborted. API_KEY not detected.");
-            throw new Error("System Identity Locked: API Key missing from Vercel environment.");
-        }
-        
-        const ai = new GoogleGenAI({ apiKey });
-        const session = ai.chats.create({
-            model: 'gemini-3-flash-preview',
-            config: {
-                systemInstruction: SYSTEM_INSTRUCTION + ` Current View: ${currentPersona} Mode.`,
-                tools: [{ functionDeclarations: currentPersona === 'Teacher' ? teacherTools : adminTools }],
-            }
-        });
-        chatSessionRef.current = session;
-        return session;
-    };
-
-    const reconnect = async () => {
-        chatSessionRef.current = null;
-        const active = verifyKey();
-        setIsAiActive(active);
-        
-        if (!active) {
-            setMessages(prev => [...prev, {
-                id: `err-${Date.now()}`,
-                role: 'model',
-                text: "Configuration Alert: No API Key detected. Ensure 'API_KEY' is added to your Vercel Project Settings and redeploy.",
-                timestamp: Date.now(),
-                isError: true
-            }]);
-        } else {
-             setMessages(prev => [...prev, {
-                id: `sys-${Date.now()}`,
-                role: 'model',
-                text: "Communication Handshake successful. Intelligence Engine re-calibrated.",
-                timestamp: Date.now()
-            }]);
-        }
-    };
-
     const sendMessage = async (text: string) => {
         const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text, timestamp: Date.now() };
         setMessages(prev => [...prev, userMsg]);
         setIsTyping(true);
 
         try {
-            const chat = await getChatSession();
-            const result: GenerateContentResponse = await chat.sendMessage({ message: text });
+            let apiKey = process.env.API_KEY;
+
+            // Trigger selector if key is missing
+            if (!apiKey || apiKey === "undefined" || apiKey === "") {
+                if (window.aistudio) {
+                    await window.aistudio.openSelectKey();
+                    apiKey = process.env.API_KEY;
+                }
+            }
+
+            if (!apiKey || apiKey === "undefined" || apiKey === "") {
+                throw new Error("CREDENTIALS_REQUIRED: Please click the 'Connect Engine' button to authorize the AI.");
+            }
+
+            const ai = new GoogleGenAI({ apiKey });
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: text,
+                config: {
+                    systemInstruction: `${SYSTEM_INSTRUCTION} Mode: ${currentPersona}.`,
+                    tools: [{ functionDeclarations: currentPersona === 'Teacher' ? teacherTools : adminTools }],
+                }
+            });
 
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: result.text || "Inquiry analyzed. Parameters confirmed.", 
+                text: response.text || "Processing complete.", 
                 timestamp: Date.now() 
             }]);
+            setIsAiActive(true);
         } catch (error: any) {
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: `Connectivity Alert: ${error.message}. Please check engine logs.`, 
+                text: `Authorization Alert: ${error.message}`, 
                 timestamp: Date.now(), 
                 isError: true 
             }]);
-            chatSessionRef.current = null;
         } finally {
             setIsTyping(false);
         }
     };
 
-    const toggleChat = () => setIsOpen(!isOpen);
-    const clearHistory = () => {
-        setMessages([]);
-        chatSessionRef.current = null;
+    const reconnect = async () => {
+        if (window.aistudio) {
+            await window.aistudio.openSelectKey();
+            // Assume success and update state
+            setIsAiActive(true);
+            setMessages(prev => [...prev, {
+                id: `sys-${Date.now()}`,
+                role: 'model',
+                text: "Handshake successful. Engine re-synchronized.",
+                timestamp: Date.now()
+            }]);
+        } else {
+            setIsAiActive(verifyKey());
+        }
     };
+
+    const toggleChat = () => setIsOpen(!isOpen);
+    const clearHistory = () => setMessages([]);
 
     return (
         <ChatContext.Provider value={{ isOpen, toggleChat, messages, isTyping, sendMessage, clearHistory, currentPersona, isAiActive, reconnect }}>

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Student, ClassProfile, Assessment, Resource, Intervention, Trend, Domain, StudentLogEntry, TestPeriod, SubdomainMetadata, VelocityBand } from '../types.ts';
 import { mockStudents } from '../data/mockData.ts';
@@ -159,7 +158,8 @@ const sortByName = (list: Student[]) => [...list].sort((a, b) => a.name.localeCo
 
 export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user } = useAuth();
-    const { thresholds, frameworkSubdomains } = useBenchmarks(); 
+    // Fix: Destructure 'subdomains' from useBenchmarks and alias it to 'frameworkSubdomains' for use in internal logic
+    const { thresholds, subdomains: frameworkSubdomains } = useBenchmarks(); 
     const [students, setStudents] = useState<Student[]>([]);
     const [classProfile, setClassProfile] = useState<ClassProfile | null>(null);
     const { showToast } = useToast();

@@ -20,21 +20,20 @@
         win.process = win.process || { env: {} };
         win.process.env = win.process.env || {};
         
-        // Search for the key in every possible injection point
-        // Vercel often hides 'API_KEY' from the client unless explicitly exposed
+        // Search for the key in every possible injection point.
+        // If the user named it API_KEY in Vercel, Vite will block it from the browser.
+        // We check win.process.env.API_KEY (Shimmed), win.API_KEY, and VITE variants.
         const detectedKey = 
           win.process.env.API_KEY || 
           win.process.env.VITE_API_KEY || 
           win.API_KEY || 
-          (win.ENV && win.ENV.API_KEY) || 
           "";
 
         if (detectedKey && detectedKey !== "undefined") {
           win.process.env.API_KEY = detectedKey;
-          win.process.env.VITE_API_KEY = detectedKey;
-          console.log("Benchmark Engine: Connectivity variable found.");
+          console.log("Benchmark Engine: Connectivity variable mapped to process.env.API_KEY");
         } else {
-          console.warn("Benchmark Engine: No API_KEY detected in browser context. Searching for AI Studio session...");
+          console.warn("Benchmark Engine: API_KEY is private (Server-only). Switching to AI Studio Protocol.");
         }
       })();
     </script>

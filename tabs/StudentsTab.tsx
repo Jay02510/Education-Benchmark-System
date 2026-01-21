@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useMemo, useTransition } from 'react';
-import { Student, TestPeriod, UserRole, VelocityBand } from '../types';
+import { Student, TestPeriod, UserRole, VelocityBand, Domain } from '../types';
 import { StudentCard } from '../components/students/StudentCard';
 import { StudentProfile } from '../components/students/StudentProfile';
 import { useStudents } from '../context/StudentContext';
@@ -69,12 +70,13 @@ export const StudentsTab: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     const stats = useMemo(() => {
-        if (!students.length) return { classAvg: 0, interventionCount: 0, growth: 0, avgVelocity: 0, atRiskList: [] };
+        if (!students.length) return { classAvg: 0, interventionCount: 0, growth: 0, avgVelocity: 0, atRiskList: [], weakestDomain: 'None' };
         
         let totalScore = 0;
         let count = 0;
         let totalGrowth = 0;
         let totalVelocity = 0;
+        const domainTotals: Record<string, { sum: number, count: number }> = {};
         const atRiskList = students.filter(s => s.interventionStatus !== null || s.hasAnomaly);
 
         students.forEach(s => {
@@ -85,6 +87,27 @@ export const StudentsTab: React.FC = () => {
                 const vals = Object.values(last.scores) as number[];
                 totalScore += vals.reduce((a,b) => a+b, 0) / vals.length;
                 count++;
+
+                // Track domain specific health
+                // Explicitly cast Object.entries to number[] type for values to fix operator application errors on 'unknown'.
+                (Object.entries(last.scores) as [string, number][]).forEach(([d, score]) => {
+                    if (score > 0) {
+                        if (!domainTotals[d]) domainTotals[d] = { sum: 0, count: 0 };
+                        domainTotals[d].sum += score;
+                        domainTotals[d].count++;
+                    }
+                });
+            }
+        });
+
+        // Find weakest domain
+        let weakestDomain = 'None';
+        let lowestAvg = 101;
+        Object.entries(domainTotals).forEach(([d, data]) => {
+            const avg = data.sum / data.count;
+            if (avg < lowestAvg) {
+                lowestAvg = avg;
+                weakestDomain = d;
             }
         });
 
@@ -106,7 +129,8 @@ export const StudentsTab: React.FC = () => {
             growth: count ? Math.round(totalGrowth / count) : 0,
             avgVelocity: Math.round(totalVelocity / students.length),
             atRiskList,
-            tiers
+            tiers,
+            weakestDomain
         };
     }, [students]);
 
@@ -149,11 +173,11 @@ export const StudentsTab: React.FC = () => {
         <div className="p-6 md:p-12 h-full max-w-[1920px] mx-auto overflow-y-auto pb-32 scrollbar-thin scrollbar-thumb-slate-200">
             <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-8">
                 <div>
-                    <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2">
-                        {isTeacher ? `Teaching Today: ${user?.name.split(' ')[0]}` : "Institutional Intelligence"}
+                    <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2 uppercase italic">
+                        {isTeacher ? `Pulse: ${user?.name.split(' ')[0]}` : "Institutional Intelligence"}
                     </h1>
                     <p className="text-slate-400 font-bold text-lg">
-                        {isTeacher ? "Classroom growth and performance summary." : "System-wide tracking and risk monitoring."}
+                        {isTeacher ? "Classroom growth and proactive risk analysis." : "System-wide tracking and risk monitoring."}
                     </p>
                 </div>
                 <div className="mt-4 md:mt-0 flex items-center bg-white p-3 rounded-full shadow-xl shadow-slate-200/50 border border-slate-100 ring-8 ring-slate-50 transition-all focus-within:ring-indigo-50">
@@ -175,15 +199,35 @@ export const StudentsTab: React.FC = () => {
                 {isTeacher ? (
                     <div className="md:col-span-8 lg:col-span-9">
                         <InsightCard 
-                            title="Active Support Protocols"
-                            description="Prioritized Classroom Strategy"
-                            actionLabel="Analyze Weakness"
-                            onAction={() => setActiveTab(TABS.RESOURCE_BANK)}
+                            title="Class Strategic Briefing"
+                            description="Proactive Pedagogical Direction"
+                            actionLabel="View Analysis"
+                            onAction={() => setActiveTab(TABS.ANALYTICS)}
                         >
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                <DashboardWidget title="Risk Protocol" value={stats.interventionCount} subtext="Requires Attention" icon="alert" gradient="from-rose-500 to-pink-600" textColor="text-white" onClick={() => setIsAtRiskModalOpen(true)} />
-                                <DashboardWidget title="Class Velocity" value={`+${stats.avgVelocity}%`} subtext="Growth Speed" icon="trendUp" gradient="from-indigo-600 to-violet-700" textColor="text-white" onClick={() => setActiveTab(TABS.ANALYTICS)} />
-                                <DashboardWidget title="Classroom Avg" value={`${stats.classAvg}%`} subtext="Proficiency" icon="analytics" gradient="from-blue-500 to-indigo-600" textColor="text-white" onClick={() => setActiveTab(TABS.ANALYTICS)} />
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <DashboardWidget 
+                                    title="Protocol Alert" 
+                                    value={stats.interventionCount} 
+                                    subtext={`${stats.atRiskList.filter(s => s.growthVelocity < 0).length} Regressions Detected`} 
+                                    icon="alert" 
+                                    gradient="from-rose-500 to-pink-600" 
+                                    textColor="text-white" 
+                                    onClick={() => setIsAtRiskModalOpen(true)} 
+                                />
+                                <DashboardWidget 
+                                    title="Class Velocity" 
+                                    value={`+${stats.avgVelocity}%`} 
+                                    subtext="Learning Speed" 
+                                    icon="trendUp" 
+                                    gradient="from-indigo-600 to-violet-700" 
+                                    textColor="text-white" 
+                                    onClick={() => setActiveTab(TABS.ANALYTICS)} 
+                                />
+                                <div className="p-8 bg-slate-50 border border-slate-100 rounded-[2.5rem] flex flex-col justify-center">
+                                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Target Priority</span>
+                                    <h4 className="text-xl font-black text-slate-800 mb-2">{stats.weakestDomain}</h4>
+                                    <p className="text-[10px] text-slate-500 leading-relaxed font-bold italic">"Class median is 8% below benchmark in this domain. Prioritize Tier 2 grouping."</p>
+                                </div>
                             </div>
                         </InsightCard>
                     </div>

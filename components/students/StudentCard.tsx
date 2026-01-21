@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Student, VelocityBand } from '../../types';
 import { Card } from '../common/Card';
@@ -15,16 +16,23 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) =>
       ? Math.round((Object.values(latestAssessment.scores) as number[]).reduce((a, b) => a + b, 0) / Object.keys(latestAssessment.scores).length) 
       : 0;
 
-  // Semantic Velocity Colors
-  let velocityColor = 'bg-slate-100 text-slate-400';
-  let velocityLabel = 'Stable';
+  // Semantic Logic Triggers
+  let badgeColor = 'bg-slate-100 text-slate-400';
+  let badgeLabel = 'Stable';
+  let badgeIcon = 'check';
 
   if (student.growthVelocity >= 10) {
-      velocityColor = 'bg-emerald-50 text-emerald-600 border-emerald-100';
-      velocityLabel = 'Fast Track';
+      badgeColor = 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      badgeLabel = 'Fast track';
+      badgeIcon = 'trendUp';
+  } else if (student.growthVelocity < -8) {
+      badgeColor = 'bg-rose-100 text-rose-700 border-rose-200 animate-pulse';
+      badgeLabel = 'Regression';
+      badgeIcon = 'alert';
   } else if (student.growthVelocity < 0) {
-      velocityColor = 'bg-rose-50 text-rose-600 border-rose-100';
-      velocityLabel = 'At Risk';
+      badgeColor = 'bg-orange-50 text-orange-600 border-orange-100';
+      badgeLabel = 'Stalling';
+      badgeIcon = 'alert';
   }
 
   return (
@@ -33,12 +41,13 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) =>
         className="group p-6 flex flex-col items-center text-center border-white/60 hover:border-white transition-all duration-300 relative" 
         onClick={onClick}
     >
-      {/* Velocity Ribbon */}
+      {/* Dynamic Velocity Rail */}
       <div className={`absolute top-0 left-0 right-0 h-1.5 ${student.growthVelocity >= 10 ? 'bg-emerald-400' : student.growthVelocity < 0 ? 'bg-rose-400' : 'bg-indigo-400 opacity-20'}`}></div>
 
-      {/* Status Badge */}
-      <div className={`absolute top-4 right-4 px-2.5 py-1 rounded-full border text-[8px] font-black uppercase tracking-widest transition-all duration-500 z-20 ${velocityColor}`}>
-        {velocityLabel}
+      {/* Intelligence Badge */}
+      <div className={`absolute top-4 right-4 px-2.5 py-1 rounded-full border text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5 z-20 ${badgeColor}`}>
+        <Icon name={badgeIcon} className="w-2.5 h-2.5" />
+        {badgeLabel}
       </div>
       
       {/* Avatar Section */}
@@ -57,17 +66,17 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) =>
         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100">Level {student.level}</span>
       </div>
       
-      {/* Performance Stats */}
+      {/* Pedagogical Stats */}
       <div className="w-full grid grid-cols-2 gap-2 mt-auto">
          <div className="flex flex-col items-center py-2.5 bg-white/40 rounded-2xl group-hover:bg-white/80 transition-all duration-300 border border-white/20">
              <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest mb-0.5">
-               <Tooltip content="Mastery of tested standards.">Skill</Tooltip>
+               <Tooltip content="Current average across all tested domains.">Mastery</Tooltip>
              </span>
              <span className="text-xs font-black text-slate-700">{latestAvg}%</span>
          </div>
          <div className="flex flex-col items-center py-2.5 bg-white/40 rounded-2xl group-hover:bg-white/80 transition-all duration-300 border border-white/20">
               <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest mb-0.5">
-                <Tooltip content="Improvement speed per cycle.">Velocity</Tooltip>
+                <Tooltip content="Percentage points gained or lost since last test cycle.">Velocity</Tooltip>
               </span>
               <span className={`text-xs font-black ${student.growthVelocity >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {student.growthVelocity > 0 ? '+' : ''}{student.growthVelocity}%

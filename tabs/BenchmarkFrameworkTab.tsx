@@ -185,6 +185,16 @@ export const BenchmarkFrameworkTab: React.FC = () => {
         return averages;
     }, [students, selectedPeriod, domains]);
 
+    const protocolHealth = useMemo(() => {
+        const measured = Object.values(averageScores).filter(v => v !== null).length;
+        const total = domains.length;
+        return {
+            percent: total > 0 ? Math.round((measured / total) * 100) : 0,
+            measured,
+            total
+        };
+    }, [averageScores, domains]);
+
     const levelToUse = classProfile?.gradeLevel || '5';
     
     const displayedBenchmarks = domains.map(domain => {
@@ -242,20 +252,26 @@ export const BenchmarkFrameworkTab: React.FC = () => {
                                     <Icon name="benchmark" className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">Active Benchmarks</h2>
-                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.25em] mt-1">{selectedPeriod} Standards Matrix</p>
+                                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">Active Protocols</h2>
+                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.25em] mt-1">{selectedPeriod} Standard Matrix</p>
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => setIsEditing(!isEditing)}
-                                className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border-2 transition-all active:scale-95 shadow-xl ${
-                                    isEditing 
-                                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-100' 
-                                    : 'bg-white border-slate-100 text-slate-500 hover:bg-slate-50'
-                                }`}
-                            >
-                                {isEditing ? 'Sync Changes' : 'Modify Protocols'}
-                            </button>
+                            <div className="flex items-center gap-4">
+                                <div className="hidden sm:flex flex-col items-end mr-4">
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Protocol Health</span>
+                                    <span className={`text-xs font-black ${protocolHealth.percent > 70 ? 'text-emerald-500' : 'text-orange-500'}`}>{protocolHealth.percent}% Coverage</span>
+                                </div>
+                                <button 
+                                    onClick={() => setIsEditing(!isEditing)}
+                                    className={`px-10 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border-2 transition-all active:scale-95 shadow-xl ${
+                                        isEditing 
+                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-indigo-100' 
+                                        : 'bg-white border-slate-100 text-slate-500 hover:bg-slate-50'
+                                    }`}
+                                >
+                                    {isEditing ? 'Sync Changes' : 'Modify Targets'}
+                                </button>
+                            </div>
                         </div>
 
                         <div className="space-y-2">
@@ -308,13 +324,6 @@ export const BenchmarkFrameworkTab: React.FC = () => {
                                     size="42 KB" 
                                     icon="analytics" 
                                 />
-                                <MaterialDownloadCard 
-                                    title="Standard descriptors list" 
-                                    category="Reference" 
-                                    type="DOC" 
-                                    size="1.1 MB" 
-                                    icon="search" 
-                                />
                             </div>
 
                             <button className="w-full mt-10 py-5 bg-indigo-600 rounded-3xl font-black text-[10px] uppercase tracking-[0.3em] hover:bg-indigo-500 transition-all shadow-2xl shadow-indigo-900/40">
@@ -329,9 +338,9 @@ export const BenchmarkFrameworkTab: React.FC = () => {
                                 <Icon name="info" className="w-5 h-5" />
                             </div>
                             <div>
-                                <h4 className="font-black text-indigo-900 text-sm mb-2 uppercase tracking-widest">Logic Advisory</h4>
+                                <h4 className="font-black text-indigo-900 text-sm mb-2 uppercase tracking-widest">Pedagogical Note</h4>
                                 <p className="text-xs text-indigo-700/80 leading-relaxed font-medium">
-                                    Benchmarks are CEFR-aligned. Ensure scores are entered within 7 days of the assessment date to preserve the accuracy of the **Growth Velocity Protocol**.
+                                    Benchmarks are calibrated to CEFR standards. If class median remains below <span className="font-black">70%</span> for two consecutive cycles, the system will suggest an institutional framework review.
                                 </p>
                             </div>
                         </div>

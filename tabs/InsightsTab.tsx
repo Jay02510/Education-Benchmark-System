@@ -10,6 +10,7 @@ import { InsightCard } from '../components/common/InsightCard';
 import { AtRiskDetailsModal } from '../components/students/AtRiskDetailsModal';
 import { GeminiService } from '../services/geminiService';
 import { ExecutiveBriefingModal } from '../components/common/ExecutiveBriefingModal';
+import { CaseStudyModal } from '../components/common/CaseStudyModal';
 
 const DashboardWidget: React.FC<{ title: string; value: string | number; subtext: string; icon: string; gradient: string; onClick?: () => void; }> = ({ title, value, subtext, icon, gradient, onClick }) => (
     <button 
@@ -36,8 +37,11 @@ export const InsightsTab: React.FC = () => {
     const [chartType, setChartType] = useState<'radar' | 'bar'>('radar');
     const [isAtRiskModalOpen, setIsAtRiskModalOpen] = useState(false);
     const [isBriefingModalOpen, setIsBriefingModalOpen] = useState(false);
+    const [isCaseStudyModalOpen, setIsCaseStudyModalOpen] = useState(false);
     const [briefingData, setBriefingData] = useState<any>(null);
+    const [caseStudyData, setCaseStudyData] = useState<any>(null);
     const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
+    const [isGeneratingStudy, setIsGeneratingStudy] = useState(false);
     const [smartGroups, setSmartGroups] = useState<{ groupName: string, studentIds: string[], focus: string }[]>([]);
     const [isGrouping, setIsGrouping] = useState(false);
 
@@ -72,18 +76,9 @@ export const InsightsTab: React.FC = () => {
         });
 
         const avgVelocity = Math.round(students.reduce((a, b) => a + b.growthVelocity, 0) / students.length);
-        
-        const compliance = Math.min(100, students.reduce((acc, s) => acc + (s.assessments.length * 15), 0) / students.length);
-        const healthScore = Math.round((avgVelocity * 2 + compliance + (domainData.reduce((a,b) => a+b.score, 0) / domainData.length)) / 4);
+        const healthScore = Math.round((avgVelocity * 2 + (domainData.reduce((a,b) => a+b.score, 0) / domainData.length)) / 3);
 
-        return { 
-            domainData, 
-            tiers, 
-            atRiskList, 
-            avgVelocity, 
-            healthScore,
-            classAvg: Math.round(domainData.reduce((a,b) => a+b.score, 0) / domainData.length) 
-        };
+        return { domainData, tiers, atRiskList, avgVelocity, healthScore, classAvg: Math.round(domainData.reduce((a,b) => a+b.score, 0) / domainData.length) };
     }, [students, domains, benchmarks, classProfile]);
 
     const handleGenerateGroups = async () => {
@@ -91,11 +86,7 @@ export const InsightsTab: React.FC = () => {
         try {
             const groups = await GeminiService.generateSmartGroups(students, domains);
             setSmartGroups(groups);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setIsGrouping(false);
-        }
+        } catch (e) { console.error(e); } finally { setIsGrouping(false); }
     };
 
     const handleGenerateBriefing = async () => {
@@ -104,11 +95,16 @@ export const InsightsTab: React.FC = () => {
             const briefing = await GeminiService.generateExecutiveBriefing(students, classProfile?.className || 'General Cohort');
             setBriefingData(briefing);
             setIsBriefingModalOpen(true);
-        } catch (e) {
-            console.error("Briefing synchronization failed:", e);
-        } finally {
-            setIsGeneratingBrief(false);
-        }
+        } finally { setIsGeneratingBrief(false); }
+    };
+
+    const handleGenerateCaseStudy = async () => {
+        setIsGeneratingStudy(true);
+        try {
+            const study = await GeminiService.generateCaseStudy(students, classProfile?.className || 'Research Cohort');
+            setCaseStudyData(study);
+            setIsCaseStudyModalOpen(true);
+        } finally { setIsGeneratingStudy(false); }
     };
 
     if (!students.length) {
@@ -116,7 +112,7 @@ export const InsightsTab: React.FC = () => {
             <div className="p-12 flex flex-col items-center justify-center min-h-[60vh] text-center">
                 <div className="w-24 h-24 bg-slate-100 rounded-[2.5rem] flex items-center justify-center text-slate-300 mb-8"><Icon name="analytics" className="w-12 h-12" /></div>
                 <h2 className="text-3xl font-black text-slate-900 mb-2">Insufficient Data</h2>
-                <p className="text-slate-400 font-bold max-w-sm">Calibrate your class and sync student scores to unlock institutional insights.</p>
+                <p className="text-slate-400 font-bold max-w-sm">Log assessment scores to unlock institutional insights.</p>
             </div>
         );
     }
@@ -128,15 +124,25 @@ export const InsightsTab: React.FC = () => {
                     <h1 className="text-7xl font-black text-slate-900 tracking-tighter mb-2 uppercase italic leading-[0.85]">Strategic <br/>Intelligence</h1>
                     <p className="text-slate-400 font-bold text-2xl italic tracking-tight">Active Insight Layer: <span className="text-indigo-600">Institutional Mode</span></p>
                 </div>
-                <button 
-                    onClick={handleGenerateBriefing}
-                    disabled={isGeneratingBrief}
-                    className={`group relative px-12 py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl transition-all active:scale-95 disabled:opacity-80 border-b-8 flex items-center gap-4 ${isGeneratingBrief ? 'bg-slate-700 text-slate-300 border-slate-900' : 'bg-slate-900 text-white hover:bg-indigo-600 border-slate-950'}`}
-                >
-                    {isGeneratingBrief ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="brain" className="w-5 h-5 text-indigo-400" />}
-                    {isGeneratingBrief ? 'Synchronizing Briefing...' : 'Leadership Briefing'}
-                    <div className="absolute -top-3 -right-3 px-2 py-1 bg-indigo-500 rounded-lg text-[8px] animate-pulse">DIRECTOR ACCESS</div>
-                </button>
+                <div className="flex flex-wrap gap-4">
+                    <button 
+                        onClick={handleGenerateCaseStudy}
+                        disabled={isGeneratingStudy}
+                        className="group px-8 py-6 rounded-[2rem] bg-white border-2 border-slate-200 text-slate-800 font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center gap-3 active:scale-95 disabled:opacity-60"
+                    >
+                        {isGeneratingStudy ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="benchmark" className="w-5 h-5 text-indigo-400" />}
+                        {isGeneratingStudy ? 'Analyzing Trends...' : 'Generate Case Study Report'}
+                    </button>
+                    <button 
+                        onClick={handleGenerateBriefing}
+                        disabled={isGeneratingBrief}
+                        className="group relative px-12 py-6 rounded-[2rem] bg-slate-900 text-white font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-indigo-600 border-b-8 border-slate-950 transition-all active:scale-95 disabled:opacity-60 flex items-center gap-3"
+                    >
+                        {isGeneratingBrief ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="brain" className="w-5 h-5 text-indigo-400" />}
+                        {isGeneratingBrief ? 'Syncing Briefing...' : 'Leadership Briefing'}
+                        <div className="absolute -top-3 -right-3 px-2 py-1 bg-indigo-500 rounded-lg text-[8px] animate-pulse">DIRECTOR ACCESS</div>
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -149,9 +155,9 @@ export const InsightsTab: React.FC = () => {
                 <div className="xl:col-span-8 space-y-10">
                     <InsightCard title="Domain Competency Matrix" description="Comparing class medians against target protocols">
                         <div className="flex justify-end mb-6">
-                            <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner border border-slate-200">
-                                <button onClick={() => setChartType('radar')} className={`px-5 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${chartType === 'radar' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>Radar</button>
-                                <button onClick={() => setChartType('bar')} className={`px-5 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${chartType === 'bar' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400 hover:text-slate-600'}`}>Bar</button>
+                            <div className="flex bg-slate-100 p-1 rounded-xl">
+                                <button onClick={() => setChartType('radar')} className={`px-5 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${chartType === 'radar' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400'}`}>Radar</button>
+                                <button onClick={() => setChartType('bar')} className={`px-5 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${chartType === 'bar' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400'}`}>Bar</button>
                             </div>
                         </div>
                         <div className="h-[450px]">
@@ -177,39 +183,30 @@ export const InsightsTab: React.FC = () => {
                                 {smartGroups.length > 0 ? 'Regenerate Clusters' : 'Auto-Cluster Class'}
                             </button>
                         </div>
-
                         {smartGroups.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {smartGroups.map((group, idx) => (
-                                    <div key={idx} className="p-8 bg-slate-50 rounded-[3rem] border border-slate-100 group hover:bg-white hover:border-indigo-100 transition-all shadow-sm hover:shadow-xl">
-                                        <div className="flex items-center justify-between mb-6">
-                                            <h4 className="font-black text-indigo-600 uppercase tracking-widest text-sm">{group.groupName}</h4>
-                                            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">{group.studentIds.length} Units</span>
-                                        </div>
+                                {smartGroups.map((group: any, idx: number) => (
+                                    <div key={idx} className="p-8 bg-slate-50 rounded-[3rem] border border-slate-100 hover:bg-white hover:border-indigo-100 transition-all shadow-sm">
+                                        <h4 className="font-black text-indigo-600 uppercase tracking-widest text-sm mb-4">{group.groupName}</h4>
                                         <div className="space-y-3 mb-8">
-                                            {group.studentIds.map(sid => {
+                                            {group.studentIds.map((sid: string) => {
                                                 const s = students.find(item => item.id === sid);
                                                 return (
                                                     <div key={sid} className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full overflow-hidden border border-white shadow-sm bg-white">
-                                                            <img src={s?.photoUrl} className="w-full h-full object-cover" alt="" />
-                                                        </div>
-                                                        <span className="text-sm font-bold text-slate-700">{s?.name || 'Unknown'}</span>
+                                                        <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100"><img src={s?.photoUrl} className="w-full h-full object-cover" /></div>
+                                                        <span className="text-xs font-bold text-slate-700">{s?.name || 'Unknown'}</span>
                                                     </div>
                                                 );
                                             })}
                                         </div>
-                                        <div className="pt-6 border-t border-slate-200">
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Tactical Focus:</p>
-                                            <p className="text-xs font-bold text-slate-600 leading-relaxed italic">"{group.focus}"</p>
-                                        </div>
+                                        <p className="text-xs font-bold text-slate-500 italic">"{group.focus}"</p>
                                     </div>
                                 ))}
                             </div>
                         ) : (
                             <div className="py-24 text-center border-4 border-dashed border-slate-100 rounded-[3.5rem] bg-slate-50/50">
                                 <Icon name="students" className="w-16 h-16 text-slate-200 mx-auto mb-6" />
-                                <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs">Run clustering engine to group students by shared skill gaps.</p>
+                                <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs">Run clustering engine to group students by skill gaps.</p>
                             </div>
                         )}
                     </Card>
@@ -217,31 +214,15 @@ export const InsightsTab: React.FC = () => {
                 
                 <div className="xl:col-span-4 space-y-10">
                     <Card className="p-10 bg-white border border-slate-100 shadow-2xl rounded-[3.5rem]">
-                        <h3 className="text-xl font-black text-slate-800 mb-10 tracking-tight flex items-center gap-4">
-                            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl shadow-inner"><Icon name="check" className="w-6 h-6" /></div>
-                            RTI Logic Spread
-                        </h3>
-                        <div className="h-72">
-                            <SupportTierChart data={analytics?.tiers as any} />
-                        </div>
-                    </Card>
-
-                    <Card className="p-10 bg-slate-900 text-white rounded-[3.5rem] shadow-[0_40px_100px_rgba(15,23,42,0.4)] relative overflow-hidden group">
-                        <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-indigo-500/10 blur-[80px] rounded-full group-hover:scale-125 transition-transform duration-1000"></div>
-                        <div className="relative z-10">
-                            <h4 className="font-black text-indigo-400 text-[10px] uppercase tracking-[0.4em] mb-6">Strategic Advisory</h4>
-                            <p className="text-2xl font-black leading-tight mb-8 italic text-slate-100">"Prioritize intensive support for <span className="text-indigo-400 underline decoration-4 underline-offset-8">{analytics?.domainData.sort((a,b) => a.score - b.score)[0].domain}</span>. System identified a class-wide gap in this quadrant."</p>
-                            <div className="flex items-center gap-4 py-4 px-6 bg-white/5 rounded-2xl border border-white/5">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg"><Icon name="brain" className="w-5 h-5" /></div>
-                                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-indigo-200">AI Logic Sync Complete</span>
-                            </div>
-                        </div>
+                        <h3 className="text-xl font-black text-slate-800 mb-10 tracking-tight">RTI Logic Spread</h3>
+                        <div className="h-72"><SupportTierChart data={analytics?.tiers as any} /></div>
                     </Card>
                 </div>
             </div>
 
             <AtRiskDetailsModal isOpen={isAtRiskModalOpen} onClose={() => setIsAtRiskModalOpen(false)} atRiskStudents={analytics?.atRiskList || []} domainCount={domains.length} />
             <ExecutiveBriefingModal isOpen={isBriefingModalOpen} onClose={() => setIsBriefingModalOpen(false)} data={briefingData} className={classProfile?.className || 'General'} />
+            <CaseStudyModal isOpen={isCaseStudyModalOpen} onClose={() => setIsCaseStudyModalOpen(false)} data={caseStudyData} />
         </div>
     );
 };

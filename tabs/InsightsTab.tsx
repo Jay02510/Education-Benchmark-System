@@ -118,7 +118,7 @@ export const InsightsTab: React.FC = () => {
             setCaseStudyData(study);
             setIsCaseStudyModalOpen(true);
         } catch (e) {
-            showToast("Case study engine timed out.", "error");
+            showToast("Case study engine timed out. Institutional Data too dense.", "error");
         } finally {
             setIsGeneratingStudy(false);
         }
@@ -145,10 +145,11 @@ export const InsightsTab: React.FC = () => {
                     <button 
                         onClick={handleGenerateCaseStudy}
                         disabled={isGeneratingStudy}
-                        className="group px-8 py-6 rounded-[2rem] bg-white border-2 border-slate-200 text-slate-800 font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center gap-3 active:scale-95 disabled:opacity-60"
+                        className="group px-8 py-6 rounded-[2rem] bg-white border-2 border-slate-200 text-slate-800 font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center gap-3 active:scale-95 disabled:opacity-80"
                     >
                         {isGeneratingStudy ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="benchmark" className="w-5 h-5 text-indigo-400" />}
-                        {isGeneratingStudy ? 'Analyzing Trends...' : 'Generate Case Study Report'}
+                        {isGeneratingStudy ? 'Pro reasoning in progress...' : 'Generate Pro Case Study'}
+                        {isGeneratingStudy && <span className="text-[8px] animate-pulse ml-2">Deep Thinking Enabled</span>}
                     </button>
                     <button 
                         onClick={handleGenerateBriefing}

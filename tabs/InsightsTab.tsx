@@ -11,6 +11,7 @@ import { AtRiskDetailsModal } from '../components/students/AtRiskDetailsModal';
 import { GeminiService } from '../services/geminiService';
 import { ExecutiveBriefingModal } from '../components/common/ExecutiveBriefingModal';
 import { CaseStudyModal } from '../components/common/CaseStudyModal';
+import { useToast } from '../context/ToastContext';
 
 const DashboardWidget: React.FC<{ title: string; value: string | number; subtext: string; icon: string; gradient: string; onClick?: () => void; }> = ({ title, value, subtext, icon, gradient, onClick }) => (
     <button 
@@ -34,6 +35,7 @@ const DashboardWidget: React.FC<{ title: string; value: string | number; subtext
 export const InsightsTab: React.FC = () => {
     const { students, classProfile } = useStudents();
     const { domains, benchmarks } = useBenchmarks();
+    const { showToast } = useToast();
     const [chartType, setChartType] = useState<'radar' | 'bar'>('radar');
     const [isAtRiskModalOpen, setIsAtRiskModalOpen] = useState(false);
     const [isBriefingModalOpen, setIsBriefingModalOpen] = useState(false);
@@ -55,7 +57,7 @@ export const InsightsTab: React.FC = () => {
             let total = 0, count = 0;
             students.forEach(s => {
                 const latest = s.assessments[s.assessments.length - 1];
-                if (latest?.scores[domain as Domain] > 0) {
+                if (latest?.scores && latest.scores[domain as Domain] > 0) {
                     total += latest.scores[domain as Domain];
                     count++;
                 }
@@ -75,7 +77,7 @@ export const InsightsTab: React.FC = () => {
             else tiers[0].value++;
         });
 
-        const avgVelocity = Math.round(students.reduce((a, b) => a + b.growthVelocity, 0) / students.length);
+        const avgVelocity = Math.round(students.reduce((a, b) => a + (b.growthVelocity || 0), 0) / students.length);
         const healthScore = Math.round((avgVelocity * 2 + (domainData.reduce((a,b) => a+b.score, 0) / domainData.length)) / 3);
 
         return { domainData, tiers, atRiskList, avgVelocity, healthScore, classAvg: Math.round(domainData.reduce((a,b) => a+b.score, 0) / domainData.length) };
@@ -86,25 +88,40 @@ export const InsightsTab: React.FC = () => {
         try {
             const groups = await GeminiService.generateSmartGroups(students, domains);
             setSmartGroups(groups);
-        } catch (e) { console.error(e); } finally { setIsGrouping(false); }
+        } catch (e) { 
+            showToast("Clustering engine offline.", "error");
+        } finally { 
+            setIsGrouping(false); 
+        }
     };
 
     const handleGenerateBriefing = async () => {
         setIsGeneratingBrief(true);
         try {
             const briefing = await GeminiService.generateExecutiveBriefing(students, classProfile?.className || 'General Cohort');
-            setBriefingData(briefing);
-            setIsBriefingModalOpen(true);
-        } finally { setIsGeneratingBrief(false); }
+            if (briefing) {
+                setBriefingData(briefing);
+                setIsBriefingModalOpen(true);
+            }
+        } catch (e) {
+            showToast("Synthesis failed. Try again.", "error");
+        } finally { 
+            setIsGeneratingBrief(false); 
+        }
     };
 
     const handleGenerateCaseStudy = async () => {
+        if (isGeneratingStudy) return;
         setIsGeneratingStudy(true);
         try {
             const study = await GeminiService.generateCaseStudy(students, classProfile?.className || 'Research Cohort');
             setCaseStudyData(study);
             setIsCaseStudyModalOpen(true);
-        } finally { setIsGeneratingStudy(false); }
+        } catch (e) {
+            showToast("Case study engine timed out.", "error");
+        } finally {
+            setIsGeneratingStudy(false);
+        }
     };
 
     if (!students.length) {
@@ -193,7 +210,9 @@ export const InsightsTab: React.FC = () => {
                                                 const s = students.find(item => item.id === sid);
                                                 return (
                                                     <div key={sid} className="flex items-center gap-3">
-                                                        <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100"><img src={s?.photoUrl} className="w-full h-full object-cover" /></div>
+                                                        <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100">
+                                                            {s?.photoUrl && <img src={s.photoUrl} className="w-full h-full object-cover" />}
+                                                        </div>
                                                         <span className="text-xs font-bold text-slate-700">{s?.name || 'Unknown'}</span>
                                                     </div>
                                                 );

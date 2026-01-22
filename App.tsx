@@ -20,6 +20,7 @@ import { CommandCenter } from './components/common/CommandCenter.tsx';
 import { ChatWidget } from './components/chat/ChatWidget.tsx';
 import { ChatProvider } from './context/ChatContext.tsx';
 import { FeedbackModal } from './components/common/FeedbackModal.tsx';
+import { LegalModal } from './components/common/LegalModal.tsx';
 
 type TabName = typeof TABS[keyof typeof TABS];
 
@@ -58,6 +59,7 @@ const MainAppLayout: React.FC = () => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+    const [isLegalOpen, setIsLegalOpen] = useState(false);
 
     const handleTabChange = (tab: TabName) => {
         setActiveTab(tab);
@@ -115,7 +117,6 @@ const MainAppLayout: React.FC = () => {
                     </nav>
 
                     <div className={`pt-6 border-t border-slate-50 ${isSidebarCollapsed ? 'flex flex-col items-center gap-6' : 'px-2'}`}>
-                        {/* Feedback Trigger */}
                         <button 
                             onClick={() => setIsFeedbackOpen(true)}
                             className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all mb-4 ${isSidebarCollapsed ? 'justify-center px-0 w-12' : ''}`}
@@ -146,6 +147,12 @@ const MainAppLayout: React.FC = () => {
                                  </button>
                              )}
                         </div>
+                        {!isSidebarCollapsed && (
+                            <div className="mt-4 px-4 flex gap-4 text-[8px] font-black text-slate-300 uppercase tracking-widest">
+                                <button onClick={() => setIsLegalOpen(true)} className="hover:text-indigo-400">Legal</button>
+                                <button onClick={() => setIsLegalOpen(true)} className="hover:text-indigo-400">Privacy</button>
+                            </div>
+                        )}
                     </div>
                 </aside>
 
@@ -164,6 +171,7 @@ const MainAppLayout: React.FC = () => {
                      <BulkAssessmentModal isOpen={isBulkEntryOpen} onClose={() => setBulkEntryOpen(false)} />
                      <PlatformGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
                      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
+                     <LegalModal isOpen={isLegalOpen} onClose={() => setIsLegalOpen(false)} />
                 </main>
             </div>
         </div>

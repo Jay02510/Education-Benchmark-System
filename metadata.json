@@ -1,5 +1,7 @@
 {
   "name": "Education Benchmark App",
   "description": "An AI-powered ESL benchmark and analytics platform for children. It provides detailed student tracking, proactive AI alerts, personalized learning pathways, and comprehensive analytics for teachers and administrators.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

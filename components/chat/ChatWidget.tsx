@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { Icon } from '../common/Icon';
 import { useAuth } from '../../context/AuthContext';
@@ -23,6 +23,13 @@ export const ChatWidget: React.FC = () => {
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // Draggable State
+    const [position, setPosition] = useState({ x: window.innerWidth - 120, y: window.innerHeight - 120 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [hasMoved, setHasMoved] = useState(false);
+    const buttonRef = useRef<HTMLButtonElement>(null);
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -30,6 +37,61 @@ export const ChatWidget: React.FC = () => {
     useEffect(() => {
         if (isOpen) scrollToBottom();
     }, [messages, isTyping, isOpen]);
+
+    // Drag Logic
+    const handleMouseDown = (e: React.MouseEvent) => {
+        setIsDragging(true);
+        setHasMoved(false);
+        setDragStart({
+            x: e.clientX - position.x,
+            y: e.clientY - position.y
+        });
+    };
+
+    const handleMouseMove = useCallback((e: MouseEvent) => {
+        if (!isDragging) return;
+        
+        const newX = e.clientX - dragStart.x;
+        const newY = e.clientY - dragStart.y;
+
+        // Threshold to distinguish click from drag
+        if (Math.abs(newX - position.x) > 5 || Math.abs(newY - position.y) > 5) {
+            setHasMoved(true);
+        }
+
+        // Keep within bounds
+        const boundedX = Math.max(20, Math.min(window.innerWidth - 100, newX));
+        const boundedY = Math.max(20, Math.min(window.innerHeight - 100, newY));
+
+        setPosition({ x: boundedX, y: boundedY });
+    }, [isDragging, dragStart, position]);
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    useEffect(() => {
+        if (isDragging) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
+        } else {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        }
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging, handleMouseMove]);
+
+    const handleButtonClick = (e: React.MouseEvent) => {
+        // If we moved the button, don't trigger the chat toggle
+        if (hasMoved) {
+            e.preventDefault();
+            return;
+        }
+        toggleChat();
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,12 +108,22 @@ export const ChatWidget: React.FC = () => {
 
     if (!user) return null;
 
+    // Calculate window orientation (open left or right depending on button position)
+    const openLeft = position.x > window.innerWidth / 2;
+    const openUp = position.y > window.innerHeight / 2;
+
     return (
-        <div className="fixed bottom-6 right-8 z-[110000] flex flex-col items-end pointer-events-none">
+        <div 
+            className="fixed z-[110000] pointer-events-none"
+            style={{ left: position.x, top: position.y }}
+        >
+            {/* Chat Window */}
             <div 
                 className={`
-                    pointer-events-auto bg-white/95 backdrop-blur-2xl w-[92vw] md:w-[450px] rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] border border-white/60 overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] origin-bottom-right mb-6 flex flex-col
-                    ${isOpen ? 'opacity-100 scale-100 h-[700px] max-h-[85vh]' : 'opacity-0 scale-75 h-0 overflow-hidden translate-y-20'}
+                    pointer-events-auto absolute bg-white/95 backdrop-blur-2xl w-[92vw] md:w-[450px] rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] border border-white/60 overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col
+                    ${isOpen ? 'opacity-100 scale-100 h-[600px] max-h-[80vh]' : 'opacity-0 scale-75 h-0 overflow-hidden pointer-events-none'}
+                    ${openLeft ? 'right-0' : 'left-0'}
+                    ${openUp ? 'bottom-28' : 'top-28'}
                 `}
             >
                 <div className="bg-slate-900 px-8 py-6 flex justify-between items-center shrink-0">
@@ -128,7 +200,7 @@ export const ChatWidget: React.FC = () => {
                     <form onSubmit={handleSubmit} className="flex items-center gap-4">
                         <input 
                             type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)}
-                            placeholder="Inquire with data engine..."
+                            placeholder="Inquire..."
                             className="flex-1 bg-slate-50 border-2 border-slate-50 text-slate-800 text-sm rounded-2xl px-6 py-5 outline-none focus:bg-white focus:border-indigo-600 transition-all font-bold shadow-inner"
                             disabled={isTyping}
                         />
@@ -142,11 +214,15 @@ export const ChatWidget: React.FC = () => {
                 </div>
             </div>
 
+            {/* Draggable Trigger Button */}
             <button 
-                onClick={toggleChat}
+                ref={buttonRef}
+                onMouseDown={handleMouseDown}
+                onClick={handleButtonClick}
                 className={`
-                    pointer-events-auto transition-all duration-500 flex items-center justify-center relative shadow-2xl active:scale-90
+                    pointer-events-auto transition-all duration-300 flex items-center justify-center relative shadow-2xl active:scale-90 select-none
                     ${isOpen ? 'w-14 h-14 rounded-full bg-slate-800 text-slate-300' : 'w-24 h-24 rounded-[2.8rem] bg-indigo-600 text-white hover:bg-indigo-700 border-b-8 border-indigo-900'}
+                    ${isDragging ? 'cursor-grabbing scale-105 rotate-3' : 'cursor-grab'}
                 `}
             >
                 {isOpen ? <Icon name="close" className="w-6 h-6" /> : (

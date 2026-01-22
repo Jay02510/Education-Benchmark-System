@@ -158,6 +158,10 @@ export const LoginScreen: React.FC = () => {
         setIsLegalModalOpen(true);
     };
 
+    const handleContactSupport = () => {
+        window.location.href = `mailto:jsn.benjamin@gmail.com?subject=Benchmark Institutional Inquiry&body=Hello, I would like to inquire about institutional licensing for my academy.`;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         let success = false;
@@ -209,8 +213,8 @@ export const LoginScreen: React.FC = () => {
                     </div>
                     
                     <div className="hidden md:flex items-center gap-8 text-sm font-bold text-slate-400">
-                        <button onClick={() => handleNav('home', 'how-it-works')} className="hover:text-white transition-colors py-2">How it works</button>
-                        <button onClick={() => handleNav('pricing')} className={`transition-colors py-2 ${currentView === 'pricing' ? 'text-white border-b-2 border-indigo-500' : 'hover:text-white'}`}>Pricing</button>
+                        <button onClick={() => handleNav('home', 'how-it-works')} className="hover:text-white transition-colors py-2">{landingLang === 'EN' ? 'How it works' : '작동 방식'}</button>
+                        <button onClick={() => handleNav('pricing')} className={`transition-colors py-2 ${currentView === 'pricing' ? 'text-white border-b-2 border-indigo-500' : 'hover:text-white'}`}>{landingLang === 'EN' ? 'Pricing' : '요금제'}</button>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -218,8 +222,8 @@ export const LoginScreen: React.FC = () => {
                              <button onClick={() => setLandingLang('EN')} className={`px-2 py-0.5 text-[9px] font-black rounded-full transition-all ${landingLang === 'EN' ? 'bg-white text-slate-900' : 'text-slate-500'}`}>EN</button>
                              <button onClick={() => setLandingLang('KO')} className={`px-2 py-0.5 text-[9px] font-black rounded-full transition-all ${landingLang === 'KO' ? 'bg-white text-slate-900' : 'text-slate-500'}`}>KO</button>
                         </div>
-                        <button onClick={() => openAuth('login')} className="text-sm font-bold text-slate-300 hover:text-white transition-colors">Log In</button>
-                        <button onClick={() => openAuth('signup')} className="px-6 py-2.5 rounded-full bg-white text-[#0B0F19] text-sm font-bold hover:bg-indigo-50 transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)]">Sign Up Free</button>
+                        <button onClick={() => openAuth('login')} className="text-sm font-bold text-slate-300 hover:text-white transition-colors">{landingLang === 'EN' ? 'Log In' : '로그인'}</button>
+                        <button onClick={() => openAuth('signup')} className="px-6 py-2.5 rounded-full bg-white text-[#0B0F19] text-sm font-bold hover:bg-indigo-50 transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)]">{landingLang === 'EN' ? 'Sign Up Free' : '무료 가입'}</button>
                     </div>
                 </div>
             </nav>
@@ -290,37 +294,46 @@ export const LoginScreen: React.FC = () => {
                                 <h3 className="text-xl font-bold text-slate-300 mb-2">Starter</h3>
                                 <div className="mb-6 flex items-baseline gap-1"><span className="text-5xl font-black text-white tracking-tight">$0</span><span className="text-slate-500 font-bold">/mo</span></div>
                                 <ul className="space-y-4 mb-8 text-sm text-slate-300 font-medium flex-1">
-                                    <li className="flex items-center gap-3 opacity-60"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Up to 25 Students</li>
-                                    <li className="flex items-center gap-3 opacity-60"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Basic Dashboards</li>
-                                    <li className="flex items-center gap-3 opacity-60"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Manual Data Entry</li>
-                                    <li className="flex items-center gap-3 opacity-30 line-through"><Icon name="close" className="w-5 h-5 text-slate-500 shrink-0" /> No PDF Export</li>
+                                    <li className="flex items-center gap-3 opacity-60"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> {landingLang === 'EN' ? 'Up to 25 Students' : '최대 25명 학생'}</li>
+                                    <li className="flex items-center gap-3 opacity-60"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> {landingLang === 'EN' ? 'Basic Dashboards' : '기본 대시보드'}</li>
+                                    <li className="flex items-center gap-3 opacity-60"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> {landingLang === 'EN' ? 'Manual Data Entry' : '수동 데이터 입력'}</li>
+                                    <li className="flex items-center gap-3 opacity-30 line-through"><Icon name="close" className="w-5 h-5 text-slate-500 shrink-0" /> {landingLang === 'EN' ? 'No PDF Export' : 'PDF 내보내기 불가'}</li>
                                 </ul>
-                                <button onClick={() => openAuth('signup')} className="w-full py-5 rounded-2xl border-2 border-white/10 hover:bg-white hover:text-black font-black uppercase text-xs tracking-widest transition-all">Get Started</button>
+                                <button onClick={() => openAuth('signup')} className="w-full py-5 rounded-2xl border-2 border-white/10 hover:bg-white hover:text-black font-black uppercase text-xs tracking-widest transition-all">{landingLang === 'EN' ? 'Get Started' : '시작하기'}</button>
                             </div>
                             
                             <div className="p-10 rounded-[3rem] bg-gradient-to-b from-indigo-600 to-indigo-900 border border-indigo-400 shadow-2xl relative transform md:-translate-y-6 z-10 flex flex-col scale-105">
-                                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-white text-indigo-900 text-[10px] font-black px-6 py-2 rounded-full uppercase tracking-[0.2em] shadow-lg">Most Popular</div>
+                                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-white text-indigo-900 text-[10px] font-black px-6 py-2 rounded-full uppercase tracking-[0.2em] shadow-lg">{landingLang === 'EN' ? 'Most Popular' : '가장 인기 있는'}</div>
                                 <h3 className="text-xl font-bold text-white mb-2">Educator Pro</h3>
                                 <div className="mb-6 flex items-baseline gap-1"><span className="text-5xl font-black text-white tracking-tight">$15</span><span className="text-indigo-200 font-bold">/mo</span></div>
                                 <ul className="space-y-4 mb-8 text-sm text-white font-medium flex-1">
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0 text-emerald-300" /> Unlimited Students</li>
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0 text-emerald-300" /> <b>AI Vision Scoring (OCR)</b></li>
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0 text-emerald-300" /> <b>Multilingual PDF Reports</b></li>
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0 text-emerald-300" /> Advanced Intervention Logic</li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0 text-emerald-300" /> {landingLang === 'EN' ? 'Unlimited Students' : '무제한 학생 수'}</li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0 text-emerald-300" /> <b>{landingLang === 'EN' ? 'AI Vision Scoring (OCR)' : 'AI 비전 채점 (OCR)'}</b></li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0 text-emerald-300" /> <b>{landingLang === 'EN' ? 'Multilingual PDF Reports' : '다국어 PDF 성적표'}</b></li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0 text-emerald-300" /> {landingLang === 'EN' ? 'Advanced Intervention Logic' : '고급 개입 로직'}</li>
                                 </ul>
-                                <button onClick={() => openAuth('signup')} className="w-full py-5 bg-white text-indigo-900 font-black uppercase text-xs tracking-widest hover:bg-indigo-50 transition-all shadow-xl rounded-2xl border-b-4 border-indigo-200">Go Pro Now</button>
+                                <button onClick={() => openAuth('signup')} className="w-full py-5 bg-white text-indigo-900 font-black uppercase text-xs tracking-widest hover:bg-indigo-50 transition-all shadow-xl rounded-2xl border-b-4 border-indigo-200">{landingLang === 'EN' ? 'Go Pro Now' : '프로 구독하기'}</button>
                             </div>
 
                             <div className="p-8 rounded-[3rem] bg-[#131825]/80 backdrop-blur border border-white/10 hover:border-white/20 transition-all flex flex-col">
-                                <h3 className="text-xl font-bold text-slate-300 mb-2">Institutional</h3>
-                                <div className="mb-6 flex items-baseline gap-1"><span className="text-3xl font-black text-white tracking-tight">Custom</span></div>
+                                <h3 className="text-xl font-bold text-slate-300 mb-2">{landingLang === 'EN' ? 'Institutional' : '기관용'}</h3>
+                                <div className="mb-6 flex flex-col gap-1">
+                                    <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{landingLang === 'EN' ? 'Enterprise Support' : '기업 전용 지원'}</span>
+                                    <span className="text-2xl font-black text-white tracking-tight">{landingLang === 'EN' ? 'Volume Licensing' : '볼륨 라이선싱'}</span>
+                                </div>
                                 <ul className="space-y-4 mb-8 text-sm text-slate-300 font-medium flex-1">
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Principal Dashboard</li>
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Cross-Class Analytics</li>
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Custom School Branding</li>
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Dedicated API Access</li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> {landingLang === 'EN' ? 'Principal Dashboard' : '원장님 전용 대시보드'}</li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> {landingLang === 'EN' ? 'Cross-Class Analytics' : '학급 간 분석 데이터'}</li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> {landingLang === 'EN' ? 'Custom School Branding' : '학원 맞춤 브랜딩'}</li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> {landingLang === 'EN' ? 'Dedicated API Access' : '전용 API 액세스'}</li>
                                 </ul>
-                                <button className="w-full py-5 rounded-2xl border-2 border-white/10 hover:bg-white hover:text-black font-black uppercase text-xs tracking-widest transition-all">Contact Sales</button>
+                                <button 
+                                    onClick={handleContactSupport}
+                                    className="w-full py-5 rounded-2xl bg-indigo-600/10 border-2 border-indigo-500/30 text-indigo-400 font-black uppercase text-xs tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-lg flex items-center justify-center gap-2"
+                                >
+                                    <Icon name="chat" className="w-4 h-4" />
+                                    {landingLang === 'EN' ? 'Contact Institutional Support' : '기관 기술 지원 문의'}
+                                </button>
                             </div>
                         </div>
                         

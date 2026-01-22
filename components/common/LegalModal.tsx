@@ -31,8 +31,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, initial
         billing: {
             title: { EN: "Pricing & Billing", KO: "결제 및 환불 정책" },
             body: {
-                EN: `1. Subscription: Pro features are billed monthly or annually. 2. Refunds: We offer a 14-day 'no-questions-asked' refund policy for new subscriptions. 3. Free Tier: The Starter plan is free forever for up to 25 students. 4. AI Usage: High-volume AI features (Vision Scoring, Report Gen) are subject to fair use limits to ensure system stability.`,
-                KO: `1. 구독: 프로 기능은 월간 또는 연간 단위로 청구됩니다. 2. 환불: 신규 구독에 대해 14일간의 '조건 없는 환불' 정책을 제공합니다. 3. 무료 티어: 스타터 플랜은 최대 25명의 학생까지 평생 무료입니다. 4. AI 사용: 시스템 안정성을 위해 대량의 AI 기능(비전 채점, 리포트 생성)은 공정 사용 제한(Fair Use Limit)의 적용을 받을 수 있습니다.`
+                EN: `1. Subscription: Pro features are billed monthly or annually. 2. Refunds: We offer a 14-day 'no-questions-asked' refund policy for new subscriptions. 3. Free Tier: The Starter plan is free forever for up to 25 students. 4. Institutional Licensing: High-volume or school-wide accounts are handled via direct support contact to ensure volume discount calibration. 5. AI Usage: High-volume AI features are subject to fair use limits.`,
+                KO: `1. 구독: 프로 기능은 월간 또는 연간 단위로 청구됩니다. 2. 환불: 신규 구독에 대해 14일간의 '조건 없는 환불' 정책을 제공합니다. 3. 무료 티어: 스타터 플랜은 최대 25명의 학생까지 평생 무료입니다. 4. 기관 라이선싱: 대량 또는 학교 전체 계정은 볼륨 할인 조정을 위해 기술 지원팀과의 직접 연락을 통해 처리됩니다. 5. AI 사용: 대량의 AI 기능은 공정 사용 제한의 적용을 받을 수 있습니다.`
             }
         },
         dpa: {

@@ -118,7 +118,7 @@ export const InsightsTab: React.FC = () => {
             setCaseStudyData(study);
             setIsCaseStudyModalOpen(true);
         } catch (e) {
-            showToast("Case study engine timed out. Institutional Data too dense.", "error");
+            showToast("Pro Engine is currently over-saturated. Please wait 30s.", "error");
         } finally {
             setIsGeneratingStudy(false);
         }
@@ -149,7 +149,7 @@ export const InsightsTab: React.FC = () => {
                     >
                         {isGeneratingStudy ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="benchmark" className="w-5 h-5 text-indigo-400" />}
                         {isGeneratingStudy ? 'Pro reasoning in progress...' : 'Generate Pro Case Study'}
-                        {isGeneratingStudy && <span className="text-[8px] animate-pulse ml-2">Deep Thinking Enabled</span>}
+                        {isGeneratingStudy && <span className="text-[8px] animate-pulse ml-2">Deep Research Mode</span>}
                     </button>
                     <button 
                         onClick={handleGenerateBriefing}

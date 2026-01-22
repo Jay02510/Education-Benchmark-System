@@ -131,7 +131,7 @@ export const LoginScreen: React.FC = () => {
     const { login, signup, loginDemo, isLoading } = useAuth();
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
-    const [legalTab, setLegalTab] = useState<'privacy' | 'terms' | 'dpa'>('privacy');
+    const [legalTab, setLegalTab] = useState<'privacy' | 'terms' | 'dpa' | 'billing'>('privacy');
     const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
     const [activeFeature, setActiveFeature] = useState(0);
     const [currentView, setCurrentView] = useState<'home' | 'pricing'>('home');
@@ -153,7 +153,7 @@ export const LoginScreen: React.FC = () => {
         setIsLoginModalOpen(true);
     };
 
-    const openLegal = (tab: 'privacy' | 'terms' | 'dpa') => {
+    const openLegal = (tab: 'privacy' | 'terms' | 'dpa' | 'billing') => {
         setLegalTab(tab);
         setIsLegalModalOpen(true);
     };
@@ -282,39 +282,50 @@ export const LoginScreen: React.FC = () => {
                 <section className="pt-32 pb-24 px-6 min-h-screen animate-in fade-in zoom-in-95 duration-500">
                     <div className="max-w-7xl mx-auto">
                         <div className="text-center mb-16">
-                            <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">{landingLang === 'EN' ? 'Simple Pricing' : '투명한 요금제'}</h2>
-                            <p className="text-slate-400 text-xl max-w-2xl mx-auto">{landingLang === 'EN' ? 'Choose the plan that fits your classroom.' : '학급에 맞는 플랜을 선택하세요.'}</p>
+                            <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tight">{landingLang === 'EN' ? 'Institutional Pricing' : '기관 맞춤형 요금제'}</h2>
+                            <p className="text-slate-400 text-xl max-w-2xl mx-auto">{landingLang === 'EN' ? 'Scale pedagogical intelligence across your entire academy.' : '학원 전체에 고도화된 교육 지능을 도입하세요.'}</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
-                            <div className="p-8 rounded-3xl bg-[#131825]/80 backdrop-blur border border-white/10 hover:border-white/20 transition-all flex flex-col">
+                            <div className="p-8 rounded-[3rem] bg-[#131825]/80 backdrop-blur border border-white/10 hover:border-white/20 transition-all flex flex-col group">
                                 <h3 className="text-xl font-bold text-slate-300 mb-2">Starter</h3>
                                 <div className="mb-6 flex items-baseline gap-1"><span className="text-5xl font-black text-white tracking-tight">$0</span><span className="text-slate-500 font-bold">/mo</span></div>
                                 <ul className="space-y-4 mb-8 text-sm text-slate-300 font-medium flex-1">
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Up to 30 Students</li>
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Basic Analytics</li>
+                                    <li className="flex items-center gap-3 opacity-60"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Up to 25 Students</li>
+                                    <li className="flex items-center gap-3 opacity-60"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Basic Dashboards</li>
+                                    <li className="flex items-center gap-3 opacity-60"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Manual Data Entry</li>
+                                    <li className="flex items-center gap-3 opacity-30 line-through"><Icon name="close" className="w-5 h-5 text-slate-500 shrink-0" /> No PDF Export</li>
                                 </ul>
-                                <button onClick={() => openAuth('signup')} className="w-full py-4 rounded-2xl border border-white/20 hover:bg-white hover:text-black font-bold transition-all">Start Free</button>
+                                <button onClick={() => openAuth('signup')} className="w-full py-5 rounded-2xl border-2 border-white/10 hover:bg-white hover:text-black font-black uppercase text-xs tracking-widest transition-all">Get Started</button>
                             </div>
-                            <div className="p-8 rounded-3xl bg-gradient-to-b from-indigo-600 to-indigo-900 border border-indigo-400 shadow-2xl relative transform md:-translate-y-4 z-10 flex flex-col">
-                                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-white text-indigo-900 text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">Popular</div>
+                            
+                            <div className="p-10 rounded-[3rem] bg-gradient-to-b from-indigo-600 to-indigo-900 border border-indigo-400 shadow-2xl relative transform md:-translate-y-6 z-10 flex flex-col scale-105">
+                                <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-white text-indigo-900 text-[10px] font-black px-6 py-2 rounded-full uppercase tracking-[0.2em] shadow-lg">Most Popular</div>
                                 <h3 className="text-xl font-bold text-white mb-2">Educator Pro</h3>
                                 <div className="mb-6 flex items-baseline gap-1"><span className="text-5xl font-black text-white tracking-tight">$15</span><span className="text-indigo-200 font-bold">/mo</span></div>
                                 <ul className="space-y-4 mb-8 text-sm text-white font-medium flex-1">
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0" /> Unlimited Students</li>
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0" /> Advanced AI Insights</li>
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0" /> Export PDF Reports</li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0 text-emerald-300" /> Unlimited Students</li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0 text-emerald-300" /> <b>AI Vision Scoring (OCR)</b></li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0 text-emerald-300" /> <b>Multilingual PDF Reports</b></li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 shrink-0 text-emerald-300" /> Advanced Intervention Logic</li>
                                 </ul>
-                                <button onClick={() => openAuth('signup')} className="w-full py-4 rounded-2xl bg-white text-indigo-900 font-black hover:bg-indigo-50 transition-all shadow-lg">Get Pro Access</button>
+                                <button onClick={() => openAuth('signup')} className="w-full py-5 bg-white text-indigo-900 font-black uppercase text-xs tracking-widest hover:bg-indigo-50 transition-all shadow-xl rounded-2xl border-b-4 border-indigo-200">Go Pro Now</button>
                             </div>
-                            <div className="p-8 rounded-3xl bg-[#131825]/80 backdrop-blur border border-white/10 hover:border-white/20 transition-all flex flex-col">
-                                <h3 className="text-xl font-bold text-slate-300 mb-2">School</h3>
-                                <div className="mb-6 flex items-baseline gap-1"><span className="text-5xl font-black text-white tracking-tight">Custom</span></div>
+
+                            <div className="p-8 rounded-[3rem] bg-[#131825]/80 backdrop-blur border border-white/10 hover:border-white/20 transition-all flex flex-col">
+                                <h3 className="text-xl font-bold text-slate-300 mb-2">Institutional</h3>
+                                <div className="mb-6 flex items-baseline gap-1"><span className="text-3xl font-black text-white tracking-tight">Custom</span></div>
                                 <ul className="space-y-4 mb-8 text-sm text-slate-300 font-medium flex-1">
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Admin Dashboard</li>
-                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> API Access & SSO</li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Principal Dashboard</li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Cross-Class Analytics</li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Custom School Branding</li>
+                                    <li className="flex items-center gap-3"><Icon name="check" className="w-5 h-5 text-emerald-500 shrink-0" /> Dedicated API Access</li>
                                 </ul>
-                                <button className="w-full py-4 rounded-2xl border border-white/20 hover:bg-white hover:text-black font-bold transition-all">Contact Sales</button>
+                                <button className="w-full py-5 rounded-2xl border-2 border-white/10 hover:bg-white hover:text-black font-black uppercase text-xs tracking-widest transition-all">Contact Sales</button>
                             </div>
+                        </div>
+                        
+                        <div className="mt-16 text-center">
+                            <p className="text-slate-500 text-xs font-medium uppercase tracking-[0.2em]">All plans include 256-bit encryption & PIPA/GDPR compliance.</p>
                         </div>
                     </div>
                 </section>
@@ -335,6 +346,7 @@ export const LoginScreen: React.FC = () => {
                             <ul className="space-y-4 text-slate-400 font-medium">
                                 <li><button onClick={() => openLegal('privacy')} className="hover:text-indigo-400 transition-colors">Privacy Policy</button></li>
                                 <li><button onClick={() => openLegal('terms')} className="hover:text-indigo-400 transition-colors">Terms of Service</button></li>
+                                <li><button onClick={() => openLegal('billing')} className="hover:text-indigo-400 transition-colors">Pricing & Billing</button></li>
                                 <li><button onClick={() => openLegal('dpa')} className="hover:text-indigo-400 transition-colors">Data Processing</button></li>
                             </ul>
                         </div>
@@ -343,6 +355,7 @@ export const LoginScreen: React.FC = () => {
                             <ul className="space-y-4 text-slate-400 font-medium">
                                 <li><button onClick={() => openLegal('privacy')} className="hover:text-indigo-400 transition-colors">개인정보처리방침</button></li>
                                 <li><button onClick={() => openLegal('terms')} className="hover:text-indigo-400 transition-colors">이용약관</button></li>
+                                <li><button onClick={() => openLegal('billing')} className="hover:text-indigo-400 transition-colors">결제 및 환불</button></li>
                             </ul>
                         </div>
                     </div>

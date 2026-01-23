@@ -27,9 +27,9 @@ export class GeminiService {
     }
 
     /**
-     * GENERATE PRO CASE STUDY
-     * Uses gemini-3-pro-preview for high-end reasoning.
-     * Optimized to prevent timeouts by minifying the payload.
+     * GENERATE CASE STUDY
+     * Primary: gemini-3-pro-preview (Deep Reasoning)
+     * Fallback: gemini-3-flash-preview (High Speed)
      */
     static async generateCaseStudy(students: Student[], className: string): Promise<{
         title: string;
@@ -41,7 +41,6 @@ export class GeminiService {
     }> {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
-        // Minified Schema for faster Pro processing
         const dataset = students.map((s, idx) => {
             const assessments = s.assessments || [];
             const latest = assessments[assessments.length - 1];
@@ -64,9 +63,9 @@ export class GeminiService {
                 m_idx: lAvg,
                 tier: s.interventionStatus?.tier || 1
             };
-        }).slice(0, 25); 
+        }).slice(0, 20); // Minified for context efficiency
 
-        const fallback = {
+        const fallbackContent = {
             title: "Performance Trajectory Analysis",
             introduction: "High-level synthesis of cohort mastery trends and growth velocity.",
             keyFindings: ["Consistent progress identified across core domains.", "Velocity remains within expected instructional bands."],
@@ -75,40 +74,57 @@ export class GeminiService {
             conclusion: "The cohort is tracking successfully against standards."
         };
 
-        if (dataset.length === 0) return fallback;
+        if (dataset.length === 0) return fallbackContent;
 
+        const systemPrompt = `Perform a deep pedagogical analysis for "${className}".
+        DATASET: ${JSON.stringify(dataset)}
+        TASK: correlate Velocity vs Delta. Identify Level-specific stalling. Propose strategy.
+        STYLE: Highly professional academic research.`;
+
+        const responseSchema = {
+            type: Type.OBJECT,
+            properties: {
+                title: { type: Type.STRING },
+                introduction: { type: Type.STRING },
+                keyFindings: { type: Type.ARRAY, items: { type: Type.STRING } },
+                longitudinalAnalysis: { type: Type.STRING },
+                riskMitigation: { type: Type.STRING },
+                conclusion: { type: Type.STRING }
+            },
+            required: ['title', 'introduction', 'keyFindings', 'longitudinalAnalysis', 'riskMitigation', 'conclusion']
+        };
+
+        // --- ATTEMPT 1: PRO ENGINE (Advanced Reasoning) ---
         try {
+            console.log("Attempting Case Study Synthesis via Pro Engine...");
             const response = await ai.models.generateContent({
                 model: 'gemini-3-pro-preview',
-                contents: `Perform a deep pedagogical analysis for "${className}".
-                DATASET (Anonymized Units): ${JSON.stringify(dataset)}
-                TASK: correlate Velocity vs Delta. Identify Level-specific stalling. Propose strategy.
-                STYLE: Highly professional academic research.`,
+                contents: systemPrompt,
                 config: {
-                    thinkingConfig: { thinkingBudget: 4000 }, // Balanced for Pro depth and UI speed
+                    thinkingConfig: { thinkingBudget: 4000 },
                     responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            title: { type: Type.STRING },
-                            introduction: { type: Type.STRING },
-                            keyFindings: { type: Type.ARRAY, items: { type: Type.STRING } },
-                            longitudinalAnalysis: { type: Type.STRING },
-                            riskMitigation: { type: Type.STRING },
-                            conclusion: { type: Type.STRING }
-                        },
-                        required: ['title', 'introduction', 'keyFindings', 'longitudinalAnalysis', 'riskMitigation', 'conclusion']
-                    }
+                    responseSchema: responseSchema
                 }
             });
-
-            const text = response.text;
-            if (!text) return fallback;
+            return JSON.parse(this.cleanJsonResponse(response.text || '{}'));
+        } catch (e: any) {
+            console.warn("Pro Engine Saturated. Triggering High-Speed Fallback...", e.message);
             
-            return { ...fallback, ...JSON.parse(this.cleanJsonResponse(text)) };
-        } catch (e) {
-            console.error("Pro Engine Timeout/Error:", e);
-            return fallback;
+            // --- ATTEMPT 2: FLASH ENGINE (Rapid Recovery) ---
+            try {
+                const response = await ai.models.generateContent({
+                    model: 'gemini-3-flash-preview',
+                    contents: systemPrompt,
+                    config: {
+                        responseMimeType: "application/json",
+                        responseSchema: responseSchema
+                    }
+                });
+                return JSON.parse(this.cleanJsonResponse(response.text || '{}'));
+            } catch (fallbackError) {
+                console.error("Critical Analysis Failure:", fallbackError);
+                return fallbackContent;
+            }
         }
     }
 

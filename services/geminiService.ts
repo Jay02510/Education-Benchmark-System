@@ -8,6 +8,108 @@ export class GeminiService {
         return text.replace(/```json\n?|```/g, '').trim();
     }
 
+    /**
+     * LOCAL SYNTHESIS ENGINE
+     * Generates a pedagogical report using frontend logic if AI is saturated.
+     */
+    private static generateLocalReport(students: Student[], className: string) {
+        return {
+            title: `Institutional Growth Analysis: ${className}`,
+            introduction: "Analytical synthesis of student performance trends based on longitudinal velocity and domain mastery metrics.",
+            studentBreakdowns: students.map(s => {
+                const latest = s.assessments[s.assessments.length - 1];
+                const first = s.assessments[0];
+                const velocity = s.growthVelocity || 0;
+                
+                // Identify high/low domains locally
+                const scores = latest ? Object.entries(latest.scores).filter(([_, v]) => typeof v === 'number') : [];
+                const sorted = scores.sort(([, a], [, b]) => (b as number) - (a as number));
+                const top = sorted[0]?.[0] || "General Core";
+                const bottom = sorted[sorted.length - 1]?.[0] || "Targeted Domains";
+
+                return {
+                    name: s.name,
+                    excelsIn: velocity > 5 
+                        ? `Demonstrates high instructional velocity in ${top}, trending towards advanced mastery.` 
+                        : `Showing consistent stability and focus in ${top} modules.`,
+                    needsWork: velocity < 0 
+                        ? `Recent regression identified in ${bottom}. Requires immediate review of foundational concepts.` 
+                        : `Targeted practice in ${bottom} is recommended to maintain growth trajectory.`,
+                    strategy: s.interventionStatus?.tier === 3 
+                        ? "Implement 1-on-1 intensive scaffolded support with weekly check-ins." 
+                        : "Integrate more high-frequency practice and peer-modeling during standard instruction."
+                };
+            }),
+            conclusion: "The cohort is currently exhibiting a stable growth profile with specific intervention nodes identified for secondary review."
+        };
+    }
+
+    /**
+     * GENERATE CASE STUDY
+     * Features: Exponential Backoff Retries + Local Logic Fallback
+     */
+    static async generateCaseStudy(students: Student[], className: string): Promise<any> {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        // Minified dataset for tokens
+        const dataset = students.map(s => ({
+            name: s.name,
+            vel: s.growthVelocity,
+            tier: s.interventionStatus?.tier || 1,
+            scores: s.assessments.map(a => ({ p: a.type, avg: Math.round(Object.values(a.scores).reduce((sum: any, v: any) => sum + (v || 0), 0) / 8) }))
+        })).slice(0, 20);
+
+        const schema = {
+            type: Type.OBJECT,
+            properties: {
+                title: { type: Type.STRING },
+                introduction: { type: Type.STRING },
+                studentBreakdowns: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            name: { type: Type.STRING },
+                            excelsIn: { type: Type.STRING },
+                            needsWork: { type: Type.STRING },
+                            strategy: { type: Type.STRING }
+                        },
+                        required: ['name', 'excelsIn', 'needsWork', 'strategy']
+                    }
+                },
+                conclusion: { type: Type.STRING }
+            },
+            required: ['title', 'introduction', 'studentBreakdowns', 'conclusion']
+        };
+
+        const prompt = `Synthesize a professional pedagogical case study for "${className}".
+        Analyze these student profiles and their 3-test score trends: ${JSON.stringify(dataset)}
+        Provide a concise summary for each student detailing strengths, gaps, and 1 specific teaching strategy.`;
+
+        // RETRY LOGIC (Max 3 attempts)
+        for (let i = 0; i < 3; i++) {
+            try {
+                const response = await ai.models.generateContent({
+                    model: 'gemini-3-flash-preview', // Flash is more resilient to saturation
+                    contents: prompt,
+                    config: {
+                        responseMimeType: "application/json",
+                        responseSchema: schema
+                    }
+                });
+                const result = JSON.parse(this.cleanJsonResponse(response.text || '{}'));
+                if (result.studentBreakdowns) return result;
+            } catch (e: any) {
+                console.warn(`Attempt ${i + 1} failed: ${e.message}`);
+                if (i < 2) await new Promise(r => setTimeout(r, 1000 * (i + 1))); // Backoff
+            }
+        }
+
+        // ABSOLUTE FALLBACK: Use Local Logic if AI is saturated
+        console.error("AI Saturated after 3 retries. Switching to Local Logic Engine.");
+        return this.generateLocalReport(students, className);
+    }
+
     static async analyzeTestPaper(base64Image: string, domains: string[]): Promise<Record<string, number>> {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         try {
@@ -15,113 +117,12 @@ export class GeminiService {
                 model: 'gemini-2.5-flash-image',
                 contents: [
                     { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
-                    { text: `Extract numerical scores for: ${domains.join(', ')}. Return JSON.` }
+                    { text: `Extract scores for: ${domains.join(', ')}. JSON only.` }
                 ],
                 config: { responseMimeType: "application/json" }
             });
             return JSON.parse(this.cleanJsonResponse(response.text || '{}'));
-        } catch (e) { 
-            console.error("Vision Sync Error:", e);
-            return {}; 
-        }
-    }
-
-    /**
-     * GENERATE COMPREHENSIVE CASE STUDY
-     * Optimized to use Gemini 3 Flash for zero-downtime and high-speed student-by-student analysis.
-     */
-    static async generateCaseStudy(students: Student[], className: string): Promise<{
-        title: string;
-        introduction: string;
-        studentBreakdowns: Array<{
-            name: string;
-            excelsIn: string;
-            needsWork: string;
-            strategy: string;
-        }>;
-        conclusion: string;
-    }> {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        
-        // Prepare rich longitudinal data for the AI
-        const dataset = students.map(s => {
-            const assessments = s.assessments || [];
-            return {
-                name: s.name,
-                lvl: s.level,
-                vel: s.growthVelocity,
-                history: assessments.map(a => ({
-                    period: a.type,
-                    avg: Math.round(Object.values(a.scores).reduce((sum: number, v: any) => sum + (v || 0), 0) / (Object.keys(a.scores).length || 1)),
-                    top_domain: Object.entries(a.scores).sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || 'N/A',
-                    low_domain: Object.entries(a.scores).sort(([,a], [,b]) => (a as number) - (b as number))[0]?.[0] || 'N/A'
-                }))
-            };
-        }).slice(0, 25);
-
-        const fallback = {
-            title: "Performance Longitudinal Analysis",
-            introduction: "High-level synthesis of student growth across three test periods.",
-            studentBreakdowns: students.map(s => ({
-                name: s.name,
-                excelsIn: "Steady progress observed.",
-                needsWork: "Continued practice in core domains.",
-                strategy: "Standard Tier 1 classroom instruction."
-            })),
-            conclusion: "The cohort is tracking successfully against standards."
-        };
-
-        if (dataset.length === 0) return fallback;
-
-        try {
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview', // High reliability for per-student loop
-                contents: `Perform a detailed pedagogical longitudinal analysis for the class "${className}". 
-                
-                Analyze the following student dataset which includes score history across periods (Baseline, Midline, Endline):
-                DATASET: ${JSON.stringify(dataset)}
-                
-                FOR EACH STUDENT, you must provide:
-                1. Areas where they EXCEL (based on high scores or positive velocity).
-                2. Areas that NEED WORK (stagnant scores or low domain performance).
-                3. A specific pedagogical STRATEGY for that student.
-                
-                The overall report should have a professional research tone.`,
-                config: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            title: { type: Type.STRING },
-                            introduction: { type: Type.STRING },
-                            studentBreakdowns: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        name: { type: Type.STRING },
-                                        excelsIn: { type: Type.STRING, description: "One sentence on strengths." },
-                                        needsWork: { type: Type.STRING, description: "One sentence on gaps." },
-                                        strategy: { type: Type.STRING, description: "One specific instructional strategy." }
-                                    },
-                                    required: ['name', 'excelsIn', 'needsWork', 'strategy']
-                                }
-                            },
-                            conclusion: { type: Type.STRING }
-                        },
-                        required: ['title', 'introduction', 'studentBreakdowns', 'conclusion']
-                    }
-                }
-            });
-
-            const text = response.text;
-            if (!text) return fallback;
-            
-            return JSON.parse(this.cleanJsonResponse(text));
-        } catch (e) {
-            console.error("Analysis Engine Failure:", e);
-            return fallback;
-        }
+        } catch (e) { return {}; }
     }
 
     static async generateExecutiveBriefing(students: Student[], className: string): Promise<any> {
@@ -130,7 +131,7 @@ export class GeminiService {
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Analyze this summary for a School Principal: ${JSON.stringify(summary)}. Provide summary, risk assessment, and actions. JSON format.`,
+                contents: `School Leader Briefing for ${className}: ${JSON.stringify(summary)}. JSON with executiveSummary, riskAssessment, leadershipActions.`,
                 config: { responseMimeType: "application/json" }
             });
             return JSON.parse(this.cleanJsonResponse(response.text || '{}'));
@@ -139,16 +140,11 @@ export class GeminiService {
 
     static async generateSmartGroups(students: Student[], domains: string[]): Promise<any> {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const data = students.map(s => ({ 
-            id: s.id, 
-            weak: Object.entries(s.assessments[s.assessments.length-1]?.scores || {})
-                .filter(([_,v]) => typeof v === 'number' && v < 70)
-                .map(([d]) => d) 
-        }));
+        const data = students.map(s => ({ id: s.id, weak: Object.entries(s.assessments[s.assessments.length-1]?.scores || {}).filter(([_,v]) => (v as number) < 70).map(([d]) => d) }));
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Group students by shared weakness: ${JSON.stringify(data)}. Return JSON array of groups.`,
+                contents: `Group students by weakness: ${JSON.stringify(data)}. JSON array.`,
                 config: { responseMimeType: "application/json" }
             });
             return JSON.parse(this.cleanJsonResponse(response.text || '[]'));
@@ -160,10 +156,10 @@ export class GeminiService {
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Predict 6-month growth trajectory for student: ${student.name}, Level ${student.level}, Velocity ${student.growthVelocity}%. 1 short sentence.`,
+                contents: `Predict trajectory for ${student.name} (Velocity ${student.growthVelocity}%). 1 sentence.`,
             });
-            return response.text || "Trajectory currently stable.";
-        } catch (e) { return "Recalculating path..."; }
+            return response.text || "Stable growth path.";
+        } catch (e) { return "Recalculating..."; }
     }
 
     static async generateMicroNarrative(context: string): Promise<string> {
@@ -173,7 +169,7 @@ export class GeminiService {
                 model: 'gemini-3-flash-preview',
                 contents: context,
             });
-            return response.text || "No insights available.";
+            return response.text || "Insights pending.";
         } catch (e) { return "Processing..."; }
     }
 
@@ -182,7 +178,7 @@ export class GeminiService {
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Translate the following academic report to ${targetLang}. Maintain a professional tone. Content: ${content}`,
+                contents: `Translate to ${targetLang}: ${content}`,
             });
             return response.text || content;
         } catch (e) { return content; }
@@ -193,7 +189,7 @@ export class GeminiService {
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Analyze cohort performance and suggest RTI mastery thresholds for Baseline, Midline, and Endline. Return JSON.`,
+                contents: `Suggest RTI thresholds for: ${JSON.stringify(students.map(s => s.growthVelocity))}. JSON only.`,
                 config: { responseMimeType: "application/json" }
             });
             return JSON.parse(this.cleanJsonResponse(response.text || '{}'));
@@ -205,10 +201,10 @@ export class GeminiService {
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Write an academic report for ${student.name}. JSON with report_card and trend_insights.`,
+                contents: `Academic report for ${student.name}. JSON with report_card text.`,
                 config: { responseMimeType: "application/json" }
             });
             return JSON.parse(this.cleanJsonResponse(response.text || '{}'));
-        } catch (e) { return { report_card: "Awaiting sync.", trend_insights: "Stable." }; }
+        } catch (e) { return { report_card: "Awaiting sync." }; }
     }
 }

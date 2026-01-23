@@ -5,6 +5,7 @@ import { DomainPerformanceChart, RadarPerformanceChart, SupportTierChart } from 
 import { Icon } from '../components/common/Icon';
 import { useStudents } from '../context/StudentContext';
 import { useBenchmarks } from '../context/BenchmarkContext';
+import { useAuth } from '../context/AuthContext';
 import { Domain, Student } from '../types';
 import { InsightCard } from '../components/common/InsightCard';
 import { AtRiskDetailsModal } from '../components/students/AtRiskDetailsModal';
@@ -12,6 +13,7 @@ import { GeminiService } from '../services/geminiService';
 import { ExecutiveBriefingModal } from '../components/common/ExecutiveBriefingModal';
 import { CaseStudyModal } from '../components/common/CaseStudyModal';
 import { useToast } from '../context/ToastContext';
+import { Modal } from '../components/common/Modal';
 
 const DashboardWidget: React.FC<{ title: string; value: string | number; subtext: string; icon: string; gradient: string; onClick?: () => void; }> = ({ title, value, subtext, icon, gradient, onClick }) => (
     <button 
@@ -35,11 +37,16 @@ const DashboardWidget: React.FC<{ title: string; value: string | number; subtext
 export const InsightsTab: React.FC = () => {
     const { students, classProfile } = useStudents();
     const { domains, benchmarks } = useBenchmarks();
+    const { user, applyBetaCode } = useAuth();
     const { showToast } = useToast();
+    
     const [chartType, setChartType] = useState<'radar' | 'bar'>('radar');
     const [isAtRiskModalOpen, setIsAtRiskModalOpen] = useState(false);
     const [isBriefingModalOpen, setIsBriefingModalOpen] = useState(false);
     const [isCaseStudyModalOpen, setIsCaseStudyModalOpen] = useState(false);
+    const [isBetaPromptOpen, setIsBetaPromptOpen] = useState(false);
+    const [betaCodeInput, setBetaCodeInput] = useState('');
+    
     const [briefingData, setBriefingData] = useState<any>(null);
     const [caseStudyData, setCaseStudyData] = useState<any>(null);
     const [isGeneratingBrief, setIsGeneratingBrief] = useState(false);
@@ -96,31 +103,36 @@ export const InsightsTab: React.FC = () => {
     };
 
     const handleGenerateBriefing = async () => {
+        if (!user?.isPremium) {
+            setIsBetaPromptOpen(true);
+            return;
+        }
         setIsGeneratingBrief(true);
         try {
             const briefing = await GeminiService.generateExecutiveBriefing(students, classProfile?.className || 'General Cohort');
-            if (briefing) {
-                setBriefingData(briefing);
-                setIsBriefingModalOpen(true);
-            }
-        } catch (e) {
-            showToast("Synthesis failed. Try again.", "error");
-        } finally { 
-            setIsGeneratingBrief(false); 
-        }
+            setBriefingData(briefing);
+            setIsBriefingModalOpen(true);
+        } finally { setIsGeneratingBrief(false); }
     };
 
     const handleGenerateCaseStudy = async () => {
-        if (isGeneratingStudy) return;
+        if (!user?.isPremium) {
+            setIsBetaPromptOpen(true);
+            return;
+        }
         setIsGeneratingStudy(true);
         try {
             const study = await GeminiService.generateCaseStudy(students, classProfile?.className || 'Research Cohort');
             setCaseStudyData(study);
             setIsCaseStudyModalOpen(true);
-        } catch (e) {
-            showToast("Pro Engine is currently over-saturated. Please wait 30s.", "error");
-        } finally {
-            setIsGeneratingStudy(false);
+        } finally { setIsGeneratingStudy(false); }
+    };
+
+    const handleApplyCode = async () => {
+        const success = await applyBetaCode(betaCodeInput);
+        if (success) {
+            setIsBetaPromptOpen(false);
+            setBetaCodeInput('');
         }
     };
 
@@ -129,7 +141,7 @@ export const InsightsTab: React.FC = () => {
             <div className="p-12 flex flex-col items-center justify-center min-h-[60vh] text-center">
                 <div className="w-24 h-24 bg-slate-100 rounded-[2.5rem] flex items-center justify-center text-slate-300 mb-8"><Icon name="analytics" className="w-12 h-12" /></div>
                 <h2 className="text-3xl font-black text-slate-900 mb-2">Insufficient Data</h2>
-                <p className="text-slate-400 font-bold max-w-sm">Log assessment scores to unlock institutional insights.</p>
+                <p className="text-slate-400 font-bold max-w-sm">Log scores for your {students.length} students to unlock insights.</p>
             </div>
         );
     }
@@ -139,45 +151,36 @@ export const InsightsTab: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-end gap-8">
                 <div>
                     <h1 className="text-7xl font-black text-slate-900 tracking-tighter mb-2 uppercase italic leading-[0.85]">Strategic <br/>Intelligence</h1>
-                    <p className="text-slate-400 font-bold text-2xl italic tracking-tight">Active Insight Layer: <span className="text-indigo-600">Institutional Mode</span></p>
+                    <p className="text-slate-400 font-bold text-2xl italic tracking-tight">Focus: <span className="text-indigo-600">{classProfile?.className} ({students.length} students)</span></p>
                 </div>
                 <div className="flex flex-wrap gap-4">
                     <button 
                         onClick={handleGenerateCaseStudy}
-                        disabled={isGeneratingStudy}
-                        className="group px-8 py-6 rounded-[2rem] bg-white border-2 border-slate-200 text-slate-800 font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-50 hover:text-indigo-600 transition-all flex items-center gap-3 active:scale-95 disabled:opacity-80"
+                        className={`group px-8 py-6 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-xl transition-all flex items-center gap-3 active:scale-95 ${user?.isPremium ? 'bg-white border-2 border-slate-200 text-slate-800 hover:bg-slate-50' : 'bg-slate-50 border-2 border-dashed border-slate-200 text-slate-400 opacity-60'}`}
                     >
                         {isGeneratingStudy ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="benchmark" className="w-5 h-5 text-indigo-400" />}
-                        {isGeneratingStudy ? 'Pro reasoning in progress...' : 'Generate Pro Case Study'}
-                        {isGeneratingStudy && <span className="text-[8px] animate-pulse ml-2">Deep Research Mode</span>}
+                        {user?.isPremium ? 'Generate Case Study' : 'Unlock Pro Research'}
+                        {!user?.isPremium && <Icon name="shield" className="w-3 h-3 ml-2" />}
                     </button>
                     <button 
                         onClick={handleGenerateBriefing}
-                        disabled={isGeneratingBrief}
-                        className="group relative px-12 py-6 rounded-[2rem] bg-slate-900 text-white font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-indigo-600 border-b-8 border-slate-950 transition-all active:scale-95 disabled:opacity-60 flex items-center gap-3"
+                        className={`group relative px-12 py-6 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-2xl transition-all active:scale-95 border-b-8 ${user?.isPremium ? 'bg-slate-900 text-white hover:bg-indigo-600 border-slate-950' : 'bg-slate-100 text-slate-400 border-slate-300'}`}
                     >
                         {isGeneratingBrief ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="brain" className="w-5 h-5 text-indigo-400" />}
-                        {isGeneratingBrief ? 'Syncing Briefing...' : 'Leadership Briefing'}
-                        <div className="absolute -top-3 -right-3 px-2 py-1 bg-indigo-500 rounded-lg text-[8px] animate-pulse">DIRECTOR ACCESS</div>
+                        {user?.isPremium ? 'Leadership Briefing' : 'Beta Locked'}
                     </button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <DashboardWidget title="Risk Protocol" value={analytics?.atRiskList.length || 0} subtext="Tier 2/3 Triggers" icon="alert" gradient="from-rose-500 to-pink-600" onClick={() => setIsAtRiskModalOpen(true)} />
-                <DashboardWidget title="Institutional Health" value={`${analytics?.healthScore}%`} subtext="Operational efficiency" icon="shield" gradient="from-indigo-600 to-violet-700" />
-                <DashboardWidget title="Mastery Median" value={`${analytics?.classAvg}%`} subtext="Institutional aggregate" icon="analytics" gradient="from-slate-800 to-slate-950" />
+                <DashboardWidget title="Risk Protocol" value={analytics?.atRiskList.length || 0} subtext={`${students.length} Total Units`} icon="alert" gradient="from-rose-500 to-pink-600" onClick={() => setIsAtRiskModalOpen(true)} />
+                <DashboardWidget title="Institutional Health" value={`${analytics?.healthScore}%`} subtext="Class Efficiency" icon="shield" gradient="from-indigo-600 to-violet-700" />
+                <DashboardWidget title="Mastery Median" value={`${analytics?.classAvg}%`} subtext="Cohort Aggregate" icon="analytics" gradient="from-slate-800 to-slate-950" />
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
                 <div className="xl:col-span-8 space-y-10">
-                    <InsightCard title="Domain Competency Matrix" description="Comparing class medians against target protocols">
-                        <div className="flex justify-end mb-6">
-                            <div className="flex bg-slate-100 p-1 rounded-xl">
-                                <button onClick={() => setChartType('radar')} className={`px-5 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${chartType === 'radar' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400'}`}>Radar</button>
-                                <button onClick={() => setChartType('bar')} className={`px-5 py-2 text-[10px] font-black uppercase rounded-lg transition-all ${chartType === 'bar' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-400'}`}>Bar</button>
-                            </div>
-                        </div>
+                    <InsightCard title="Domain Competency Matrix" description={`Targeting Standards for ${classProfile?.gradeLevel}`}>
                         <div className="h-[450px]">
                             {chartType === 'radar' ? <RadarPerformanceChart data={analytics?.domainData || []} /> : <DomainPerformanceChart data={analytics?.domainData || []} />}
                         </div>
@@ -186,37 +189,35 @@ export const InsightsTab: React.FC = () => {
                     <Card className="p-12 bg-white border border-slate-100 shadow-2xl rounded-[4rem]">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12 border-b border-slate-50 pb-8">
                             <div className="flex items-center gap-6">
-                                <div className="p-4 bg-indigo-600 text-white rounded-3xl shadow-xl shadow-indigo-100"><Icon name="brain" className="w-8 h-8" /></div>
+                                <div className="p-4 bg-indigo-600 text-white rounded-3xl shadow-xl"><Icon name="brain" className="w-8 h-8" /></div>
                                 <div>
-                                    <h2 className="text-3xl font-black text-slate-800 tracking-tight">Instructional Clustering</h2>
-                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em] mt-1">AI-Powered Intervention Pods</p>
+                                    <h2 className="text-3xl font-black text-slate-800 tracking-tight">Instructional Pods</h2>
+                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em] mt-1">AI Grouping engine (Restricted to roster)</p>
                                 </div>
                             </div>
                             <button 
                                 onClick={handleGenerateGroups}
                                 disabled={isGrouping}
-                                className="px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-3 border-b-4 border-indigo-900"
+                                className="px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-indigo-700 transition-all border-b-4 border-indigo-900"
                             >
                                 {isGrouping ? <Icon name="refresh" className="w-4 h-4 animate-spin" /> : <Icon name="plus" className="w-4 h-4" />}
-                                {smartGroups.length > 0 ? 'Regenerate Clusters' : 'Auto-Cluster Class'}
+                                Cluster These {students.length} Students
                             </button>
                         </div>
                         {smartGroups.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {smartGroups.map((group: any, idx: number) => (
-                                    <div key={idx} className="p-8 bg-slate-50 rounded-[3rem] border border-slate-100 hover:bg-white hover:border-indigo-100 transition-all shadow-sm">
+                                    <div key={idx} className="p-8 bg-slate-50 rounded-[3rem] border border-slate-100 hover:bg-white hover:border-indigo-100 transition-all">
                                         <h4 className="font-black text-indigo-600 uppercase tracking-widest text-sm mb-4">{group.groupName}</h4>
                                         <div className="space-y-3 mb-8">
                                             {group.studentIds.map((sid: string) => {
                                                 const s = students.find(item => item.id === sid);
-                                                return (
+                                                return s ? (
                                                     <div key={sid} className="flex items-center gap-3">
-                                                        <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100">
-                                                            {s?.photoUrl && <img src={s.photoUrl} className="w-full h-full object-cover" />}
-                                                        </div>
-                                                        <span className="text-xs font-bold text-slate-700">{s?.name || 'Unknown'}</span>
+                                                        <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100"><img src={s.photoUrl} className="w-full h-full object-cover" /></div>
+                                                        <span className="text-xs font-bold text-slate-700">{s.name}</span>
                                                     </div>
-                                                );
+                                                ) : null;
                                             })}
                                         </div>
                                         <p className="text-xs font-bold text-slate-500 italic">"{group.focus}"</p>
@@ -225,13 +226,11 @@ export const InsightsTab: React.FC = () => {
                             </div>
                         ) : (
                             <div className="py-24 text-center border-4 border-dashed border-slate-100 rounded-[3.5rem] bg-slate-50/50">
-                                <Icon name="students" className="w-16 h-16 text-slate-200 mx-auto mb-6" />
-                                <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs">Run clustering engine to group students by skill gaps.</p>
+                                <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs">Run clustering engine to map skill gaps.</p>
                             </div>
                         )}
                     </Card>
                 </div>
-                
                 <div className="xl:col-span-4 space-y-10">
                     <Card className="p-10 bg-white border border-slate-100 shadow-2xl rounded-[3.5rem]">
                         <h3 className="text-xl font-black text-slate-800 mb-10 tracking-tight">RTI Logic Spread</h3>
@@ -239,6 +238,31 @@ export const InsightsTab: React.FC = () => {
                     </Card>
                 </div>
             </div>
+
+            <Modal isOpen={isBetaPromptOpen} onClose={() => setIsBetaPromptOpen(false)} title="Unlock Institutional Intelligence" size="md">
+                <div className="space-y-6 text-center py-4">
+                    <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-[2rem] flex items-center justify-center mx-auto mb-4 shadow-xl shadow-indigo-100">
+                        <Icon name="brain" className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Limited Beta Access</h3>
+                    <p className="text-slate-500 font-medium">Unlock deep research, OCR scanning, and executive briefings. Limited to the first 40 users.</p>
+                    <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+                        <input 
+                            type="text" 
+                            value={betaCodeInput}
+                            onChange={e => setBetaCodeInput(e.target.value.toUpperCase())}
+                            placeholder="Enter Code (e.g. BENCHMARK40)"
+                            className="w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:border-indigo-600 outline-none text-center font-black tracking-widest text-lg"
+                        />
+                    </div>
+                    <button 
+                        onClick={handleApplyCode}
+                        className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-indigo-600 shadow-2xl transition-all active:scale-95"
+                    >
+                        Verify Beta Protocol
+                    </button>
+                </div>
+            </Modal>
 
             <AtRiskDetailsModal isOpen={isAtRiskModalOpen} onClose={() => setIsAtRiskModalOpen(false)} atRiskStudents={analytics?.atRiskList || []} domainCount={domains.length} />
             <ExecutiveBriefingModal isOpen={isBriefingModalOpen} onClose={() => setIsBriefingModalOpen(false)} data={briefingData} className={classProfile?.className || 'General'} />

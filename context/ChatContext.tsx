@@ -71,11 +71,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsTyping(true);
 
         try {
-            // Updated: Always create a fresh instance with the required API key named parameter
+            console.debug("Chat: Initiating request turn 1...");
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-            const model = 'gemini-3-pro-preview';
+            const model = 'gemini-3-flash-preview';
             
-            // Turn 1: Initial tool detection and reasoning turn
             let response = await ai.models.generateContent({
                 model,
                 contents: text,
@@ -87,15 +86,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             let finalContent = response.text;
 
-            // Handle tool execution loop if the model requested function calls
             if (response.functionCalls && response.functionCalls.length > 0) {
+                console.debug("Chat: Executing tool call...");
                 const toolResults = response.functionCalls.map(fc => ({
                     id: fc.id,
                     name: fc.name,
                     response: { result: executeTool(fc.name, fc.args) }
                 }));
 
-                // Turn 2: Provide tool results back to the model for final synthesis
                 const secondResponse = await ai.models.generateContent({
                     model,
                     contents: [
@@ -114,15 +112,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: finalContent || "Analysis complete. Reviewing context for pedagogical alignment.", 
+                text: finalContent || "Analysis complete. Please review the roster for specific student trends.", 
                 timestamp: Date.now() 
             }]);
         } catch (error: any) {
-            console.error("Benchmark AI Node Failure:", error);
+            console.error("Chat Node Failure:", error);
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: "My neural pathways are temporarily saturated. Please refresh the connection or retry in a moment.", 
+                text: "My reasoning pathways are currently saturated. Please re-initiate your query in a moment.", 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

@@ -112,6 +112,7 @@ export interface User {
     name: string;
     role: UserRole;
     isDemo?: boolean;
+    isPremium?: boolean;
 }
 
 export interface Resource {
@@ -136,7 +137,6 @@ export interface TeacherStrategy {
     description: string;
 }
 
-// Added ChatMessage interface to fix the import error in context/ChatContext.tsx
 export interface ChatMessage {
     id: string;
     role: 'user' | 'model';

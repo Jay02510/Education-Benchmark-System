@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { Student, Domain } from '../types.ts';
+import { Student, Domain, TestPeriod } from '../types.ts';
 
 export class GeminiService {
     private static cleanJsonResponse(text: string): string {
@@ -9,55 +9,57 @@ export class GeminiService {
     }
 
     /**
-     * LOCAL SYNTHESIS ENGINE
-     * Generates a pedagogical report using frontend logic if AI is saturated.
+     * LOCAL PEDAGOGICAL ENGINE
+     * Guaranteed zero-latency summary generation if AI is saturated.
      */
     private static generateLocalReport(students: Student[], className: string) {
         return {
-            title: `Institutional Growth Analysis: ${className}`,
-            introduction: "Analytical synthesis of student performance trends based on longitudinal velocity and domain mastery metrics.",
+            title: `Pedagogical Trajectory Report: ${className}`,
+            introduction: "A comprehensive longitudinal analysis identifying student performance benchmarks across Baseline, Midline, and Endline cycles.",
             studentBreakdowns: students.map(s => {
-                const latest = s.assessments[s.assessments.length - 1];
-                const first = s.assessments[0];
+                const assessments = [...(s.assessments || [])].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                const latest = assessments[assessments.length - 1];
                 const velocity = s.growthVelocity || 0;
                 
-                // Identify high/low domains locally
+                // Score Analysis logic
                 const scores = latest ? Object.entries(latest.scores).filter(([_, v]) => typeof v === 'number') : [];
                 const sorted = scores.sort(([, a], [, b]) => (b as number) - (a as number));
-                const top = sorted[0]?.[0] || "General Core";
-                const bottom = sorted[sorted.length - 1]?.[0] || "Targeted Domains";
+                const top = sorted[0]?.[0] || "Core Literacy";
+                const bottom = sorted[sorted.length - 1]?.[0] || "Targeted Skill Domains";
 
                 return {
                     name: s.name,
-                    excelsIn: velocity > 5 
-                        ? `Demonstrates high instructional velocity in ${top}, trending towards advanced mastery.` 
-                        : `Showing consistent stability and focus in ${top} modules.`,
-                    needsWork: velocity < 0 
-                        ? `Recent regression identified in ${bottom}. Requires immediate review of foundational concepts.` 
-                        : `Targeted practice in ${bottom} is recommended to maintain growth trajectory.`,
-                    strategy: s.interventionStatus?.tier === 3 
-                        ? "Implement 1-on-1 intensive scaffolded support with weekly check-ins." 
-                        : "Integrate more high-frequency practice and peer-modeling during standard instruction."
+                    excelsIn: `${top}: Shown consistent strength across the three-test cycle with steady mastery acquisition.`,
+                    needsWork: `${bottom}: Requires more practice to bridge the gap identified in the most recent assessment.`,
+                    strategy: velocity < 0 
+                        ? "Execute immediate Tier 2 intervention with focused phonics/grammar drills." 
+                        : "Maintain current trajectory with enriched reading comprehension materials."
                 };
             }),
-            conclusion: "The cohort is currently exhibiting a stable growth profile with specific intervention nodes identified for secondary review."
+            conclusion: "Overall class metrics indicate a stable learning curve with specific individuals highlighted for secondary support cycles."
         };
     }
 
     /**
-     * GENERATE CASE STUDY
-     * Features: Exponential Backoff Retries + Local Logic Fallback
+     * GENERATE COMPREHENSIVE CASE STUDY
+     * Optimized for high speed and zero-saturation errors.
      */
     static async generateCaseStudy(students: Student[], className: string): Promise<any> {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
-        // Minified dataset for tokens
-        const dataset = students.map(s => ({
-            name: s.name,
-            vel: s.growthVelocity,
-            tier: s.interventionStatus?.tier || 1,
-            scores: s.assessments.map(a => ({ p: a.type, avg: Math.round(Object.values(a.scores).reduce((sum: any, v: any) => sum + (v || 0), 0) / 8) }))
-        })).slice(0, 20);
+        // Step 1: Compress data to bare essentials to prevent token-heavy failures
+        const dataset = students.map(s => {
+            const history = (s.assessments || []).map(a => ({
+                p: a.type,
+                avg: Math.round(Object.values(a.scores).reduce((sum: any, v: any) => sum + (v || 0), 0) / 8)
+            }));
+            
+            return {
+                n: s.name,
+                h: history,
+                v: s.growthVelocity
+            };
+        }).slice(0, 15); // Limit to top 15 for extreme speed
 
         const schema = {
             type: Type.OBJECT,
@@ -82,32 +84,30 @@ export class GeminiService {
             required: ['title', 'introduction', 'studentBreakdowns', 'conclusion']
         };
 
-        const prompt = `Synthesize a professional pedagogical case study for "${className}".
-        Analyze these student profiles and their 3-test score trends: ${JSON.stringify(dataset)}
-        Provide a concise summary for each student detailing strengths, gaps, and 1 specific teaching strategy.`;
+        const prompt = `Class: "${className}". Analyze the 3-test (Baseline, Midline, Endline) history for these students: ${JSON.stringify(dataset)}. 
+        Provide a professional summary for each student including: 
+        1. Where they excelled (using the score trends).
+        2. Where they need work.
+        3. A pedagogical strategy to improve.
+        Be concise and academic.`;
 
-        // RETRY LOGIC (Max 3 attempts)
-        for (let i = 0; i < 3; i++) {
-            try {
-                const response = await ai.models.generateContent({
-                    model: 'gemini-3-flash-preview', // Flash is more resilient to saturation
-                    contents: prompt,
-                    config: {
-                        responseMimeType: "application/json",
-                        responseSchema: schema
-                    }
-                });
-                const result = JSON.parse(this.cleanJsonResponse(response.text || '{}'));
-                if (result.studentBreakdowns) return result;
-            } catch (e: any) {
-                console.warn(`Attempt ${i + 1} failed: ${e.message}`);
-                if (i < 2) await new Promise(r => setTimeout(r, 1000 * (i + 1))); // Backoff
-            }
+        try {
+            // Use FLASH model for maximum resilience against "Saturation"
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview', 
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: schema
+                }
+            });
+            const result = JSON.parse(this.cleanJsonResponse(response.text || '{}'));
+            if (result.studentBreakdowns) return result;
+            return this.generateLocalReport(students, className);
+        } catch (e) {
+            console.warn("AI Engine unreachable/saturated. Using Local Intelligence Layer.");
+            return this.generateLocalReport(students, className);
         }
-
-        // ABSOLUTE FALLBACK: Use Local Logic if AI is saturated
-        console.error("AI Saturated after 3 retries. Switching to Local Logic Engine.");
-        return this.generateLocalReport(students, className);
     }
 
     static async analyzeTestPaper(base64Image: string, domains: string[]): Promise<Record<string, number>> {

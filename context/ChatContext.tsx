@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState } from 'react';
-import { ChatMessage } from '../types.ts';
+import { ChatMessage, Domain } from '../types.ts';
 import { GoogleGenAI } from "@google/genai";
 import { teacherTools } from '../services/agentTools.ts';
 import { useStudents } from './StudentContext.tsx';
@@ -19,13 +19,14 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 const SYSTEM_INSTRUCTION = `You are the Benchmark AI Co-pilot, an elite pedagogical intelligence engine for ESL schools.
 You have access to real-time classroom data through tools. 
-When asked about students or performance, ALWAYS use a tool first to get accurate data.
-Be concise, professional, and focus on "Growth Velocity" and "Intervention Tiers".
-Always conclude your data-heavy answers with a 1-sentence pedagogical "next step".`;
+When asked about students, performance, or standards, ALWAYS use the relevant tool first to get actual data.
+Respond as a professional educational consultant. Focus on "Growth Velocity" and "Intervention Tiers".
+Always provide a specific answer followed by one pedagogical "next step".
+If a tool returns "not found", inform the user politely and suggest checking the roster.`;
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { students, classProfile } = useStudents();
-    const { domains, benchmarks } = useBenchmarks();
+    const { benchmarks } = useBenchmarks();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isTyping, setIsTyping] = useState(false);
@@ -33,31 +34,32 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const executeTool = (name: string, args: any) => {
         switch (name) {
             case 'get_class_summary':
-                const avgVel = students.length ? Math.round(students.reduce((a, b) => a + b.growthVelocity, 0) / students.length) : 0;
+                const avgVel = students.length ? Math.round(students.reduce((a, b) => a + (b.growthVelocity || 0), 0) / students.length) : 0;
                 return {
                     className: classProfile?.className || "General",
                     studentCount: students.length,
                     averageVelocity: `${avgVel}%`,
-                    atRiskCount: students.filter(s => s.hasAnomaly).length
+                    atRiskCount: students.filter(s => s.hasAnomaly || (s.interventionStatus && s.interventionStatus.tier > 1)).length
                 };
             case 'list_at_risk_students':
                 return students
-                    .filter(s => s.hasAnomaly)
-                    .map(s => ({ name: s.name, reason: s.interventionStatus?.triggerReason, tier: s.interventionStatus?.tier }));
+                    .filter(s => s.hasAnomaly || (s.interventionStatus && s.interventionStatus.tier > 1))
+                    .map(s => ({ name: s.name, reason: s.interventionStatus?.triggerReason || 'Velocity Drop', tier: s.interventionStatus?.tier || 2 }));
             case 'get_student_details':
                 const student = students.find(s => s.name.toLowerCase().includes(args.studentName?.toLowerCase() || ""));
-                if (!student) return { error: "Student not found in institutional roster." };
+                if (!student) return { error: `Student "${args.studentName}" not found.` };
                 return {
                     name: student.name,
+                    level: student.level,
                     velocity: `${student.growthVelocity}%`,
-                    latestScores: student.assessments[student.assessments.length - 1]?.scores || "No assessment data on file.",
+                    latestScores: student.assessments[student.assessments.length - 1]?.scores || "No data.",
                     tier: student.interventionStatus?.tier || 1
                 };
             case 'get_benchmark_standards':
                 const found = benchmarks.find(b => b.level_name === args.level && b.domain === args.domain);
-                return found || { error: "No benchmark standard found for this combination." };
+                return found || { error: "Standard not found." };
             default:
-                return { error: "Execution Protocol: Tool not found." };
+                return { error: "Tool not implemented." };
         }
     };
 
@@ -69,17 +71,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsTyping(true);
 
         try {
-            // Priority Check for API Key
-            const apiKey = process.env.API_KEY || (import.meta as any).env?.VITE_API_KEY;
+            // Updated: Always create a fresh instance with the required API key named parameter
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const model = 'gemini-3-pro-preview';
             
-            if (!apiKey) {
-                throw new Error("Logic Engine Fault: API Key is missing. Check deployment VITE_API_KEY.");
-            }
-
-            const ai = new GoogleGenAI({ apiKey });
-            const model = 'gemini-3-flash-preview';
-            
-            // Turn 1: Check for Tool Calls
+            // Turn 1: Initial tool detection and reasoning turn
             let response = await ai.models.generateContent({
                 model,
                 contents: text,
@@ -91,7 +87,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             let finalContent = response.text;
 
-            // Handle Multi-Turn Tool Execution
+            // Handle tool execution loop if the model requested function calls
             if (response.functionCalls && response.functionCalls.length > 0) {
                 const toolResults = response.functionCalls.map(fc => ({
                     id: fc.id,
@@ -99,7 +95,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     response: { result: executeTool(fc.name, fc.args) }
                 }));
 
-                // Turn 2: Synthesize final answer with tool data
+                // Turn 2: Provide tool results back to the model for final synthesis
                 const secondResponse = await ai.models.generateContent({
                     model,
                     contents: [
@@ -118,21 +114,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: finalContent || "Instructional analysis complete.", 
+                text: finalContent || "Analysis complete. Reviewing context for pedagogical alignment.", 
                 timestamp: Date.now() 
             }]);
         } catch (error: any) {
-            console.error("Benchmark AI Fault:", error);
-            let displayError = "Request failed. Please verify your connection or API key settings.";
-            
-            if (error.message?.includes("API Key is missing")) {
-                displayError = "Security Fault: VITE_API_KEY not detected in engine environment. Please verify project environment variables.";
-            }
-
+            console.error("Benchmark AI Node Failure:", error);
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: displayError, 
+                text: "My neural pathways are temporarily saturated. Please refresh the connection or retry in a moment.", 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

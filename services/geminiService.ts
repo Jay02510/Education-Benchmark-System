@@ -27,104 +27,100 @@ export class GeminiService {
     }
 
     /**
-     * GENERATE CASE STUDY
-     * Primary: gemini-3-pro-preview (Deep Reasoning)
-     * Fallback: gemini-3-flash-preview (High Speed)
+     * GENERATE COMPREHENSIVE CASE STUDY
+     * Optimized to use Gemini 3 Flash for zero-downtime and high-speed student-by-student analysis.
      */
     static async generateCaseStudy(students: Student[], className: string): Promise<{
         title: string;
         introduction: string;
-        keyFindings: string[];
-        longitudinalAnalysis: string;
-        riskMitigation: string;
+        studentBreakdowns: Array<{
+            name: string;
+            excelsIn: string;
+            needsWork: string;
+            strategy: string;
+        }>;
         conclusion: string;
     }> {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
-        const dataset = students.map((s, idx) => {
+        // Prepare rich longitudinal data for the AI
+        const dataset = students.map(s => {
             const assessments = s.assessments || [];
-            const latest = assessments[assessments.length - 1];
-            const prev = assessments[assessments.length - 2];
-            
-            const getAvg = (a: any) => {
-                if (!a?.scores) return 0;
-                const v = Object.values(a.scores).filter(n => typeof n === 'number') as number[];
-                return v.length ? Math.round(v.reduce((a,b) => a+b, 0) / v.length) : 0;
-            };
-
-            const lAvg = getAvg(latest);
-            const pAvg = getAvg(prev);
-
             return {
-                id: idx + 1,
+                name: s.name,
                 lvl: s.level,
                 vel: s.growthVelocity,
-                delta: lAvg - pAvg,
-                m_idx: lAvg,
-                tier: s.interventionStatus?.tier || 1
+                history: assessments.map(a => ({
+                    period: a.type,
+                    avg: Math.round(Object.values(a.scores).reduce((sum: number, v: any) => sum + (v || 0), 0) / (Object.keys(a.scores).length || 1)),
+                    top_domain: Object.entries(a.scores).sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] || 'N/A',
+                    low_domain: Object.entries(a.scores).sort(([,a], [,b]) => (a as number) - (b as number))[0]?.[0] || 'N/A'
+                }))
             };
-        }).slice(0, 20); // Minified for context efficiency
+        }).slice(0, 25);
 
-        const fallbackContent = {
-            title: "Performance Trajectory Analysis",
-            introduction: "High-level synthesis of cohort mastery trends and growth velocity.",
-            keyFindings: ["Consistent progress identified across core domains.", "Velocity remains within expected instructional bands."],
-            longitudinalAnalysis: "Projections suggest continued mastery acquisition based on current deltas.",
-            riskMitigation: "Standard Tier 1 classroom strategies are recommended.",
+        const fallback = {
+            title: "Performance Longitudinal Analysis",
+            introduction: "High-level synthesis of student growth across three test periods.",
+            studentBreakdowns: students.map(s => ({
+                name: s.name,
+                excelsIn: "Steady progress observed.",
+                needsWork: "Continued practice in core domains.",
+                strategy: "Standard Tier 1 classroom instruction."
+            })),
             conclusion: "The cohort is tracking successfully against standards."
         };
 
-        if (dataset.length === 0) return fallbackContent;
+        if (dataset.length === 0) return fallback;
 
-        const systemPrompt = `Perform a deep pedagogical analysis for "${className}".
-        DATASET: ${JSON.stringify(dataset)}
-        TASK: correlate Velocity vs Delta. Identify Level-specific stalling. Propose strategy.
-        STYLE: Highly professional academic research.`;
-
-        const responseSchema = {
-            type: Type.OBJECT,
-            properties: {
-                title: { type: Type.STRING },
-                introduction: { type: Type.STRING },
-                keyFindings: { type: Type.ARRAY, items: { type: Type.STRING } },
-                longitudinalAnalysis: { type: Type.STRING },
-                riskMitigation: { type: Type.STRING },
-                conclusion: { type: Type.STRING }
-            },
-            required: ['title', 'introduction', 'keyFindings', 'longitudinalAnalysis', 'riskMitigation', 'conclusion']
-        };
-
-        // --- ATTEMPT 1: PRO ENGINE (Advanced Reasoning) ---
         try {
-            console.log("Attempting Case Study Synthesis via Pro Engine...");
             const response = await ai.models.generateContent({
-                model: 'gemini-3-pro-preview',
-                contents: systemPrompt,
+                model: 'gemini-3-flash-preview', // High reliability for per-student loop
+                contents: `Perform a detailed pedagogical longitudinal analysis for the class "${className}". 
+                
+                Analyze the following student dataset which includes score history across periods (Baseline, Midline, Endline):
+                DATASET: ${JSON.stringify(dataset)}
+                
+                FOR EACH STUDENT, you must provide:
+                1. Areas where they EXCEL (based on high scores or positive velocity).
+                2. Areas that NEED WORK (stagnant scores or low domain performance).
+                3. A specific pedagogical STRATEGY for that student.
+                
+                The overall report should have a professional research tone.`,
                 config: {
-                    thinkingConfig: { thinkingBudget: 4000 },
                     responseMimeType: "application/json",
-                    responseSchema: responseSchema
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: { type: Type.STRING },
+                            introduction: { type: Type.STRING },
+                            studentBreakdowns: {
+                                type: Type.ARRAY,
+                                items: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        name: { type: Type.STRING },
+                                        excelsIn: { type: Type.STRING, description: "One sentence on strengths." },
+                                        needsWork: { type: Type.STRING, description: "One sentence on gaps." },
+                                        strategy: { type: Type.STRING, description: "One specific instructional strategy." }
+                                    },
+                                    required: ['name', 'excelsIn', 'needsWork', 'strategy']
+                                }
+                            },
+                            conclusion: { type: Type.STRING }
+                        },
+                        required: ['title', 'introduction', 'studentBreakdowns', 'conclusion']
+                    }
                 }
             });
-            return JSON.parse(this.cleanJsonResponse(response.text || '{}'));
-        } catch (e: any) {
-            console.warn("Pro Engine Saturated. Triggering High-Speed Fallback...", e.message);
+
+            const text = response.text;
+            if (!text) return fallback;
             
-            // --- ATTEMPT 2: FLASH ENGINE (Rapid Recovery) ---
-            try {
-                const response = await ai.models.generateContent({
-                    model: 'gemini-3-flash-preview',
-                    contents: systemPrompt,
-                    config: {
-                        responseMimeType: "application/json",
-                        responseSchema: responseSchema
-                    }
-                });
-                return JSON.parse(this.cleanJsonResponse(response.text || '{}'));
-            } catch (fallbackError) {
-                console.error("Critical Analysis Failure:", fallbackError);
-                return fallbackContent;
-            }
+            return JSON.parse(this.cleanJsonResponse(text));
+        } catch (e) {
+            console.error("Analysis Engine Failure:", e);
+            return fallback;
         }
     }
 

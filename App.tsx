@@ -12,6 +12,7 @@ import { BenchmarkProvider } from './context/BenchmarkContext.tsx';
 import { ToastProvider } from './context/ToastContext.tsx';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { NavigationProvider, useNavigation } from './context/NavigationContext.tsx';
+import { LanguageProvider } from './context/LanguageContext.tsx';
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard.tsx';
 import { LoginScreen } from './components/auth/LoginScreen.tsx';
 import { PlatformGuideModal } from './components/common/PlatformGuideModal.tsx';
@@ -180,21 +181,23 @@ const MainAppLayout: React.FC = () => {
 
 const App: React.FC = () => {
     return (
-        <ToastProvider>
-            <AuthProvider>
-                <BenchmarkProvider>
-                    <StudentProvider>
-                        <ResourceProvider>
-                            <NavigationProvider>
-                                <ChatProvider>
-                                    <MainAppLayout />
-                                </ChatProvider>
-                            </NavigationProvider>
-                        </ResourceProvider>
-                    </StudentProvider>
-                </BenchmarkProvider>
-            </AuthProvider>
-        </ToastProvider>
+        <LanguageProvider>
+            <ToastProvider>
+                <AuthProvider>
+                    <BenchmarkProvider>
+                        <StudentProvider>
+                            <ResourceProvider>
+                                <NavigationProvider>
+                                    <ChatProvider>
+                                        <MainAppLayout />
+                                    </ChatProvider>
+                                </NavigationProvider>
+                            </ResourceProvider>
+                        </StudentProvider>
+                    </BenchmarkProvider>
+                </AuthProvider>
+            </ToastProvider>
+        </LanguageProvider>
     );
 };
 

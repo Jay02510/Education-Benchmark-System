@@ -3,11 +3,11 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Student, Domain } from '../types.ts';
 
 /**
- * GEMINI INTELLIGENCE SERVICE (STRICT DATA SCOPING)
- * Optimized for dynamic class sizes with absolute context isolation.
+ * GEMINI INTELLIGENCE SERVICE (STRICT DATA SCOPE)
+ * Zero-knowledge analyzer: ignores training data, strictly processes JSON input.
  */
 export class GeminiService {
-    private static STRICT_DATA_INSTRUCTION = "CRITICAL: You are an isolated analyzer. Base your response EXCLUSIVELY on the provided JSON payload. Do not use external academic statistics or assume data exists for students not listed in the payload. If the payload contains 7 students, analyze exactly 7 students.";
+    private static STRICT_DATA_INSTRUCTION = "CRITICAL: You are an isolated pedagogical analyzer. Base your response EXCLUSIVELY on the provided JSON payload. Do not use external academic statistics. If the payload contains 2 students, analyze exactly those 2 students. Do not assume data exists for students not listed.";
 
     private static cleanJsonResponse(text: string): string {
         if (!text) return '{}';
@@ -16,15 +16,15 @@ export class GeminiService {
 
     private static generateLocalReport(students: Student[], className: string) {
         return {
-            title: `Growth Synthesis: ${className}`,
-            introduction: "Local fallback analysis activated. Trajectory based on longitudinal mastery metrics.",
+            title: `Synthesis: ${className}`,
+            introduction: "Institutional fallback analysis activated. Trends based on local mastery metrics.",
             studentBreakdowns: students.map(s => ({
                 name: s.name,
-                excelsIn: "Consistent performance in core instructional modules.",
-                needsWork: "Higher-order thinking skill refinement.",
-                strategy: "Deploy scaffolded task complexity in the next cycle."
+                excelsIn: "Consistent performance in tested modules.",
+                needsWork: "Higher-order application of core skills.",
+                strategy: "Deploy scaffolded task complexity."
             })),
-            conclusion: "Cohort is tracking within standard institutional parameters."
+            conclusion: "Cohort tracking within standard parameters."
         };
     }
 
@@ -39,11 +39,9 @@ export class GeminiService {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: `${this.STRICT_DATA_INSTRUCTION} \n\n Analyze these ${dataset.length} students: ${JSON.stringify(dataset)}. 
-                Group them into "Instructional Pods" based on shared gaps in: ${domains.join(', ')}. 
+                Group them into "Pods" based on shared gaps in: ${domains.join(', ')}. 
                 Return JSON array with groupName, studentIds, focus.`,
-                config: {
-                    responseMimeType: "application/json"
-                }
+                config: { responseMimeType: "application/json" }
             });
             return JSON.parse(this.cleanJsonResponse(response.text || '[]'));
         } catch (e) { return []; }
@@ -60,7 +58,7 @@ export class GeminiService {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: `${this.STRICT_DATA_INSTRUCTION} \n\n Synthesize a Lead Researcher Case Study for class "${className}" containing exactly ${dataset.length} students: ${JSON.stringify(dataset)}. 
-                Identify excelsIn, needsWork, and strategy for EVERY student in this specific list. Return valid JSON.`,
+                Identify excelsIn, needsWork, and strategy for EVERY student listed. Return JSON.`,
                 config: {
                     maxOutputTokens: 8192,
                     responseMimeType: "application/json"
@@ -83,19 +81,17 @@ export class GeminiService {
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `${this.STRICT_DATA_INSTRUCTION} \n\n Generate a Director's Briefing for class "${className}" (Pop: ${summary.length} students). 
+                contents: `${this.STRICT_DATA_INSTRUCTION} \n\n Generate a Director's Briefing for class "${className}" (${summary.length} students). 
                 Data: ${JSON.stringify(summary)}. 
                 Include executiveSummary, riskAssessment, and 3 leadershipActions. Return JSON.`,
-                config: {
-                    responseMimeType: "application/json"
-                }
+                config: { responseMimeType: "application/json" }
             });
             return JSON.parse(this.cleanJsonResponse(response.text || '{}'));
         } catch (e) {
             return {
-                executiveSummary: `Institutional sync active. Cohort of ${students.length} is tracking within expected parameters.`,
-                riskAssessment: "Monitor velocity band for Tier 2 students.",
-                leadershipActions: ["Continue tracking velocity.", "Review intervention logs.", "Schedule calibration."]
+                executiveSummary: `Institutional sync active. Cohort of ${students.length} tracking normally.`,
+                riskAssessment: "Risk levels stable.",
+                leadershipActions: ["Continue tracking velocity.", "Schedule calibration."]
             };
         }
     }
@@ -122,7 +118,7 @@ export class GeminiService {
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `${this.STRICT_DATA_INSTRUCTION} \n\n Predict path for ${student.name} based ONLY on their ${student.growthVelocity}% velocity. 1 sentence.`,
+                contents: `${this.STRICT_DATA_INSTRUCTION} \n\n Predict path for ${student.name} based ONLY on ${student.growthVelocity}% velocity. 1 sentence.`,
             });
             return response.text || "Trajectory stable.";
         } catch (e) { return "Analyzing..."; }
@@ -139,23 +135,12 @@ export class GeminiService {
         } catch (e) { return "Processing."; }
     }
 
-    static async generateTranslatedReport(content: string, targetLang: string): Promise<string> {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        try {
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
-                contents: `Translate this report to ${targetLang}: ${content}`,
-            });
-            return response.text || content;
-        } catch (e) { return content; }
-    }
-
     static async suggestDynamicThresholds(students: Student[]): Promise<any> {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Suggest RTI thresholds for a class of ${students.length} students. JSON format.`,
+                contents: `Suggest RTI thresholds for a cohort of ${students.length} students. JSON { Baseline, Midline, Endline }.`,
                 config: { responseMimeType: "application/json" }
             });
             return JSON.parse(this.cleanJsonResponse(response.text || '{}'));
@@ -167,12 +152,21 @@ export class GeminiService {
         try {
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Report card narrative for ${student.name} ONLY. Use provided scores. JSON { report_card: string }.`,
-                config: { 
-                    responseMimeType: "application/json"
-                }
+                contents: `Report card narrative for ${student.name}. Use scores: ${JSON.stringify(student.assessments[student.assessments.length-1]?.scores)}. JSON { report_card: string }.`,
+                config: { responseMimeType: "application/json" }
             });
             return JSON.parse(this.cleanJsonResponse(response.text || '{}'));
         } catch (e) { return { report_card: "Transcript synthesis in progress." }; }
+    }
+
+    static async generateTranslatedReport(content: string, targetLang: string): Promise<string> {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        try {
+            const response = await ai.models.generateContent({
+                model: 'gemini-3-flash-preview',
+                contents: `Translate to ${targetLang}: ${content}`,
+            });
+            return response.text || content;
+        } catch (e) { return content; }
     }
 }

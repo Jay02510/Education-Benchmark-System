@@ -209,7 +209,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const updatedProfile = { ...classProfile, ...updates };
         setClassProfile(updatedProfile);
         if (user.isDemo) localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(updatedProfile));
-        else await updateDoc(doc(db, 'class_profiles', classProfile.id), updates);
+        else await updateDoc(doc(doc(db, 'class_profiles', classProfile.id)), updates);
         showToast("Class profile updated.");
     };
 

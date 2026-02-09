@@ -12,7 +12,7 @@ import { BenchmarkProvider } from './context/BenchmarkContext.tsx';
 import { ToastProvider } from './context/ToastContext.tsx';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { NavigationProvider, useNavigation } from './context/NavigationContext.tsx';
-import { LanguageProvider } from './context/LanguageContext.tsx';
+import { LanguageProvider, useLanguage } from './context/LanguageContext.tsx';
 import { OnboardingWizard } from './components/onboarding/OnboardingWizard.tsx';
 import { LoginScreen } from './components/auth/LoginScreen.tsx';
 import { PlatformGuideModal } from './components/common/PlatformGuideModal.tsx';
@@ -54,6 +54,7 @@ const NavItem: React.FC<{
 
 const MainAppLayout: React.FC = () => {
     const { user, logout } = useAuth();
+    const { language } = useLanguage();
     const { activeTab, setActiveTab, isBulkEntryOpen, setBulkEntryOpen } = useNavigation();
     const { classProfile } = useStudents();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -81,12 +82,20 @@ const MainAppLayout: React.FC = () => {
 
     return (
         <div className="flex flex-col h-screen bg-[#F8FAFC] font-sans overflow-hidden text-slate-800 print:h-auto print:overflow-visible">
-            {/* Demo Mode Persistence Banner */}
+            {/* 💡 PERSISTENT DEMO BAR */}
             {user?.isDemo && (
-                <div className="bg-indigo-600 text-white px-4 py-2 text-center text-[10px] font-black uppercase tracking-[0.2em] relative z-[1000] flex items-center justify-center gap-4">
-                    <Icon name="info" className="w-3 h-3" />
-                    <span>Demo Mode Active: Changes will not be saved. Join Benchmark to unlock your own roster.</span>
-                    <button onClick={logout} className="ml-4 px-3 py-1 bg-white text-indigo-600 rounded-lg hover:bg-slate-100 transition-colors">Create Account</button>
+                <div className="bg-indigo-600 text-white px-4 py-2.5 text-center text-[10px] font-black uppercase tracking-[0.2em] relative z-[1000] flex items-center justify-center gap-6 shadow-xl">
+                    <div className="flex items-center gap-2">
+                        <Icon name="brain" className="w-3 h-3 text-indigo-200" />
+                        <span>{language === 'EN' ? 'Interactive Demo Mode Active' : '인터랙티브 데모 모드 활성'}</span>
+                    </div>
+                    <span className="hidden md:inline opacity-60">|</span>
+                    <span className="hidden md:inline font-bold normal-case tracking-normal">
+                        {language === 'EN' ? 'Changes are not saved. Create an account to manage your own students.' : '변경사항은 저장되지 않습니다. 학생 관리를 시작하려면 계정을 만드세요.'}
+                    </span>
+                    <button onClick={logout} className="px-4 py-1 bg-white text-indigo-600 rounded-lg hover:bg-slate-100 transition-colors shadow-sm active:scale-95">
+                        {language === 'EN' ? 'Create Account' : '계정 생성'}
+                    </button>
                 </div>
             )}
 

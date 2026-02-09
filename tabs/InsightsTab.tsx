@@ -37,15 +37,14 @@ const DashboardWidget: React.FC<{ title: string; value: string | number; subtext
 export const InsightsTab: React.FC = () => {
     const { students, classProfile } = useStudents();
     const { domains, benchmarks } = useBenchmarks();
-    const { user, applyBetaCode } = useAuth();
+    const { user, logout } = useAuth();
     const { showToast } = useToast();
     
     const [chartType, setChartType] = useState<'radar' | 'bar'>('radar');
     const [isAtRiskModalOpen, setIsAtRiskModalOpen] = useState(false);
     const [isBriefingModalOpen, setIsBriefingModalOpen] = useState(false);
     const [isCaseStudyModalOpen, setIsCaseStudyModalOpen] = useState(false);
-    const [isBetaPromptOpen, setIsBetaPromptOpen] = useState(false);
-    const [betaCodeInput, setBetaCodeInput] = useState('');
+    const [isUpgradePromptOpen, setIsUpgradePromptOpen] = useState(false);
     
     const [briefingData, setBriefingData] = useState<any>(null);
     const [caseStudyData, setCaseStudyData] = useState<any>(null);
@@ -103,8 +102,8 @@ export const InsightsTab: React.FC = () => {
     };
 
     const handleGenerateBriefing = async () => {
-        if (!user?.isPremium) {
-            setIsBetaPromptOpen(true);
+        if (!user?.isPremium && !user?.isDemo) {
+            setIsUpgradePromptOpen(true);
             return;
         }
         setIsGeneratingBrief(true);
@@ -116,8 +115,8 @@ export const InsightsTab: React.FC = () => {
     };
 
     const handleGenerateCaseStudy = async () => {
-        if (!user?.isPremium) {
-            setIsBetaPromptOpen(true);
+        if (!user?.isPremium && !user?.isDemo) {
+            setIsUpgradePromptOpen(true);
             return;
         }
         setIsGeneratingStudy(true);
@@ -128,20 +127,12 @@ export const InsightsTab: React.FC = () => {
         } finally { setIsGeneratingStudy(false); }
     };
 
-    const handleApplyCode = async () => {
-        const success = await applyBetaCode(betaCodeInput);
-        if (success) {
-            setIsBetaPromptOpen(false);
-            setBetaCodeInput('');
-        }
-    };
-
     if (!students.length) {
         return (
             <div className="p-12 flex flex-col items-center justify-center min-h-[60vh] text-center">
                 <div className="w-24 h-24 bg-slate-100 rounded-[2.5rem] flex items-center justify-center text-slate-300 mb-8"><Icon name="analytics" className="w-12 h-12" /></div>
                 <h2 className="text-3xl font-black text-slate-900 mb-2">Insufficient Data</h2>
-                <p className="text-slate-400 font-bold max-w-sm">Log scores for your {students.length} students to unlock insights.</p>
+                <p className="text-slate-400 font-bold max-w-sm">Log scores for your students to unlock insights.</p>
             </div>
         );
     }
@@ -156,18 +147,19 @@ export const InsightsTab: React.FC = () => {
                 <div className="flex flex-wrap gap-4">
                     <button 
                         onClick={handleGenerateCaseStudy}
-                        className={`group px-8 py-6 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-xl transition-all flex items-center gap-3 active:scale-95 ${user?.isPremium ? 'bg-white border-2 border-slate-200 text-slate-800 hover:bg-slate-50' : 'bg-slate-50 border-2 border-dashed border-slate-200 text-slate-400 opacity-60'}`}
+                        className={`group px-8 py-6 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-xl transition-all flex items-center gap-3 active:scale-95 bg-white border-2 border-slate-200 text-slate-800 hover:bg-slate-50`}
                     >
                         {isGeneratingStudy ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="benchmark" className="w-5 h-5 text-indigo-400" />}
-                        {user?.isPremium ? 'Generate Case Study' : 'Unlock Pro Research'}
-                        {!user?.isPremium && <Icon name="shield" className="w-3 h-3 ml-2" />}
+                        Generate Case Study
+                        {user?.isDemo && <span className="ml-2 px-2 py-0.5 bg-indigo-50 text-[8px] rounded border border-indigo-100">DEMO</span>}
                     </button>
                     <button 
                         onClick={handleGenerateBriefing}
-                        className={`group relative px-12 py-6 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-2xl transition-all active:scale-95 border-b-8 ${user?.isPremium ? 'bg-slate-900 text-white hover:bg-indigo-600 border-slate-950' : 'bg-slate-100 text-slate-400 border-slate-300'}`}
+                        className={`group relative px-12 py-6 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-2xl transition-all active:scale-95 border-b-8 bg-slate-900 text-white hover:bg-indigo-600 border-slate-950`}
                     >
                         {isGeneratingBrief ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="brain" className="w-5 h-5 text-indigo-400" />}
-                        {user?.isPremium ? 'Leadership Briefing' : 'Beta Locked'}
+                        Leadership Briefing
+                        {user?.isDemo && <span className="ml-2 px-2 py-0.5 bg-white/10 text-[8px] rounded border border-white/20">DEMO</span>}
                     </button>
                 </div>
             </div>
@@ -239,27 +231,18 @@ export const InsightsTab: React.FC = () => {
                 </div>
             </div>
 
-            <Modal isOpen={isBetaPromptOpen} onClose={() => setIsBetaPromptOpen(false)} title="Unlock Institutional Intelligence" size="md">
+            <Modal isOpen={isUpgradePromptOpen} onClose={() => setIsUpgradePromptOpen(false)} title="Join the Educational Frontier" size="md">
                 <div className="space-y-6 text-center py-4">
                     <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-[2rem] flex items-center justify-center mx-auto mb-4 shadow-xl shadow-indigo-100">
-                        <Icon name="brain" className="w-10 h-10" />
+                        <Icon name="benchmark" className="w-10 h-10" />
                     </div>
-                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Limited Beta Access</h3>
-                    <p className="text-slate-500 font-medium">Unlock deep research, OCR scanning, and executive briefings. Limited to the first 40 users.</p>
-                    <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
-                        <input 
-                            type="text" 
-                            value={betaCodeInput}
-                            onChange={e => setBetaCodeInput(e.target.value.toUpperCase())}
-                            placeholder="Enter Code (e.g. BENCHMARK40)"
-                            className="w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:border-indigo-600 outline-none text-center font-black tracking-widest text-lg"
-                        />
-                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Upgrade to Full Access</h3>
+                    <p className="text-slate-500 font-medium leading-relaxed">Save your own class data, manage unlimited students, and export unlimited AI reports. Create an account to start your institutional transition.</p>
                     <button 
-                        onClick={handleApplyCode}
+                        onClick={logout}
                         className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-indigo-600 shadow-2xl transition-all active:scale-95"
                     >
-                        Verify Beta Protocol
+                        Create My Account
                     </button>
                 </div>
             </Modal>

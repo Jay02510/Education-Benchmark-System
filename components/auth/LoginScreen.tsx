@@ -18,7 +18,6 @@ export const LoginScreen: React.FC = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [betaCode, setBetaCode] = useState('');
 
     const FEATURES = [
         {
@@ -99,13 +98,12 @@ export const LoginScreen: React.FC = () => {
         e.preventDefault();
         let success = false;
         if (authMode === 'login') success = await login(email, password);
-        else success = await signup(name, email, password, betaCode);
+        else success = await signup(name, email, password);
         if (success) setIsLoginModalOpen(false);
     };
 
     return (
         <div className="min-h-screen bg-[#0B0F19] text-white font-sans overflow-x-hidden">
-            {/* Header / Nav */}
             <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0B0F19]/80 backdrop-blur-md border-b border-white/5 py-4 px-6 md:px-12">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
                     <div className="flex items-center gap-3">
@@ -116,7 +114,6 @@ export const LoginScreen: React.FC = () => {
                     </div>
                     
                     <div className="flex items-center gap-6">
-                        {/* Language Toggle */}
                         <div className="hidden sm:flex bg-white/5 p-1 rounded-xl border border-white/10 mr-4">
                             <button onClick={() => setLanguage('EN')} className={`px-3 py-1.5 text-[10px] font-black rounded-lg transition-all ${language === 'EN' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-white'}`}>EN</button>
                             <button onClick={() => setLanguage('KO')} className={`px-3 py-1.5 text-[10px] font-black rounded-lg transition-all ${language === 'KO' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-white'}`}>KO</button>
@@ -128,7 +125,6 @@ export const LoginScreen: React.FC = () => {
                 </div>
             </nav>
 
-            {/* Hero Section */}
             <section className="pt-32 md:pt-48 pb-20 px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-center">
                 <div className="animate-in fade-in slide-in-from-left duration-1000">
                     <h1 className="text-5xl md:text-7xl xl:text-8xl font-black tracking-tighter mb-8 italic leading-[0.95] md:leading-[0.9]">
@@ -141,21 +137,14 @@ export const LoginScreen: React.FC = () => {
                         {t('hero_sub')}
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4">
-                        <button onClick={() => openAuth('signup')} className="px-10 py-5 md:px-12 md:py-6 rounded-[2rem] bg-indigo-600 font-black uppercase text-xs tracking-widest hover:bg-indigo-500 shadow-2xl border-b-[8px] border-indigo-950 active:scale-95 active:border-b-0 transition-all">
-                            {t('cta_start')}
+                        <button onClick={loginDemo} className="px-10 py-5 md:px-12 md:py-6 rounded-[2rem] bg-indigo-600 font-black uppercase text-xs tracking-widest hover:bg-indigo-500 shadow-2xl border-b-[8px] border-indigo-950 active:scale-95 active:border-b-0 transition-all flex items-center justify-center gap-3">
+                            <Icon name="brain" className="w-5 h-5 text-indigo-300" />
+                            {language === 'EN' ? 'Try Interactive Demo' : '인터랙티브 데모 체험'}
                         </button>
-                        <button onClick={loginDemo} className="px-10 py-5 md:px-12 md:py-6 rounded-[2rem] bg-white/5 border border-white/10 font-black uppercase text-xs hover:bg-white/10 transition-all flex items-center justify-center gap-3">
-                            <Icon name="brain" className="w-5 h-5 text-indigo-400" />
-                            {t('cta_sandbox')}
+                        <button onClick={() => openAuth('signup')} className="px-10 py-5 md:px-12 md:py-6 rounded-[2rem] bg-white/5 border border-white/10 font-black uppercase text-xs hover:bg-white/10 transition-all flex items-center justify-center gap-3">
+                            <Icon name="plus" className="w-5 h-5 text-indigo-400" />
+                            {t('nav_join')}
                         </button>
-                    </div>
-                    
-                    {/* Mobile Lang Toggle */}
-                    <div className="mt-10 sm:hidden flex justify-center">
-                         <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
-                            <button onClick={() => setLanguage('EN')} className={`px-4 py-2 text-[10px] font-black rounded-lg ${language === 'EN' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>English</button>
-                            <button onClick={() => setLanguage('KO')} className={`px-4 py-2 text-[10px] font-black rounded-lg ${language === 'KO' ? 'bg-indigo-600 text-white' : 'text-slate-500'}`}>한국어</button>
-                        </div>
                     </div>
                 </div>
 
@@ -174,7 +163,6 @@ export const LoginScreen: React.FC = () => {
                 </div>
             </section>
 
-            {/* Modals */}
             {isLoginModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in">
                     <div className="bg-white text-slate-900 w-full max-w-md p-8 md:p-10 rounded-[3rem] md:rounded-[3.5rem] shadow-2xl relative overflow-hidden border border-slate-100">
@@ -197,12 +185,6 @@ export const LoginScreen: React.FC = () => {
                                 <label className="text-[8px] font-black uppercase text-slate-400 ml-1">{t('field_pass')}</label>
                                 <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:border-indigo-600 outline-none font-bold" placeholder="••••••••" />
                             </div>
-                            {authMode === 'signup' && (
-                                <div className="space-y-1">
-                                    <label className="text-[8px] font-black uppercase text-indigo-500 ml-1">{t('field_beta')}</label>
-                                    <input type="text" value={betaCode} onChange={e => setBetaCode(e.target.value)} className="w-full px-6 py-4 bg-indigo-50/50 border-2 border-indigo-100 rounded-2xl focus:border-indigo-600 outline-none font-bold placeholder:text-indigo-200" placeholder="BENCHMARK40" />
-                                </div>
-                            )}
                             <button type="submit" disabled={isLoading} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 transition-all border-b-8 border-slate-950 active:scale-95 active:border-b-0">
                                 {isLoading ? 'Syncing...' : (authMode === 'login' ? t('btn_auth') : t('btn_init'))}
                             </button>

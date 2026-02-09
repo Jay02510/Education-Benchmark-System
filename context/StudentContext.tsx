@@ -139,15 +139,42 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [classProfile, setClassProfile] = useState<ClassProfile | null>(null);
     const { showToast } = useToast();
 
+    const loadDemoData = () => {
+        if (!user) return;
+        const profile = { id: 'demo-p', className: 'Sample Explorers 5A', gradeLevel: '5', academicYear: '2024' };
+        const sortedMock = sortByName(mockStudents);
+        
+        // Enhance mock data slightly for better demo visualization
+        const enhancedMock = sortedMock.map(s => ({
+            ...s,
+            photoUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${s.name}`
+        }));
+
+        setStudents(enhancedMock);
+        setClassProfile(profile);
+        
+        if (user.id === 'demo-user') {
+            localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(profile));
+            localStorage.setItem(getStorageKey(user.id, 'students'), JSON.stringify(enhancedMock));
+        }
+    };
+
     useEffect(() => {
         if (!user) { setStudents([]); setClassProfile(null); return; }
+        
         const sKey = getStorageKey(user.id, 'students');
         const pKey = getStorageKey(user.id, 'profile');
+        
         if (user.isDemo) {
             const localStudents = localStorage.getItem(sKey);
             const localProfile = localStorage.getItem(pKey);
-            if (localStudents) setStudents(sortByName(JSON.parse(localStudents)));
-            if (localProfile) setClassProfile(JSON.parse(localProfile));
+            
+            if (localStudents && localProfile) {
+                setStudents(sortByName(JSON.parse(localStudents)));
+                setClassProfile(JSON.parse(localProfile));
+            } else {
+                loadDemoData(); // Auto-load if empty in demo mode
+            }
         } else {
             const qStudents = query(collection(db, 'students'), where('userId', '==', user.id));
             const unsubStudents = onSnapshot(qStudents, (snapshot) => {
@@ -350,17 +377,6 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (user.isDemo) syncStudents(students.map(s => s.id === studentId ? { ...s, actionLog: newLog } : s));
         else await updateDoc(doc(db, 'students', studentId), { actionLog: newLog });
         showToast("Note recorded.");
-    };
-
-    const loadDemoData = () => {
-        if (!user) return;
-        const profile = { id: 'demo-p', className: 'Sample Classroom', gradeLevel: '5', academicYear: '2024' };
-        localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(profile));
-        const sortedMock = sortByName(mockStudents);
-        localStorage.setItem(getStorageKey(user.id, 'students'), JSON.stringify(sortedMock));
-        setStudents(sortedMock);
-        setClassProfile(profile);
-        showToast("Demo data initialized.");
     };
 
     return (

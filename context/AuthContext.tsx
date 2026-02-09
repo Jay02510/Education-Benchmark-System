@@ -9,16 +9,15 @@ import {
     signOut, 
     onAuthStateChanged
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface AuthContextType {
     user: User | null;
     isLoading: boolean;
     login: (email: string, password: string, silent?: boolean) => Promise<boolean>;
     loginDemo: () => void;
-    signup: (name: string, email: string, password: string, betaCode?: string) => Promise<boolean>;
+    signup: (name: string, email: string, password: string) => Promise<boolean>;
     logout: () => void;
-    applyBetaCode: (code: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -70,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoading(true);
         try {
             await signInWithEmailAndPassword(auth, email, password);
+            localStorage.removeItem('benchmark_demo_session'); // Clear demo if logging in
             if (!silent) showToast("Welcome back!");
             return true;
         } catch (error: any) {
@@ -81,27 +81,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const loginDemo = () => {
         setIsLoading(true);
-        const demoUser: User = { id: 'demo-user', name: 'Demo Teacher', role: UserRole.Teacher, isDemo: true, isPremium: false };
+        const demoUser: User = { 
+            id: 'demo-user', 
+            name: 'Guest Educator', 
+            role: UserRole.Teacher, 
+            isDemo: true, 
+            isPremium: true // Demo mode allows trying premium features
+        };
         localStorage.setItem('benchmark_demo_session', JSON.stringify(demoUser));
         setUser(demoUser);
-        setTimeout(() => { setIsLoading(false); showToast("Demo Mode Activated"); }, 500);
+        setTimeout(() => { 
+            setIsLoading(false); 
+            showToast("Demo Environment Initialized"); 
+        }, 800);
     };
 
-    const signup = async (name: string, email: string, password: string, betaCode?: string): Promise<boolean> => {
+    const signup = async (name: string, email: string, password: string): Promise<boolean> => {
         setIsLoading(true);
         try {
             const cred = await createUserWithEmailAndPassword(auth, email, password);
-            const isPremium = betaCode?.toUpperCase() === 'BENCHMARK40';
+            localStorage.removeItem('benchmark_demo_session');
             
             await setDoc(doc(db, 'users', cred.user.uid), {
                 name,
                 email,
-                isPremium,
+                isPremium: false,
                 role: UserRole.Teacher,
                 createdAt: new Date().toISOString()
             });
 
-            if (isPremium) showToast("Premium Beta Access Granted!");
+            showToast("Account created successfully!");
             return true;
         } catch (error: any) {
             showToast("Signup failed.", "error");
@@ -110,33 +119,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const applyBetaCode = async (code: string): Promise<boolean> => {
-        if (code.toUpperCase() === 'BENCHMARK40') {
-            if (user) {
-                if (!user.isDemo) {
-                    await updateDoc(doc(db, 'users', user.id), { isPremium: true });
-                }
-                const updatedUser = { ...user, isPremium: true };
-                setUser(updatedUser);
-                if (user.isDemo) localStorage.setItem('benchmark_demo_session', JSON.stringify(updatedUser));
-                showToast("Premium Status Unlocked!");
-                return true;
-            }
-        } else {
-            showToast("Invalid or expired beta code.", "error");
-        }
-        return false;
-    };
-
     const logout = async () => {
         localStorage.removeItem('benchmark_demo_session');
         await signOut(auth);
         setUser(null);
-        showToast("Logged out.");
+        showToast("Session ended.");
     };
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, login, loginDemo, signup, logout, applyBetaCode }}>
+        <AuthContext.Provider value={{ user, isLoading, login, loginDemo, signup, logout }}>
             {children}
         </AuthContext.Provider>
     );

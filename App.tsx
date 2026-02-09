@@ -81,6 +81,15 @@ const MainAppLayout: React.FC = () => {
 
     return (
         <div className="flex flex-col h-screen bg-[#F8FAFC] font-sans overflow-hidden text-slate-800 print:h-auto print:overflow-visible">
+            {/* Demo Mode Persistence Banner */}
+            {user?.isDemo && (
+                <div className="bg-indigo-600 text-white px-4 py-2 text-center text-[10px] font-black uppercase tracking-[0.2em] relative z-[1000] flex items-center justify-center gap-4">
+                    <Icon name="info" className="w-3 h-3" />
+                    <span>Demo Mode Active: Changes will not be saved. Join Benchmark to unlock your own roster.</span>
+                    <button onClick={logout} className="ml-4 px-3 py-1 bg-white text-indigo-600 rounded-lg hover:bg-slate-100 transition-colors">Create Account</button>
+                </div>
+            )}
+
             <div className="flex flex-1 overflow-hidden relative">
                 {(!classProfile && !user?.isDemo) && <OnboardingWizard />}
                 <CommandCenter />
@@ -148,12 +157,6 @@ const MainAppLayout: React.FC = () => {
                                  </button>
                              )}
                         </div>
-                        {!isSidebarCollapsed && (
-                            <div className="mt-4 px-4 flex gap-4 text-[8px] font-black text-slate-300 uppercase tracking-widest">
-                                <button onClick={() => setIsLegalOpen(true)} className="hover:text-indigo-400">Legal</button>
-                                <button onClick={() => setIsLegalOpen(true)} className="hover:text-indigo-400">Privacy</button>
-                            </div>
-                        )}
                     </div>
                 </aside>
 

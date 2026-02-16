@@ -17,12 +17,13 @@ interface ChatContextType {
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-const SYSTEM_INSTRUCTION = `You are the Benchmark AI Co-pilot, an elite pedagogical intelligence engine for ESL schools.
-You have access to real-time classroom data through tools. 
-When asked about students, performance, or standards, ALWAYS use the relevant tool first to get actual data.
-Respond as a professional educational consultant. Focus on "Growth Velocity" and "Intervention Tiers".
-Always provide a specific answer followed by one pedagogical "next step".
-If a tool returns "not found", inform the user politely and suggest checking the roster.`;
+const SYSTEM_INSTRUCTION = `You are the Benchmark AI Co-pilot, an elite pedagogical intelligence engine.
+PRIVACY PROTOCOL: You operate in a strict zero-knowledge sandbox. Never mention student data from previous conversations.
+DATA ACCESS: You have real-time classroom tools. Use them to get actual metrics before responding.
+STYLE: Respond as a professional educational consultant. 
+PRIORITY: Focus on "Growth Velocity" and "Intervention Tiers".
+Follow every answer with a specific pedagogical "next step".
+If a tool returns "not found", suggest checking the institutional roster.`;
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { students, classProfile } = useStudents();
@@ -46,20 +47,21 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     .filter(s => s.hasAnomaly || (s.interventionStatus && s.interventionStatus.tier > 1))
                     .map(s => ({ name: s.name, reason: s.interventionStatus?.triggerReason || 'Velocity Drop', tier: s.interventionStatus?.tier || 2 }));
             case 'get_student_details':
-                const student = students.find(s => s.name.toLowerCase().includes(args.studentName?.toLowerCase() || ""));
-                if (!student) return { error: `Student "${args.studentName}" not found.` };
+                const studentNameQuery = args.studentName?.toLowerCase() || "";
+                const student = students.find(s => s.name.toLowerCase().includes(studentNameQuery));
+                if (!student) return { error: `Student context matching "${args.studentName}" not found in current roster.` };
                 return {
                     name: student.name,
                     level: student.level,
                     velocity: `${student.growthVelocity}%`,
-                    latestScores: student.assessments[student.assessments.length - 1]?.scores || "No data.",
+                    latestScores: student.assessments[student.assessments.length - 1]?.scores || "No data logged.",
                     tier: student.interventionStatus?.tier || 1
                 };
             case 'get_benchmark_standards':
                 const found = benchmarks.find(b => b.level_name === args.level && b.domain === args.domain);
-                return found || { error: "Standard not found." };
+                return found || { error: "Instructional standard not found for this calibration." };
             default:
-                return { error: "Tool not implemented." };
+                return { error: "Logic node not implemented." };
         }
     };
 
@@ -71,7 +73,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsTyping(true);
 
         try {
-            console.debug("Chat: Initiating request turn 1...");
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             const model = 'gemini-3-flash-preview';
             
@@ -87,7 +88,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             let finalContent = response.text;
 
             if (response.functionCalls && response.functionCalls.length > 0) {
-                console.debug("Chat: Executing tool call...");
                 const toolResults = response.functionCalls.map(fc => ({
                     id: fc.id,
                     name: fc.name,
@@ -112,7 +112,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: finalContent || "Analysis complete. Please review the roster for specific student trends.", 
+                text: finalContent || "Logic synthesis complete. Please review the roster for specific student trends.", 
                 timestamp: Date.now() 
             }]);
         } catch (error: any) {
@@ -120,7 +120,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 
-                text: "My reasoning pathways are currently saturated. Please re-initiate your query in a moment.", 
+                text: "Safety protocols or reasoning pathways are currently saturated. Please re-initiate in a moment.", 
                 timestamp: Date.now(), 
                 isError: true 
             }]);

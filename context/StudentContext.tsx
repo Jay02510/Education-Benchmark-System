@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Student, ClassProfile, Assessment, Intervention, Trend, Domain, StudentLogEntry, TestPeriod, SubdomainMetadata, VelocityBand } from '../types.ts';
 import { mockStudents } from '../data/mockData.ts';
 import { useToast } from './ToastContext.tsx';
@@ -38,6 +38,14 @@ interface StudentContextType {
 const StudentContext = createContext<StudentContextType | undefined>(undefined);
 
 const getStorageKey = (userId: string, type: 'students' | 'profile') => `benchmark_${type}_${userId}`;
+
+/**
+ * SANITIZATION ENGINE
+ * Prevents malicious scripts from entering the data layer.
+ */
+const sanitizeInput = (text: string): string => {
+    return text.replace(/[<>]/g, "").trim(); 
+};
 
 const getTrueProficiency = (assessment: Assessment | undefined, frameworkSubdomains: Record<string, SubdomainMetadata[]>): number => {
     if (!assessment) return 0;
@@ -139,12 +147,10 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [classProfile, setClassProfile] = useState<ClassProfile | null>(null);
     const { showToast } = useToast();
 
-    const loadDemoData = () => {
+    const loadDemoData = useCallback(() => {
         if (!user) return;
         const profile = { id: 'demo-p', className: 'Sample Explorers 5A', gradeLevel: '5', academicYear: '2024' };
         const sortedMock = sortByName(mockStudents);
-        
-        // Enhance mock data slightly for better demo visualization
         const enhancedMock = sortedMock.map(s => ({
             ...s,
             photoUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${s.name}`
@@ -153,11 +159,11 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setStudents(enhancedMock);
         setClassProfile(profile);
         
-        if (user.id === 'demo-user') {
+        if (user.isDemo) {
             localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(profile));
             localStorage.setItem(getStorageKey(user.id, 'students'), JSON.stringify(enhancedMock));
         }
-    };
+    }, [user]);
 
     useEffect(() => {
         if (!user) { setStudents([]); setClassProfile(null); return; }
@@ -170,10 +176,14 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const localProfile = localStorage.getItem(pKey);
             
             if (localStudents && localProfile) {
-                setStudents(sortByName(JSON.parse(localStudents)));
-                setClassProfile(JSON.parse(localProfile));
+                try {
+                    setStudents(sortByName(JSON.parse(localStudents)));
+                    setClassProfile(JSON.parse(localProfile));
+                } catch (e) {
+                    loadDemoData();
+                }
             } else {
-                loadDemoData(); // Auto-load if empty in demo mode
+                loadDemoData();
             }
         } else {
             const qStudents = query(collection(db, 'students'), where('userId', '==', user.id));
@@ -187,7 +197,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             });
             return () => { unsubStudents(); unsubProfile(); };
         }
-    }, [user]);
+    }, [user, loadDemoData]);
 
     const syncStudents = (newStudents: Student[]) => {
         const sorted = sortByName(newStudents);
@@ -196,33 +206,52 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     const registerClass = async (profile: ClassProfile) => {
-        if (user?.isDemo) { 
-            setClassProfile(profile); 
-            localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(profile)); 
+        if (!user) return;
+        const sanitizedProfile = { 
+            ...profile, 
+            className: sanitizeInput(profile.className) 
+        };
+
+        if (user.isDemo) { 
+            setClassProfile(sanitizedProfile); 
+            localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(sanitizedProfile)); 
             return; 
         }
-        await addDoc(collection(db, 'class_profiles'), { ...profile, userId: user?.id });
+        await addDoc(collection(db, 'class_profiles'), { ...sanitizedProfile, userId: user.id });
     };
 
     const updateClassProfile = async (updates: Partial<ClassProfile>) => {
         if (!classProfile || !user) return;
-        const updatedProfile = { ...classProfile, ...updates };
+        const sanitizedUpdates = { ...updates };
+        if (sanitizedUpdates.className) sanitizedUpdates.className = sanitizeInput(sanitizedUpdates.className);
+
+        const updatedProfile = { ...classProfile, ...sanitizedUpdates };
         setClassProfile(updatedProfile);
-        if (user.isDemo) localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(updatedProfile));
-        else await updateDoc(doc(doc(db, 'class_profiles', classProfile.id)), updates);
+
+        if (user.isDemo) {
+            localStorage.setItem(getStorageKey(user.id, 'profile'), JSON.stringify(updatedProfile));
+        } else {
+            await updateDoc(doc(db, 'class_profiles', classProfile.id), sanitizedUpdates);
+        }
         showToast("Class profile updated.");
     };
 
     const addStudent = async (student: Student) => {
         if (!user) return;
-        const studentWithLog = { ...student, actionLog: student.actionLog || [] };
+        const sanitizedStudent = { 
+            ...student, 
+            name: sanitizeInput(student.name),
+            actionLog: student.actionLog || [] 
+        };
+
         if (user.isDemo) {
-            syncStudents([...students, studentWithLog]);
+            syncStudents([...students, sanitizedStudent]);
             showToast("Student added.");
             return;
         }
-        const { id, ...data } = studentWithLog;
-        await setDoc(doc(collection(db, 'students')), { ...data, userId: user.id });
+        
+        const { id, ...data } = sanitizedStudent;
+        await addDoc(collection(db, 'students'), { ...data, userId: user.id });
         showToast("Student added.");
     };
 
@@ -230,7 +259,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!user) return;
         const newStudents = names.map(name => ({
             id: `s-${Date.now()}-${Math.random()}`,
-            name: name.trim(),
+            name: sanitizeInput(name),
             level: classProfile?.gradeLevel || '5',
             class: classProfile?.className || 'General',
             photoUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${name.trim()}`,
@@ -242,6 +271,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             interventionStatus: null,
             actionLog: [],
         })) as Student[];
+
         if (user.isDemo) {
             syncStudents([...students, ...newStudents]);
             showToast(`${names.length} students added.`);
@@ -250,7 +280,8 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const batch = writeBatch(db);
         newStudents.forEach(s => {
             const { id, ...data } = s;
-            batch.set(doc(collection(db, 'students')), { ...data, userId: user.id });
+            const newRef = doc(collection(db, 'students'));
+            batch.set(newRef, { ...data, userId: user.id });
         });
         await batch.commit();
         showToast(`${names.length} students added.`);
@@ -258,9 +289,12 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const updateStudent = async (updated: Student) => {
         if (!user) return;
-        if (user.isDemo) syncStudents(students.map(s => s.id === updated.id ? updated : s));
-        else {
-            const { id, ...data } = updated;
+        const sanitized = { ...updated, name: sanitizeInput(updated.name) };
+
+        if (user.isDemo) {
+            syncStudents(students.map(s => s.id === sanitized.id ? sanitized : s));
+        } else {
+            const { id, ...data } = sanitized;
             await updateDoc(doc(db, 'students', id), data as any);
         }
     };
@@ -285,12 +319,14 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (idx > -1) assessments[idx] = assessment;
         else assessments.push(assessment);
         assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
         const velocity = calculateVelocity(assessments, frameworkSubdomains);
         const velocityBand = calculateVelocityBand(velocity);
         const rti = calculateRTIStatus(assessments, thresholds, frameworkSubdomains);
         const latestAvg = getTrueProficiency(assessments[assessments.length-1], frameworkSubdomains);
         const firstAvg = getTrueProficiency(assessments[0], frameworkSubdomains);
         const growth = assessments.length >= 2 ? latestAvg - firstAvg : 0;
+        
         const payload = { 
             assessments, 
             overallGrowth: Math.round(growth), 
@@ -299,8 +335,12 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             interventionStatus: rti, 
             hasAnomaly: !!rti 
         };
-        if (user.isDemo) syncStudents(students.map(s => s.id === studentId ? { ...s, ...payload } : s));
-        else await updateDoc(doc(db, 'students', studentId), payload);
+
+        if (user.isDemo) {
+            syncStudents(students.map(s => s.id === studentId ? { ...s, ...payload } : s));
+        } else {
+            await updateDoc(doc(db, 'students', studentId), payload);
+        }
         showToast("Assessment recorded.");
     };
 
@@ -313,6 +353,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const velocityBand = calculateVelocityBand(velocity);
         const rti = calculateRTIStatus(assessments, thresholds, frameworkSubdomains);
         const growth = assessments.length >= 2 ? getTrueProficiency(assessments[assessments.length-1], frameworkSubdomains) - getTrueProficiency(assessments[0], frameworkSubdomains) : 0;
+        
         const payload = { 
             assessments, 
             overallGrowth: Math.round(growth), 
@@ -321,8 +362,12 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             interventionStatus: rti, 
             hasAnomaly: !!rti 
         };
-        if (user.isDemo) syncStudents(students.map(s => s.id === studentId ? { ...s, ...payload } : s));
-        else await updateDoc(doc(db, 'students', studentId), payload);
+
+        if (user.isDemo) {
+            syncStudents(students.map(s => s.id === studentId ? { ...s, ...payload } : s));
+        } else {
+            await updateDoc(doc(db, 'students', studentId), payload);
+        }
         showToast("Assessment deleted.");
     };
 
@@ -330,6 +375,7 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!user) return;
         const batch = user.isDemo ? null : writeBatch(db);
         const updatedStudents = [...students];
+        
         items.forEach(item => {
             const sIdx = updatedStudents.findIndex(s => s.id === item.studentId);
             if (sIdx === -1) return;
@@ -347,12 +393,14 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 };
             } else assessments.push(item.assessment);
             assessments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            
             const vel = calculateVelocity(assessments, frameworkSubdomains);
             const velocityBand = calculateVelocityBand(vel);
             const latestAvg = getTrueProficiency(assessments[assessments.length-1], frameworkSubdomains);
             const firstAvg = getTrueProficiency(assessments[0], frameworkSubdomains);
             const growth = assessments.length >= 2 ? latestAvg - firstAvg : 0;
             const rti = calculateRTIStatus(assessments, thresholds, frameworkSubdomains);
+            
             const payload = { 
                 assessments, 
                 overallGrowth: Math.round(growth), 
@@ -361,9 +409,13 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 interventionStatus: rti, 
                 hasAnomaly: !!rti 
             };
-            if (batch) batch.update(doc(db, 'students', s.id), payload);
+            
+            if (batch) {
+                batch.update(doc(db, 'students', s.id), payload);
+            }
             updatedStudents[sIdx] = { ...s, ...payload };
         });
+
         if (batch) await batch.commit();
         else syncStudents(updatedStudents);
         showToast(`Batch sync complete.`);
@@ -373,9 +425,15 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!user) return;
         const student = students.find(s => s.id === studentId);
         if (!student) return;
-        const newLog = [...(student.actionLog || []), { ...entry, id: `log-${Date.now()}` }];
-        if (user.isDemo) syncStudents(students.map(s => s.id === studentId ? { ...s, actionLog: newLog } : s));
-        else await updateDoc(doc(db, 'students', studentId), { actionLog: newLog });
+        
+        const sanitizedContent = sanitizeInput(entry.content);
+        const newLog = [...(student.actionLog || []), { ...entry, content: sanitizedContent, id: `log-${Date.now()}` }];
+        
+        if (user.isDemo) {
+            syncStudents(students.map(s => s.id === studentId ? { ...s, actionLog: newLog } : s));
+        } else {
+            await updateDoc(doc(db, 'students', studentId), { actionLog: newLog });
+        }
         showToast("Note recorded.");
     };
 

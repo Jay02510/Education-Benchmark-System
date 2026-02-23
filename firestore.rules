@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper: Is the user authenticated?
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper: Does the user own this document?
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Students Collection
+    match /students/{studentId} {
+      allow read, write: if isSignedIn() && isOwner(resource.data.userId || request.resource.data.userId);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Class Profiles
+    match /class_profiles/{profileId} {
+      allow read, write: if isSignedIn() && isOwner(resource.data.userId || request.resource.data.userId);
+    }
+
+    // Framework Configs
+    match /framework_configs/{configId} {
+      allow read, write: if isSignedIn() && isOwner(resource.data.userId || request.resource.data.userId);
+    }
+
+    // Resources
+    match /resources/{resourceId} {
+      allow read, write: if isSignedIn() && isOwner(resource.data.userId || request.resource.data.userId);
+    }
+
+    // User Profiles
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && isOwner(userId);
+    }
+  }
+}

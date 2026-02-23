@@ -1,6 +1,6 @@
 
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, setPersistence, browserSessionPersistence, browserLocalPersistence } from "firebase/auth";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -17,6 +17,11 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 // Initialize services with the explicit app instance
 export const auth = getAuth(app);
+
+// Helper to set session persistence (Audit: Session Expiration)
+export const setSessionExpiration = (isPersistent: boolean) => {
+  return setPersistence(auth, isPersistent ? browserLocalPersistence : browserSessionPersistence);
+};
 
 // Use modern Firestore initialization with persistent local cache
 export const db = initializeFirestore(app, {

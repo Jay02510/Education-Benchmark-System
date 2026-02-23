@@ -2,6 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 
+import { logger } from './services/logger';
+
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {
@@ -16,7 +18,7 @@ try {
     </React.StrictMode>
   );
 } catch (error: any) {
-    console.error("Critical System Launch Failure:", error);
+    logger.error("Critical System Launch Failure", error);
     rootElement.innerHTML = `
         <div style="padding: 40px; font-family: sans-serif; text-align: center; background: #fff1f2; color: #9f1239; border-radius: 1.5rem; margin: 2rem; border: 1px solid #fecdd3;">
             <h1 style="font-weight: 800; font-size: 1.25rem;">Kernel Panic</h1>

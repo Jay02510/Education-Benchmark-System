@@ -4,6 +4,7 @@ import { Resource } from '../types';
 import { useToast } from './ToastContext';
 import { useAuth } from './AuthContext';
 import { db } from '../firebase';
+import { logger } from '../services/logger';
 import { collection, addDoc, deleteDoc, doc, query, where, onSnapshot } from 'firebase/firestore';
 
 interface ResourceContextType {
@@ -42,7 +43,7 @@ export const ResourceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                 })) as Resource[];
                 setResources(loaded);
             }, (error) => {
-                 console.error("Error fetching resources:", error);
+                 logger.error("Resource Sync Failure", error);
             });
             return () => unsubscribe();
         }
@@ -68,7 +69,7 @@ export const ResourceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             });
             showToast("Resource saved to bank!");
         } catch (e) {
-            console.error(e);
+            logger.error("Resource Save Failure", e);
             showToast("Error saving resource.", "error");
         }
     };
@@ -88,7 +89,7 @@ export const ResourceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             await deleteDoc(doc(db, 'resources', id));
             showToast("Resource removed.", "info");
         } catch (e) {
-            console.error(e);
+            logger.error("Resource Deletion Failure", e);
         }
     };
 

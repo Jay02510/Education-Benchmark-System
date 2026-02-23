@@ -18,6 +18,7 @@ export const LoginScreen: React.FC = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(true);
 
     const FEATURES = [
         {
@@ -97,7 +98,7 @@ export const LoginScreen: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         let success = false;
-        if (authMode === 'login') success = await login(email, password);
+        if (authMode === 'login') success = await login(email, password, false, rememberMe);
         else success = await signup(name, email, password);
         if (success) setIsLoginModalOpen(false);
     };
@@ -185,6 +186,22 @@ export const LoginScreen: React.FC = () => {
                                 <label className="text-[8px] font-black uppercase text-slate-400 ml-1">{t('field_pass')}</label>
                                 <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:border-indigo-600 outline-none font-bold" placeholder="••••••••" />
                             </div>
+                            
+                            {authMode === 'login' && (
+                                <div className="flex items-center gap-2 px-1">
+                                    <input 
+                                        type="checkbox" 
+                                        id="rememberMe" 
+                                        checked={rememberMe} 
+                                        onChange={e => setRememberMe(e.target.checked)}
+                                        className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    />
+                                    <label htmlFor="rememberMe" className="text-[10px] font-black uppercase text-slate-400 tracking-widest cursor-pointer">
+                                        {language === 'EN' ? 'Keep session active (30 days)' : '세션 유지 (30일)'}
+                                    </label>
+                                </div>
+                            )}
+
                             <button type="submit" disabled={isLoading} className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 transition-all border-b-8 border-slate-950 active:scale-95 active:border-b-0">
                                 {isLoading ? 'Syncing...' : (authMode === 'login' ? t('btn_auth') : t('btn_init'))}
                             </button>

@@ -25,13 +25,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
         
         // Simulation of the notification to jsn.benjamin@gmail.com
         // In a production environment, this would call a Firebase Cloud Function or EmailJS
-        console.log("FEEDBACK LOGGED:", {
-            recipient: "jsn.benjamin@gmail.com",
-            context: activeTab,
-            sentiment,
-            message,
-            timestamp: new Date().toISOString()
-        });
+        // Audit: Removed raw debug log
 
         setTimeout(() => {
             setIsSubmitting(false);

@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState } from 'react';
 import { ChatMessage, Domain } from '../types.ts';
 import { GoogleGenAI } from "@google/genai";
+import { logger } from '../services/logger';
 import { teacherTools } from '../services/agentTools.ts';
 import { useStudents } from './StudentContext.tsx';
 import { useBenchmarks } from './BenchmarkContext.tsx';
@@ -116,7 +117,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 timestamp: Date.now() 
             }]);
         } catch (error: any) {
-            console.error("Chat Node Failure:", error);
+            logger.error("Chat Node Failure", error);
             setMessages(prev => [...prev, { 
                 id: Date.now().toString(), 
                 role: 'model', 

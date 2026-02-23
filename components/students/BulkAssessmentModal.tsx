@@ -6,6 +6,8 @@ import { useBenchmarks } from '../../context/BenchmarkContext';
 import { Icon } from '../common/Icon';
 import { useStudents } from '../../context/StudentContext';
 
+import { logger } from '../../services/logger';
+
 interface BulkAssessmentModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -35,7 +37,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
             modalRef.current?.requestFullscreen().catch(err => {
-                console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+                logger.error(`Fullscreen Error: ${err.message}`);
             });
             setIsFullscreen(true);
         } else {

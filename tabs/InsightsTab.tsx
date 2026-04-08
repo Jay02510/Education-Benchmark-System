@@ -94,8 +94,8 @@ export const InsightsTab: React.FC = () => {
         try {
             const groups = await GeminiService.generateSmartGroups(students, domains);
             setSmartGroups(groups);
-        } catch (e) { 
-            showToast("Clustering engine offline.", "error");
+        } catch (e: any) { 
+            showToast(e.message || "Clustering engine offline.", "error");
         } finally { 
             setIsGrouping(false); 
         }
@@ -111,6 +111,8 @@ export const InsightsTab: React.FC = () => {
             const briefing = await GeminiService.generateExecutiveBriefing(students, classProfile?.className || 'General Cohort');
             setBriefingData(briefing);
             setIsBriefingModalOpen(true);
+        } catch (e: any) {
+            showToast(e.message || "Briefing engine offline.", "error");
         } finally { setIsGeneratingBrief(false); }
     };
 
@@ -124,6 +126,8 @@ export const InsightsTab: React.FC = () => {
             const study = await GeminiService.generateCaseStudy(students, classProfile?.className || 'Research Cohort');
             setCaseStudyData(study);
             setIsCaseStudyModalOpen(true);
+        } catch (e: any) {
+            showToast(e.message || "Research engine offline.", "error");
         } finally { setIsGeneratingStudy(false); }
     };
 

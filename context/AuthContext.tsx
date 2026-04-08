@@ -31,45 +31,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     useEffect(() => {
         let isMounted = true;
-        const initAuth = () => {
-            const localDemo = localStorage.getItem('benchmark_demo_session');
-            if (localDemo) {
-                if (isMounted) {
-                    setUser(JSON.parse(localDemo));
-                    setIsLoading(false);
+        
+        // Initial check for demo session
+        const localDemo = localStorage.getItem('benchmark_demo_session');
+        if (localDemo && isMounted) {
+            setUser(JSON.parse(localDemo));
+            setIsLoading(false);
+        }
+
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (!isMounted) return;
+
+            if (firebaseUser) {
+                // If we have a real user, it always overrides demo
+                localStorage.removeItem('benchmark_demo_session');
+                try {
+                    const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+                    const userData = userDoc.exists() ? userDoc.data() : {};
+                    
+                    setUser({
+                        id: firebaseUser.uid,
+                        name: userData.name || firebaseUser.displayName || 'Teacher',
+                        role: UserRole.Teacher,
+                        isDemo: false,
+                        isPremium: userData.isPremium || false
+                    });
+                } catch (e) {
+                    logger.error("User Profile Fetch Failed", e);
+                    // Fallback to basic auth info if profile fetch fails
+                    setUser({
+                        id: firebaseUser.uid,
+                        name: firebaseUser.displayName || 'Teacher',
+                        role: UserRole.Teacher,
+                        isDemo: false,
+                        isPremium: false
+                    });
                 }
-                return;
+            } else {
+                // Only clear user if we're not in demo mode
+                const stillDemo = localStorage.getItem('benchmark_demo_session');
+                if (!stillDemo) {
+                    setUser(null);
+                }
             }
+            setIsLoading(false);
+        });
 
-            const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-                if (isMounted) {
-                    if (firebaseUser) {
-                        try {
-                            const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-                            const userData = userDoc.exists() ? userDoc.data() : {};
-                            
-                            setUser({
-                                id: firebaseUser.uid,
-                                name: userData.name || firebaseUser.displayName || 'Teacher',
-                                role: UserRole.Teacher,
-                                isDemo: false,
-                                isPremium: userData.isPremium || false
-                            });
-                        } catch (e) {
-                            logger.error("User Profile Fetch Failed", e);
-                            setUser(null);
-                        }
-                    } else {
-                        setUser(null);
-                    }
-                    setIsLoading(false);
-                }
-            });
-            return unsubscribe;
+        return () => { 
+            isMounted = false; 
+            unsubscribe(); 
         };
-
-        const unsubscribe = initAuth();
-        return () => { isMounted = false; if (typeof unsubscribe === 'function') unsubscribe(); };
     }, []);
 
     const login = async (email: string, password: string, silent = false, rememberMe = true): Promise<boolean> => {

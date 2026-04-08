@@ -22,6 +22,10 @@ export class GeminiService {
         this.lastCallTime = now;
     }
 
+    private static getAI() {
+        return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY });
+    }
+
     private static cleanJsonResponse(text: string): string {
         if (!text) return '{}';
         return text.replace(/```json\n?|```/g, '').trim();
@@ -44,7 +48,7 @@ export class GeminiService {
     static async generateSmartGroups(students: Student[], domains: string[]): Promise<any> {
         try {
             this.checkRateLimit();
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = this.getAI();
             const dataset = students.map(s => ({
                 id: s.id,
                 scores: s.assessments[s.assessments.length - 1]?.scores || {}
@@ -67,7 +71,7 @@ export class GeminiService {
     static async generateCaseStudy(students: Student[], className: string): Promise<any> {
         try {
             this.checkRateLimit();
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = this.getAI();
             const dataset = students.map(s => ({
                 n: s.name,
                 h: s.assessments.map(a => ({ p: a.type, avg: Math.round(Object.values(a.scores).reduce((sum: number, v: any) => sum + (v || 0), 0) / 8) }))
@@ -92,7 +96,7 @@ export class GeminiService {
     static async generateExecutiveBriefing(students: Student[], className: string): Promise<any> {
         try {
             this.checkRateLimit();
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = this.getAI();
             const summary = students.map(s => ({ 
                 n: s.name, 
                 v: s.growthVelocity, 
@@ -120,7 +124,7 @@ export class GeminiService {
     static async analyzeTestPaper(base64Image: string, domains: string[]): Promise<Record<string, number>> {
         try {
             this.checkRateLimit();
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = this.getAI();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: {
@@ -141,7 +145,7 @@ export class GeminiService {
     static async predictStudentTrajectory(student: Student): Promise<string> {
         try {
             this.checkRateLimit();
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = this.getAI();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: `${this.STRICT_DATA_INSTRUCTION} \n\n Predict path for ${student.name} based ONLY on ${student.growthVelocity}% velocity. 1 sentence.`,
@@ -156,7 +160,7 @@ export class GeminiService {
     static async generateMicroNarrative(context: string): Promise<string> {
         try {
             this.checkRateLimit();
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = this.getAI();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: `${this.STRICT_DATA_INSTRUCTION} \n\n ${context}`,
@@ -171,7 +175,7 @@ export class GeminiService {
     static async suggestDynamicThresholds(students: Student[]): Promise<any> {
         try {
             this.checkRateLimit();
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = this.getAI();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: `Suggest RTI thresholds for a cohort of ${students.length} students. JSON { Baseline, Midline, Endline }.`,
@@ -187,7 +191,7 @@ export class GeminiService {
     static async generateComprehensiveStudentAnalysis(student: Student): Promise<any> {
         try {
             this.checkRateLimit();
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = this.getAI();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: `Report card narrative for ${student.name}. Use scores: ${JSON.stringify(student.assessments[student.assessments.length-1]?.scores)}. JSON { report_card: string }.`,
@@ -203,7 +207,7 @@ export class GeminiService {
     static async generateTranslatedReport(content: string, targetLang: string): Promise<string> {
         try {
             this.checkRateLimit();
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = this.getAI();
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: `Translate to ${targetLang}: ${content}`,

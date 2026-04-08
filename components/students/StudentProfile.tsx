@@ -67,8 +67,12 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
 
     useEffect(() => {
         const fetchPrediction = async () => {
-            const res = await GeminiService.predictStudentTrajectory(student);
-            setPrediction(res);
+            try {
+                const res = await GeminiService.predictStudentTrajectory(student);
+                setPrediction(res);
+            } catch (e: any) {
+                setPrediction("Trajectory synthesis paused. System recalibrating.");
+            }
         };
         fetchPrediction();
     }, [student]);

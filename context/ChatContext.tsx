@@ -6,6 +6,7 @@ import { logger } from '../services/logger';
 import { teacherTools } from '../services/agentTools.ts';
 import { useStudents } from './StudentContext.tsx';
 import { useBenchmarks } from './BenchmarkContext.tsx';
+import { useResources } from './ResourceContext.tsx';
 
 interface ChatContextType {
     isOpen: boolean;
@@ -29,6 +30,7 @@ If a tool returns "not found", suggest checking the institutional roster.`;
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { students, classProfile } = useStudents();
     const { benchmarks } = useBenchmarks();
+    const { resources } = useResources();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [isTyping, setIsTyping] = useState(false);
@@ -61,6 +63,28 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             case 'get_benchmark_standards':
                 const found = benchmarks.find(b => b.level_name === args.level && b.domain === args.domain);
                 return found || { error: "Instructional standard not found for this calibration." };
+            case 'get_domain_performance':
+                const domain = args.domain as Domain;
+                let total = 0, count = 0;
+                students.forEach(s => {
+                    const latest = s.assessments[s.assessments.length - 1];
+                    if (latest?.scores && latest.scores[domain] !== undefined) {
+                        total += latest.scores[domain];
+                        count++;
+                    }
+                });
+                return {
+                    domain,
+                    averageScore: count > 0 ? `${Math.round(total / count)}%` : "No data",
+                    studentCount: count
+                };
+            case 'search_resources':
+                const queryStr = args.query.toLowerCase();
+                const filtered = resources.filter(r => 
+                    r.title.toLowerCase().includes(queryStr) || 
+                    r.description.toLowerCase().includes(queryStr)
+                );
+                return filtered.map(r => ({ title: r.title, domain: r.domain, level: r.level }));
             default:
                 return { error: "Logic node not implemented." };
         }
@@ -74,7 +98,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsTyping(true);
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY });
             const model = 'gemini-3-flash-preview';
             
             let response = await ai.models.generateContent({

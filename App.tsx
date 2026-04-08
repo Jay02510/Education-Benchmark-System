@@ -53,7 +53,7 @@ const NavItem: React.FC<{
 );
 
 const MainAppLayout: React.FC = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, isLoading } = useAuth();
     const { language } = useLanguage();
     const { activeTab, setActiveTab, isBulkEntryOpen, setBulkEntryOpen } = useNavigation();
     const { classProfile } = useStudents();
@@ -77,6 +77,17 @@ const MainAppLayout: React.FC = () => {
             default: return <StudentsTab />;
         }
     };
+    
+    if (isLoading) {
+        return (
+            <div className="h-screen w-full flex flex-col items-center justify-center bg-[#0B0F19]">
+                <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl animate-bounce mb-6">
+                    <Icon name="benchmark" className="w-8 h-8 text-white" strokeWidth={3} />
+                </div>
+                <p className="text-indigo-400 font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">Synchronizing Pedagogical Context...</p>
+            </div>
+        );
+    }
     
     if (!user) return <LoginScreen />;
 

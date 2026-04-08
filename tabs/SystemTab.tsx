@@ -53,8 +53,8 @@ export const SystemTab: React.FC = () => {
         <div className="p-6 md:p-12 max-w-[1400px] mx-auto h-full flex flex-col pb-48">
             <div className="mb-12 flex justify-between items-end">
                 <div>
-                    <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2 uppercase italic leading-none">Command Center</h1>
-                    <p className="text-slate-400 font-bold text-lg italic">Logic configuration and institutional guardrails.</p>
+                    <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2 uppercase italic leading-none">Settings & Controls</h1>
+                    <p className="text-slate-400 font-bold text-lg italic">Manage app settings and learning goals.</p>
                 </div>
             </div>
 
@@ -62,9 +62,9 @@ export const SystemTab: React.FC = () => {
                 <div className="lg:col-span-3">
                     <div className="space-y-2 sticky top-6">
                         {[
-                            { id: 'profile', t: 'Authenticated User', i: 'students' },
-                            { id: 'institutional', t: 'Skill Architecture', i: 'admin' },
-                            { id: 'security', t: 'RTI Calibration', i: 'alert' }
+                            { id: 'profile', t: 'My Profile', i: 'students' },
+                            { id: 'institutional', t: 'Subject Structure', i: 'admin' },
+                            { id: 'security', t: 'Alert Settings', i: 'alert' }
                         ].map(item => (
                             <button 
                                 key={item.id}
@@ -85,22 +85,22 @@ export const SystemTab: React.FC = () => {
                         {activeSection === 'profile' && (
                             <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500 relative z-10">
                                 <div>
-                                    <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Identity Record</h2>
-                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Personal Identification Layer</p>
+                                    <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">My Profile</h2>
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Personal Information</p>
                                 </div>
                                 <div className="space-y-6 max-w-xl">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-slate-300 tracking-widest ml-1">Official Name</label>
+                                        <label className="text-[10px] font-black uppercase text-slate-300 tracking-widest ml-1">Full Name</label>
                                         <input type="text" defaultValue={user?.name} className="w-full px-8 py-5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:bg-white focus:border-indigo-500 outline-none font-black text-slate-800 transition-all text-xl" />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-slate-300 tracking-widest ml-1">Logic Credentials</label>
+                                        <label className="text-[10px] font-black uppercase text-slate-300 tracking-widest ml-1">Account Permissions</label>
                                         <div className="w-full px-8 py-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-slate-400 font-black uppercase tracking-widest text-xs flex items-center gap-3">
                                             <Icon name="shield" className="w-4 h-4" />
-                                            {user?.role} Level Access Enabled
+                                            {user?.role} Access Level
                                         </div>
                                     </div>
-                                    <button className="px-12 py-5 bg-slate-900 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-indigo-600 transition-all mt-6 border-b-4 border-slate-950">Update Identity</button>
+                                    <button className="px-12 py-5 bg-slate-900 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-indigo-600 transition-all mt-6 border-b-4 border-slate-950">Update Profile</button>
                                 </div>
                             </div>
                         )}
@@ -109,21 +109,21 @@ export const SystemTab: React.FC = () => {
                             <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500 relative z-10">
                                 <div className="flex justify-between items-start">
                                     <div>
-                                        <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Academic Blueprint</h2>
-                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Domain & Subdomain Component Logic</p>
+                                        <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Subject Structure</h2>
+                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Manage subjects and specific skills</p>
                                     </div>
                                     <button 
-                                        onClick={() => { if(window.confirm("WARNING: Reverting to Master standards will delete custom fields. Proceed?")) resetBenchmarks(); }} 
+                                        onClick={() => { if(window.confirm("WARNING: Resetting will delete all custom changes. Proceed?")) resetBenchmarks(); }} 
                                         className="text-[9px] font-black text-rose-500 hover:text-white hover:bg-rose-500 uppercase tracking-widest border border-rose-100 px-6 py-3 rounded-2xl transition-all"
                                     >
-                                        Emergency Reset
+                                        Reset to Default
                                     </button>
                                 </div>
                                 
                                 <div className="bg-slate-50 p-10 rounded-[3rem] border border-slate-100">
                                     <div className="flex gap-4 mb-10">
-                                        <input type="text" value={newDomainInput} onChange={(e) => setNewDomainInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddDomain()} placeholder="Add Primary Segment" className="flex-1 px-8 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none focus:border-indigo-600 font-black text-lg shadow-sm" />
-                                        <button onClick={handleAddDomain} className="px-10 py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all border-b-4 border-slate-950">Add Segment</button>
+                                        <input type="text" value={newDomainInput} onChange={(e) => setNewDomainInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddDomain()} placeholder="Add New Subject" className="flex-1 px-8 py-5 bg-white border-2 border-slate-200 rounded-2xl outline-none focus:border-indigo-600 font-black text-lg shadow-sm" />
+                                        <button onClick={handleAddDomain} className="px-10 py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all border-b-4 border-slate-950">Add Subject</button>
                                     </div>
                                     <div className="space-y-4">
                                         {domains.map(d => (
@@ -131,7 +131,7 @@ export const SystemTab: React.FC = () => {
                                                 <div onClick={() => setExpandedDomain(expandedDomain === d ? null : d)} className="flex items-center justify-between p-6 cursor-pointer">
                                                     <div className="flex items-center gap-4">
                                                         <div className={`p-3 rounded-xl transition-colors ${expandedDomain === d ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-600'}`}><Icon name="benchmark" className="w-5 h-5" /></div>
-                                                        <div><span className="font-black text-slate-800 text-lg uppercase tracking-tight">{d}</span><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{(subdomains[d] || []).length} Components</p></div>
+                                                        <div><span className="font-black text-slate-800 text-lg uppercase tracking-tight">{d}</span><p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{(subdomains[d] || []).length} Skills</p></div>
                                                     </div>
                                                     <div className="flex items-center gap-3">
                                                         <button onClick={(e) => { e.stopPropagation(); deleteDomain(d); }} className="p-3 text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all"><Icon name="close" className="w-5 h-5" /></button>
@@ -144,14 +144,14 @@ export const SystemTab: React.FC = () => {
                                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
                                                             {(subdomains[d] || []).map((sub: SubdomainMetadata) => (
                                                                 <div key={sub.name} className="flex items-center justify-between p-4 bg-white rounded-2xl border border-slate-100 group shadow-sm">
-                                                                    <div className="flex flex-col"><span className="text-xs font-black text-slate-700">{sub.name}</span><span className="text-[9px] font-bold text-slate-400 uppercase">Limit: {sub.maxScore} pts</span></div>
+                                                                    <div className="flex flex-col"><span className="text-xs font-black text-slate-700">{sub.name}</span><span className="text-[9px] font-bold text-slate-400 uppercase">Max Points: {sub.maxScore}</span></div>
                                                                     <button onClick={() => deleteSubdomain(d, sub.name)} className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-rose-500 transition-all"><Icon name="close" className="w-4 h-4" /></button>
                                                                 </div>
                                                             ))}
                                                         </div>
                                                         <div className="flex gap-3 bg-white p-4 rounded-[1.8rem] border border-slate-100 shadow-inner">
-                                                            <input value={newSubName} onChange={e => setNewSubName(e.target.value)} placeholder="Component Name" className="flex-1 bg-transparent px-4 py-2 text-sm font-bold outline-none" />
-                                                            <button onClick={() => handleAddSub(d)} className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all">Attach</button>
+                                                            <input value={newSubName} onChange={e => setNewSubName(e.target.value)} placeholder="Skill Name" className="flex-1 bg-transparent px-4 py-2 text-sm font-bold outline-none" />
+                                                            <button onClick={() => handleAddSub(d)} className="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all">Add Skill</button>
                                                         </div>
                                                     </div>
                                                 )}
@@ -166,8 +166,8 @@ export const SystemTab: React.FC = () => {
                             <div className="space-y-10 animate-in fade-in slide-in-from-right-4 duration-500 relative z-10">
                                 <div className="flex justify-between items-center">
                                     <div>
-                                        <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Logic Sensitivity</h2>
-                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Calibration of Automated RTI Trigger Points</p>
+                                        <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Alert Settings</h2>
+                                        <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Set when students should be flagged for extra help</p>
                                     </div>
                                     <button 
                                         onClick={handleAutoCalibrate}
@@ -175,7 +175,7 @@ export const SystemTab: React.FC = () => {
                                         className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center gap-3 hover:bg-indigo-700 disabled:opacity-50 transition-all border-b-4 border-indigo-900"
                                     >
                                         {isCalibrating ? <Icon name="refresh" className="w-4 h-4 animate-spin" /> : <Icon name="brain" className="w-4 h-4" />}
-                                        AI Optimal Calibration
+                                        AI Smart Calibration
                                     </button>
                                 </div>
                                 <div className="space-y-12">
@@ -183,8 +183,8 @@ export const SystemTab: React.FC = () => {
                                         <div key={period} className="space-y-4 p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100">
                                             <div className="flex justify-between items-end mb-4">
                                                 <div>
-                                                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest block mb-1">{period} Cycle Mastery</label>
-                                                    <p className="text-[10px] text-slate-400 font-bold max-w-sm">Threshold for automated Tier 2 placement.</p>
+                                                    <label className="text-xs font-black text-slate-800 uppercase tracking-widest block mb-1">{period} Goal</label>
+                                                    <p className="text-[10px] text-slate-400 font-bold max-w-sm">Score needed to avoid being flagged.</p>
                                                 </div>
                                                 <span className="text-5xl font-black text-indigo-600 tracking-tighter">{thresholds[period]}%</span>
                                             </div>

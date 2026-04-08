@@ -5,6 +5,7 @@ import { useToast } from './ToastContext';
 import { useAuth } from './AuthContext';
 import { db } from '../firebase';
 import { logger } from '../services/logger';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 import { collection, addDoc, deleteDoc, doc, query, where, onSnapshot } from 'firebase/firestore';
 
 interface ResourceContextType {
@@ -42,8 +43,11 @@ export const ResourceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
                     ...doc.data()
                 })) as Resource[];
                 setResources(loaded);
-            }, (error) => {
+            }, (error: any) => {
                  logger.error("Resource Sync Failure", error);
+                 if (error?.message?.includes('Missing or insufficient permissions') || error?.code === 'permission-denied') {
+                     handleFirestoreError(error, OperationType.LIST, 'resources');
+                 }
             });
             return () => unsubscribe();
         }

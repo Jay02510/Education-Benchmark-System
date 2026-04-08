@@ -180,8 +180,13 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({ isOpen, 
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-50">
-                <button onClick={onClose} className="px-8 py-3 text-slate-400 font-bold hover:text-slate-600 transition">Cancel</button>
-                <button onClick={handleSubmit} className="px-10 py-3 bg-slate-900 text-white rounded-2xl font-black shadow-xl hover:bg-indigo-600 transition-all flex items-center gap-2 text-xs uppercase tracking-widest border-b-4 border-slate-950"><Icon name="check" className="w-4 h-4" /> Commit Cycle</button>
+                <button 
+                    onClick={onClose} 
+                    className="px-8 py-3 bg-white text-slate-400 border-2 border-slate-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                >
+                    Cancel
+                </button>
+                <button onClick={handleSubmit} className="px-10 py-3 bg-slate-900 text-white rounded-2xl font-black shadow-xl hover:bg-indigo-600 transition-all flex items-center gap-2 text-xs uppercase tracking-widest border-b-4 border-slate-950"><Icon name="check" className="w-4 h-4" /> Save Assessment</button>
             </div>
         </Modal>
     );

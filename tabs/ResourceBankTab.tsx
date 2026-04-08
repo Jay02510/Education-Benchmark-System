@@ -110,6 +110,14 @@ export const ResourceBankTab: React.FC = () => {
                         <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200">
                            <pre className="whitespace-pre-wrap font-sans text-sm">{selectedResource.content}</pre>
                         </div>
+                        <div className="flex justify-end pt-4">
+                            <button 
+                                onClick={() => setSelectedResource(null)}
+                                className="px-8 py-3 bg-white text-slate-400 border border-slate-200 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                            >
+                                Close
+                            </button>
+                        </div>
                     </div>
                 )}
             </Modal>

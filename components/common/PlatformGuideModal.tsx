@@ -29,15 +29,15 @@ export const PlatformGuideModal: React.FC<PlatformGuideModalProps> = ({ isOpen, 
                     <div className="space-y-1">
                         <Term 
                             icon="trendUp" 
-                            name="Growth Velocity" 
+                            name="Growth Rate" 
                             subtitle="Learning Speed"
                             def="This tracks how fast a student is improving. A higher percentage means they are catching up or excelling quickly." 
                         />
                         <Term 
                             icon="alert" 
-                            name="Intervention Tiers" 
-                            subtitle="Support Levels"
-                            def="Tier 1 is the whole class. Tier 2 is a small group. Tier 3 is 1-on-1 intensive care. We flag students automatically if they need more help." 
+                            name="Support Levels" 
+                            subtitle="Intervention Steps"
+                            def="Level 1 is the whole class. Level 2 is a small group. Level 3 is 1-on-1 intensive care. We flag students automatically if they need more help." 
                         />
                          <Term 
                             icon="benchmark" 
@@ -71,7 +71,7 @@ export const PlatformGuideModal: React.FC<PlatformGuideModalProps> = ({ isOpen, 
                     <div className="space-y-1">
                         <Term 
                             icon="brain" 
-                            name="Executive Briefing" 
+                            name="Principal Briefing" 
                             subtitle="Owner Summary"
                             def="A strategic overview designed for school leadership to see overall school health without getting bogged down in tiny details." 
                         />
@@ -90,7 +90,7 @@ export const PlatformGuideModal: React.FC<PlatformGuideModalProps> = ({ isOpen, 
                      </div>
                      <div>
                         <p className="text-sm font-bold text-emerald-900 mb-0.5">Presentation Tip</p>
-                        <p className="text-xs text-emerald-700">Focus on 'Learning Speed' and 'Institutional Health' when talking to the school owner.</p>
+                        <p className="text-xs text-emerald-700">Focus on 'Learning Speed' and 'School Health' when talking to the school owner.</p>
                      </div>
                 </div>
             </div>

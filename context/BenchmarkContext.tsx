@@ -6,6 +6,7 @@ import { DOMAINS as INITIAL_DOMAINS, SUBDOMAINS as INITIAL_SUBDOMAINS } from '..
 import { useToast } from './ToastContext';
 import { useAuth } from './AuthContext';
 import { db } from '../firebase';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 import { collection, addDoc, doc, updateDoc, deleteDoc, query, where, onSnapshot, writeBatch, getDocs } from 'firebase/firestore';
 
 const DEFAULT_THRESHOLDS: Record<TestPeriod, number> = {
@@ -61,17 +62,27 @@ export const BenchmarkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             const unsubBench = onSnapshot(q, (snapshot) => {
                 const loaded = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Benchmark[];
                 setBenchmarks(loaded);
+            }, (error: any) => {
+                if (error?.message?.includes('Missing or insufficient permissions') || error?.code === 'permission-denied') {
+                    handleFirestoreError(error, OperationType.LIST, 'benchmarks');
+                }
             });
 
             const loadConfig = async () => {
-                const qConfig = query(collection(db, 'framework_configs'), where('userId', '==', user.id));
-                const snapshot = await getDocs(qConfig);
-                if (!snapshot.empty) {
-                    const docSnap = snapshot.docs[0];
-                    setConfigDocId(docSnap.id);
-                    setDomains(docSnap.data().domains || []);
-                    setSubdomains(docSnap.data().subdomains || {});
-                    setThresholds(docSnap.data().thresholds || DEFAULT_THRESHOLDS);
+                try {
+                    const qConfig = query(collection(db, 'framework_configs'), where('userId', '==', user.id));
+                    const snapshot = await getDocs(qConfig);
+                    if (!snapshot.empty) {
+                        const docSnap = snapshot.docs[0];
+                        setConfigDocId(docSnap.id);
+                        setDomains(docSnap.data().domains || []);
+                        setSubdomains(docSnap.data().subdomains || {});
+                        setThresholds(docSnap.data().thresholds || DEFAULT_THRESHOLDS);
+                    }
+                } catch (error: any) {
+                    if (error?.message?.includes('Missing or insufficient permissions') || error?.code === 'permission-denied') {
+                        handleFirestoreError(error, OperationType.LIST, 'framework_configs');
+                    }
                 }
             };
             loadConfig();

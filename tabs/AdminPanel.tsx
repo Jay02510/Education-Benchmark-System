@@ -12,7 +12,7 @@ export const AdminPanel: React.FC = () => {
 
     return (
         <div className="p-8 h-full overflow-y-auto">
-            <h1 className="text-3xl font-extrabold text-slate-900 mb-6 tracking-tight">System Administration</h1>
+            <h1 className="text-3xl font-extrabold text-slate-900 mb-6 tracking-tight">Admin Dashboard</h1>
             
             <div className="flex space-x-8 border-b border-gray-100 mb-8 overflow-x-auto">
                 {(['Configuration', 'Users'] as const).map((tab) => (
@@ -61,8 +61,8 @@ const ConfigSection: React.FC = () => {
                             <Icon name="alert" className="w-6 h-6" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Flagging Thresholds</h2>
-                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">Automated RTI Trigger Points</p>
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Alert Thresholds</h2>
+                            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">When to flag students for help</p>
                         </div>
                     </div>
                     
@@ -88,7 +88,7 @@ const ConfigSection: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 <Card className="p-8 shadow-lg bg-white">
                     <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-50">
-                        <h2 className="text-xl font-black text-slate-900">Academic Domains</h2>
+                        <h2 className="text-xl font-black text-slate-900">Subjects</h2>
                         <div className="flex gap-2">
                             <input value={newDomain} onChange={(e) => setNewDomain(e.target.value)} placeholder="Subject Name" className="px-4 py-2 border border-slate-200 rounded-xl text-sm font-bold w-40 focus:ring-2 focus:ring-indigo-500 outline-none" />
                             <button onClick={handleAddDomain} className="bg-slate-900 text-white px-5 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition shadow-lg active:scale-95">Add</button>

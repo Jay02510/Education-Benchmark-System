@@ -37,7 +37,7 @@ const DashboardWidget: React.FC<{ title: string; value: string | number; subtext
 export const InsightsTab: React.FC = () => {
     const { students, classProfile } = useStudents();
     const { domains, benchmarks } = useBenchmarks();
-    const { user, logout } = useAuth();
+    const { user, logout, upgradeToPremium } = useAuth();
     const { showToast } = useToast();
     
     const [chartType, setChartType] = useState<'radar' | 'bar'>('radar');
@@ -72,9 +72,9 @@ export const InsightsTab: React.FC = () => {
         });
 
         const tiers = [
-            { name: 'Tier 1', value: 0, color: '#10b981', students: [] },
-            { name: 'Tier 2', value: 0, color: '#f59e0b', students: [] },
-            { name: 'Tier 3', value: 0, color: '#f43f5e', students: [] }
+            { name: 'On Track', value: 0, color: '#10b981', students: [] },
+            { name: 'Needs Monitoring', value: 0, color: '#f59e0b', students: [] },
+            { name: 'Needs Help', value: 0, color: '#f43f5e', students: [] }
         ];
 
         students.forEach(s => {
@@ -170,7 +170,7 @@ export const InsightsTab: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <DashboardWidget title="Risk Protocol" value={analytics?.atRiskList.length || 0} subtext={`${students.length} Total Units`} icon="alert" gradient="from-rose-500 to-pink-600" onClick={() => setIsAtRiskModalOpen(true)} />
-                <DashboardWidget title="Institutional Health" value={`${analytics?.healthScore}%`} subtext="Class Efficiency" icon="shield" gradient="from-indigo-600 to-violet-700" />
+                <DashboardWidget title="School Health" value={`${analytics?.healthScore}%`} subtext="Class Efficiency" icon="shield" gradient="from-indigo-600 to-violet-700" />
                 <DashboardWidget title="Mastery Median" value={`${analytics?.classAvg}%`} subtext="Cohort Aggregate" icon="analytics" gradient="from-slate-800 to-slate-950" />
             </div>
 
@@ -229,7 +229,7 @@ export const InsightsTab: React.FC = () => {
                 </div>
                 <div className="xl:col-span-4 space-y-10">
                     <Card className="p-10 bg-white border border-slate-100 shadow-2xl rounded-[3.5rem]">
-                        <h3 className="text-xl font-black text-slate-800 mb-10 tracking-tight">RTI Logic Spread</h3>
+                        <h3 className="text-xl font-black text-slate-800 mb-10 tracking-tight">Support Level Distribution</h3>
                         <div className="h-72"><SupportTierChart data={analytics?.tiers as any} /></div>
                     </Card>
                 </div>
@@ -241,13 +241,27 @@ export const InsightsTab: React.FC = () => {
                         <Icon name="benchmark" className="w-10 h-10" />
                     </div>
                     <h3 className="text-2xl font-black text-slate-900 tracking-tight">Upgrade to Full Access</h3>
-                    <p className="text-slate-500 font-medium leading-relaxed">Save your own class data, manage unlimited students, and export unlimited AI reports. Create an account to start your institutional transition.</p>
-                    <button 
-                        onClick={logout}
-                        className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-indigo-600 shadow-2xl transition-all active:scale-95"
-                    >
-                        Create My Account
-                    </button>
+                    <p className="text-slate-500 font-medium leading-relaxed">
+                        {user ? "Unlock unlimited AI reports, advanced clustering, and deep insights for your classroom." : "Save your own class data, manage unlimited students, and export unlimited AI reports. Create an account to start your institutional transition."}
+                    </p>
+                    {user ? (
+                        <button 
+                            onClick={async () => {
+                                await upgradeToPremium();
+                                setIsUpgradePromptOpen(false);
+                            }}
+                            className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-indigo-700 shadow-2xl transition-all active:scale-95"
+                        >
+                            Upgrade to Premium
+                        </button>
+                    ) : (
+                        <button 
+                            onClick={logout}
+                            className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-indigo-600 shadow-2xl transition-all active:scale-95"
+                        >
+                            Create My Account
+                        </button>
+                    )}
                 </div>
             </Modal>
 

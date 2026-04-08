@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useTransition } from 'react';
+import React, { useState, useEffect, useMemo, useTransition, useRef } from 'react';
 import { Student } from '../types';
 import { StudentCard } from '../components/students/StudentCard';
 import { StudentProfile } from '../components/students/StudentProfile';
@@ -9,10 +9,12 @@ import { Icon } from '../components/common/Icon';
 import { AddStudentModal } from '../components/students/AddStudentModal';
 import { StudentCardSkeleton } from '../components/common/Skeleton';
 import { Modal } from '../components/common/Modal';
+import { useToast } from '../context/ToastContext';
 
 export const StudentsTab: React.FC = () => {
-    const { students, classProfile, updateClassProfile } = useStudents();
+    const { students, classProfile, updateClassProfile, addStudentsBulk } = useStudents();
     const { selectedStudentId, setSelectedStudentId, setBulkEntryOpen } = useNavigation();
+    const { showToast } = useToast();
     
     const [isPending, startTransition] = useTransition();
     const [searchTerm, setSearchTerm] = useState('');
@@ -21,6 +23,7 @@ export const StudentsTab: React.FC = () => {
     const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
     const [isEditClassModalOpen, setIsEditClassModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const timer = setTimeout(() => setIsLoading(false), 400);
@@ -30,6 +33,33 @@ export const StudentsTab: React.FC = () => {
     const filteredStudents = useMemo(() => {
         return students.filter(student => student.name.toLowerCase().includes(deferredSearch.toLowerCase()));
     }, [students, deferredSearch]);
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const text = event.target?.result as string;
+                // Basic CSV parsing: split by newline, take first column as name
+                const names = text.split('\n')
+                    .map(line => line.split(',')[0].trim())
+                    .filter(name => name.length > 0 && name.toLowerCase() !== 'name'); // skip header
+                
+                if (names.length > 0) {
+                    await addStudentsBulk(names);
+                    showToast(`Successfully imported ${names.length} students.`, 'success');
+                } else {
+                    showToast("No valid names found in CSV.", 'error');
+                }
+            } catch (error) {
+                showToast("Failed to parse CSV file.", 'error');
+            }
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        };
+        reader.readAsText(file);
+    };
 
     if (selectedStudentId) {
         const selectedStudent = students.find(s => s.id === selectedStudentId);
@@ -47,7 +77,7 @@ export const StudentsTab: React.FC = () => {
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center bg-white p-2 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 ring-4 ring-slate-50 transition-all focus-within:ring-indigo-50">
+                    <div className="flex items-center bg-white p-2 rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 ring-4 ring-slate-50 transition-all focus-within:ring-indigo-50 relative">
                         <Icon name="search" className={`w-5 h-5 ml-3 transition-colors ${isPending ? 'text-indigo-500 animate-pulse' : 'text-slate-300'}`} />
                         <input 
                             type="text" 
@@ -57,9 +87,31 @@ export const StudentsTab: React.FC = () => {
                                 setSearchTerm(e.target.value);
                                 startTransition(() => setDeferredSearch(e.target.value));
                             }}
-                            className="bg-transparent border-none focus:ring-0 text-sm font-black text-slate-700 placeholder-slate-200 w-48 md:w-64"
+                            className="bg-transparent border-none focus:ring-0 text-sm font-black text-slate-700 placeholder-slate-200 w-48 md:w-64 pr-10"
                         />
+                        {searchTerm && (
+                            <button 
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    startTransition(() => setDeferredSearch(''));
+                                }}
+                                className="absolute right-3 text-slate-300 hover:text-slate-500 transition-colors"
+                            >
+                                <Icon name="close" className="w-4 h-4" />
+                            </button>
+                        )}
                     </div>
+                    <input 
+                        type="file" 
+                        accept=".csv" 
+                        ref={fileInputRef} 
+                        onChange={handleFileUpload} 
+                        className="hidden" 
+                    />
+                    <button onClick={() => fileInputRef.current?.click()} className="px-6 py-4 bg-white border-2 border-slate-100 text-slate-800 rounded-2xl font-black hover:bg-slate-50 transition flex items-center justify-center gap-3 shadow-sm active:scale-95 text-xs uppercase tracking-widest">
+                        <Icon name="upload" className="w-4 h-4 text-indigo-500" />
+                        Import CSV
+                    </button>
                     <button onClick={() => setBulkEntryOpen(true)} className="px-6 py-4 bg-white border-2 border-slate-100 text-slate-800 rounded-2xl font-black hover:bg-slate-50 transition flex items-center justify-center gap-3 shadow-sm active:scale-95 text-xs uppercase tracking-widest">
                         <Icon name="benchmark" className="w-4 h-4 text-indigo-500" />
                         Bulk Entry

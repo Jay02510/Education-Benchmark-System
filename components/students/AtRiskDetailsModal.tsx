@@ -84,7 +84,7 @@ export const AtRiskDetailsModal: React.FC<AtRiskDetailsModalProps> = ({ isOpen, 
                 <div className="flex justify-end pt-6">
                     <button 
                         onClick={onClose}
-                        className="px-10 py-4 text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] hover:text-slate-600 transition"
+                        className="px-10 py-4 bg-white text-slate-400 border-2 border-slate-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
                     >
                         Dismiss
                     </button>

@@ -46,7 +46,7 @@ interface DomainPerformanceChartProps {
     data: { domain: Domain; score: number; target: number }[];
 }
 
-export const DomainPerformanceChart: React.FC<DomainPerformanceChartProps> = ({ data }) => {
+export const DomainPerformanceChart: React.FC<DomainPerformanceChartProps> = React.memo(({ data }) => {
     return (
         <ResponsiveContainer width="100%" height={350}>
             <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -83,9 +83,9 @@ export const DomainPerformanceChart: React.FC<DomainPerformanceChartProps> = ({ 
             </BarChart>
         </ResponsiveContainer>
     );
-};
+});
 
-export const RadarPerformanceChart: React.FC<DomainPerformanceChartProps> = ({ data }) => {
+export const RadarPerformanceChart: React.FC<DomainPerformanceChartProps> = React.memo(({ data }) => {
     const radarData = data.map(d => ({
         subject: d.domain,
         A: d.score,
@@ -106,9 +106,9 @@ export const RadarPerformanceChart: React.FC<DomainPerformanceChartProps> = ({ d
             </RadarChart>
         </ResponsiveContainer>
     );
-};
+});
 
-export const ProficiencyDistributionChart: React.FC<{ data: { name: string, count: number, color: string, students: string[] }[] }> = ({ data }) => (
+export const ProficiencyDistributionChart: React.FC<{ data: { name: string, count: number, color: string, students: string[] }[] }> = React.memo(({ data }) => (
     <ResponsiveContainer width="100%" height={280}>
         <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
@@ -128,9 +128,9 @@ export const ProficiencyDistributionChart: React.FC<{ data: { name: string, coun
             </Bar>
         </BarChart>
     </ResponsiveContainer>
-);
+));
 
-export const SupportTierChart: React.FC<{ data: { name: string, value: number, color: string, students: string[] }[] }> = ({ data }) => (
+export const SupportTierChart: React.FC<{ data: { name: string, value: number, color: string, students: string[] }[] }> = React.memo(({ data }) => (
     <ResponsiveContainer width="100%" height={280}>
         <PieChart>
             <Pie
@@ -150,7 +150,7 @@ export const SupportTierChart: React.FC<{ data: { name: string, value: number, c
             <Legend verticalAlign="bottom" align="center" iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold', paddingTop: '10px' }} />
         </PieChart>
     </ResponsiveContainer>
-);
+));
 
 interface LongitudinalGrowthChartProps {
     data: { name: string, [key: string]: number | string | null }[];
@@ -159,7 +159,7 @@ interface LongitudinalGrowthChartProps {
     actions?: { date: string, type: string }[];
 }
 
-export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = ({ data, lines, type = 'line', actions = [] }) => {
+export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = React.memo(({ data, lines, type = 'line', actions = [] }) => {
     const commonProps = {
         data: data,
         margin: { top: 20, right: 20, left: -20, bottom: 0 }
@@ -243,4 +243,4 @@ export const LongitudinalGrowthChart: React.FC<LongitudinalGrowthChartProps> = (
             {renderChart()}
         </ResponsiveContainer>
     );
-};
+});

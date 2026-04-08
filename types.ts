@@ -72,6 +72,7 @@ export interface Student {
     assessments: Assessment[];
     interventionStatus: Intervention | null;
     actionLog: StudentLogEntry[];
+    cachedReport?: string;
 }
 
 export interface Assessment {

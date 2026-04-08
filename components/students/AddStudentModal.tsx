@@ -207,7 +207,12 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
                         </div>
 
                         <div className="flex justify-center gap-3 mt-8">
-                            <button onClick={() => setShowCropper(false)} className="px-6 py-2.5 text-slate-500 font-bold hover:text-slate-700 transition">Cancel</button>
+                            <button 
+                                onClick={() => setShowCropper(false)} 
+                                className="px-8 py-2.5 bg-white text-slate-400 border-2 border-slate-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                            >
+                                Cancel
+                            </button>
                             <button onClick={applyCrop} className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition active:scale-95">Set Profile Photo</button>
                         </div>
                         <canvas ref={canvasRef} className="hidden" />
@@ -265,7 +270,12 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
                         </div>
                         
                         <div className="pt-4 flex justify-end space-x-3 border-t border-slate-100">
-                            <button onClick={onClose} className="px-6 py-3 text-slate-400 font-bold hover:text-slate-600 transition">Cancel</button>
+                            <button 
+                                onClick={onClose}
+                                className="px-8 py-3 bg-white text-slate-400 border-2 border-slate-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                            >
+                                Cancel
+                            </button>
                             <button onClick={handleSubmit} disabled={!name.trim()} className="px-10 py-3 bg-slate-900 text-white rounded-2xl font-black shadow-xl shadow-indigo-900/10 hover:bg-indigo-600 transition-all disabled:opacity-50 active:scale-95 flex items-center space-x-2">
                                 <Icon name={studentToEdit ? "check" : "plus"} className="w-4 h-4" />
                                 <span>{studentToEdit ? "Update Student" : "Add to Roster"}</span>

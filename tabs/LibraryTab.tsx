@@ -64,8 +64,8 @@ export const LibraryTab: React.FC = () => {
         <div className="p-6 md:p-12 space-y-12 max-w-[1600px] mx-auto pb-32">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
                 <div>
-                    <h1 className="text-6xl font-black text-slate-900 tracking-tighter mb-2 uppercase italic leading-none">Resource Hub</h1>
-                    <p className="text-slate-400 font-bold text-xl italic tracking-tight">Active Logic Bank: <span className="text-indigo-600">Level {levelToUse}</span> Protocols.</p>
+                    <h1 className="text-6xl font-black text-slate-900 tracking-tighter mb-2 uppercase italic leading-none">Resource Library</h1>
+                    <p className="text-slate-400 font-bold text-xl italic tracking-tight">Available materials for <span className="text-indigo-600">Level {levelToUse}</span>.</p>
                 </div>
                 
                 <div className="bg-white p-2.5 rounded-[2.5rem] shadow-2xl border border-slate-100 flex gap-1 ring-[10px] ring-slate-50/50">
@@ -84,8 +84,8 @@ export const LibraryTab: React.FC = () => {
                             <div className="flex items-center gap-5">
                                 <div className="p-4 bg-indigo-50 text-indigo-600 rounded-2xl shadow-inner border border-indigo-100"><Icon name="benchmark" className="w-8 h-8" /></div>
                                 <div>
-                                    <h2 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1">Active Standards</h2>
-                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.25em]">{selectedPeriod} Global Can-Do List</p>
+                                    <h2 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1">Learning Standards</h2>
+                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.25em]">{selectedPeriod} Goals</p>
                                 </div>
                             </div>
                             <div className="flex flex-col items-end">
@@ -150,7 +150,7 @@ export const LibraryTab: React.FC = () => {
                             >
                                 <span className="flex items-center justify-center gap-3">
                                     <Icon name="brain" className="w-5 h-5" />
-                                    Launch AI Resource Engine
+                                    Generate New Resource
                                 </span>
                             </button>
                         </div>
@@ -163,9 +163,9 @@ export const LibraryTab: React.FC = () => {
                         <div className="relative z-10">
                             <div className="flex items-center gap-3 mb-5">
                                 <Icon name="brain" className="w-5 h-5 text-indigo-600" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600">Pedagogical Guardrail</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600">Teaching Tip</span>
                             </div>
-                            <p className="text-sm font-bold text-slate-700 leading-relaxed italic">"Teachers should cross-reference 'Micro-Lessons' with the Endline targets to ensure instructional velocity is aligned with standard mastery targets."</p>
+                            <p className="text-sm font-bold text-slate-700 leading-relaxed italic">"Check these resources against the end-of-year goals to make sure students are moving at the right pace."</p>
                         </div>
                     </div>
                 </div>
@@ -181,7 +181,13 @@ export const LibraryTab: React.FC = () => {
                             {selectedResource.content}
                         </div>
                         <div className="flex justify-end gap-4 pt-8 border-t border-slate-100">
-                            <button onClick={() => window.print()} className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all hover:bg-slate-800 border-b-4 border-black">Export Protocol PDF</button>
+                            <button 
+                                onClick={() => setSelectedResource(null)}
+                                className="px-8 py-5 bg-white text-slate-400 border-2 border-slate-100 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
+                            >
+                                Close
+                            </button>
+                            <button onClick={() => window.print()} className="px-12 py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all hover:bg-slate-800 border-b-4 border-black">Export as PDF</button>
                         </div>
                     </div>
                 )}

@@ -13,38 +13,44 @@ service cloud.firestore {
 
     // Students Collection
     match /students/{studentId} {
-      allow read, update, delete: if isSignedIn() && isOwner(resource.data.userId);
+      allow read, delete: if isSignedIn() && isOwner(resource.data.userId);
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow update: if isSignedIn() && isOwner(resource.data.userId) && isOwner(request.resource.data.userId);
     }
 
     // Class Profiles
     match /class_profiles/{profileId} {
-      allow read, update, delete: if isSignedIn() && isOwner(resource.data.userId);
+      allow read, delete: if isSignedIn() && isOwner(resource.data.userId);
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow update: if isSignedIn() && isOwner(resource.data.userId) && isOwner(request.resource.data.userId);
     }
 
     // Framework Configs
     match /framework_configs/{configId} {
-      allow read, update, delete: if isSignedIn() && isOwner(resource.data.userId);
+      allow read, delete: if isSignedIn() && isOwner(resource.data.userId);
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow update: if isSignedIn() && isOwner(resource.data.userId) && isOwner(request.resource.data.userId);
     }
 
     // Resources
     match /resources/{resourceId} {
-      allow read, update, delete: if isSignedIn() && isOwner(resource.data.userId);
+      allow read, delete: if isSignedIn() && isOwner(resource.data.userId);
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow update: if isSignedIn() && isOwner(resource.data.userId) && isOwner(request.resource.data.userId);
     }
 
     // Benchmarks
     match /benchmarks/{benchmarkId} {
-      allow read, update, delete: if isSignedIn() && isOwner(resource.data.userId);
+      allow read, delete: if isSignedIn() && isOwner(resource.data.userId);
       allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+      allow update: if isSignedIn() && isOwner(resource.data.userId) && isOwner(request.resource.data.userId);
     }
 
     // User Profiles
     match /users/{userId} {
-      allow read, update, delete: if isSignedIn() && isOwner(userId);
+      allow read, delete: if isSignedIn() && isOwner(userId);
       allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId);
     }
   }
 }

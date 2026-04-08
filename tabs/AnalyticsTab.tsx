@@ -79,9 +79,9 @@ export const AnalyticsTab: React.FC = () => {
         ];
 
         const tiers = [
-            { name: 'Tier 1', value: 0, color: '#10b981', students: [] as string[] },
-            { name: 'Tier 2', value: 0, color: '#f59e0b', students: [] as string[] },
-            { name: 'Tier 3', value: 0, color: '#f43f5e', students: [] as string[] }
+            { name: 'On Track', value: 0, color: '#10b981', students: [] as string[] },
+            { name: 'Needs Monitoring', value: 0, color: '#f59e0b', students: [] as string[] },
+            { name: 'Needs Help', value: 0, color: '#f43f5e', students: [] as string[] }
         ];
 
         let totalProficiency = 0;
@@ -118,23 +118,23 @@ export const AnalyticsTab: React.FC = () => {
     return (
         <div className="p-6 md:p-10 space-y-10 max-w-[1600px] mx-auto pb-20">
             <div>
-                <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Institutional Analytics</h1>
-                <p className="text-slate-400 font-bold mt-1">High-level pedagogical oversight and health monitoring.</p>
+                <h1 className="text-4xl font-black text-slate-900 tracking-tighter">School Analytics</h1>
+                <p className="text-slate-400 font-bold mt-1">Overview of student performance and growth.</p>
             </div>
 
             {!hasData ? (
                  <div className="flex flex-col items-center justify-center py-32 bg-white rounded-[3rem] border border-slate-100 shadow-xl">
                     <Icon name="analytics" className="w-20 h-20 text-indigo-500 mb-8" />
-                    <h2 className="text-3xl font-black text-slate-900 mb-2">Awaiting Evidence</h2>
-                    <p className="text-slate-400 font-medium mb-10">Record student assessments to see institutional trends.</p>
+                    <h2 className="text-3xl font-black text-slate-900 mb-2">No Data Yet</h2>
+                    <p className="text-slate-400 font-medium mb-10">Record student assessments to see performance trends.</p>
                 </div>
             ) : (
                 <>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                        <KPICard title="Institutional Growth" subtitle="" value={`+${analytics?.avgVelocity || 0}%`} icon="trendUp" theme="blue" />
-                        <KPICard title="Operational Risk" subtitle="" value={analytics?.atRiskCount || 0} icon="alert" theme="rose" />
-                        <KPICard title="Pedagogical Avg" subtitle="" value={`${analytics?.classAvg}%`} icon="analytics" theme="purple" />
-                        <KPICard title="Evidence Points" subtitle="" value={analytics?.totalActions || 0} icon="chat" theme="orange" />
+                        <KPICard title="Average Growth" subtitle="" value={`+${analytics?.avgVelocity || 0}%`} icon="trendUp" theme="blue" />
+                        <KPICard title="Students Needing Help" subtitle="" value={analytics?.atRiskCount || 0} icon="alert" theme="rose" />
+                        <KPICard title="Class Average" subtitle="" value={`${analytics?.classAvg}%`} icon="analytics" theme="purple" />
+                        <KPICard title="Total Observations" subtitle="" value={analytics?.totalActions || 0} icon="chat" theme="orange" />
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -145,7 +145,7 @@ export const AnalyticsTab: React.FC = () => {
 
                         <Card className="p-8 shadow-xl bg-white lg:col-span-2">
                             <div className="flex justify-between items-center mb-8">
-                                <h3 className="font-black text-slate-800">Domain Mapping</h3>
+                                <h3 className="font-black text-slate-800">Subject Performance</h3>
                                 <div className="flex bg-slate-100 p-1 rounded-xl">
                                     <button onClick={() => setChartType('radar')} className={`px-4 py-1.5 text-[10px] font-black uppercase rounded-lg ${chartType === 'radar' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Radar</button>
                                     <button onClick={() => setChartType('bar')} className={`px-4 py-1.5 text-[10px] font-black uppercase rounded-lg ${chartType === 'bar' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Bar</button>

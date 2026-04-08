@@ -23,7 +23,7 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({ isOpen, onClose,
     if (!data) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Pedagogical Research Study" size="xl">
+        <Modal isOpen={isOpen} onClose={onClose} title="Student Performance Report" size="xl">
             <div className="bg-white p-6 md:p-12 rounded-[3.5rem] border border-slate-100 shadow-sm overflow-hidden relative">
                 <div className="absolute top-10 right-10 opacity-5 pointer-events-none">
                     <Icon name="benchmark" className="w-64 h-64" />
@@ -32,14 +32,14 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({ isOpen, onClose,
                 <div className="relative z-10 space-y-12">
                     <header className="border-b-4 border-slate-900 pb-8">
                         <div className="flex items-center gap-3 mb-4">
-                            <span className="bg-indigo-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Case Study Analysis</span>
-                            <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Longitudinal Performance Summary</span>
+                            <span className="bg-indigo-600 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Performance Analysis</span>
+                            <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Growth Summary</span>
                         </div>
                         <h2 className="text-5xl font-black text-slate-900 tracking-tighter leading-none italic">{data.title}</h2>
                     </header>
 
                     <section>
-                        <h3 className="text-[10px] font-black uppercase text-indigo-600 tracking-[0.4em] mb-4 border-b border-indigo-50 pb-2">I. Executive Summary</h3>
+                        <h3 className="text-[10px] font-black uppercase text-indigo-600 tracking-[0.4em] mb-4 border-b border-indigo-50 pb-2">I. Summary</h3>
                         <p className="text-lg text-slate-700 leading-relaxed font-medium italic bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100">
                             "{data.introduction}"
                         </p>
@@ -47,9 +47,9 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({ isOpen, onClose,
 
                     <section>
                         <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-[10px] font-black uppercase text-indigo-600 tracking-[0.4em]">II. Individualized Student Insights</h3>
+                            <h3 className="text-[10px] font-black uppercase text-indigo-600 tracking-[0.4em]">II. Student Details</h3>
                             <div className="px-4 py-2 bg-emerald-50 rounded-xl text-emerald-600 text-[9px] font-black uppercase tracking-widest border border-emerald-100">
-                                Longitudinal Analysis Active
+                                Growth Analysis Active
                             </div>
                         </div>
                         
@@ -98,13 +98,21 @@ export const CaseStudyModal: React.FC<CaseStudyModalProps> = ({ isOpen, onClose,
                             <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.4em] mb-2">III. Conclusion</h3>
                             <p className="text-xs text-slate-500 font-bold italic leading-relaxed">"{data.conclusion}"</p>
                         </div>
-                        <button 
-                            onClick={() => window.print()}
-                            className="px-12 py-5 bg-slate-900 text-white rounded-[1.8rem] font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-indigo-600 transition-all border-b-8 border-slate-950 flex items-center gap-3"
-                        >
-                            <Icon name="library" className="w-5 h-5" />
-                            Export Institutional PDF
-                        </button>
+                        <div className="flex items-center gap-3">
+                            <button 
+                                onClick={onClose}
+                                className="px-8 py-5 bg-white text-slate-400 border-2 border-slate-100 rounded-[1.8rem] font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-all"
+                            >
+                                Close
+                            </button>
+                            <button 
+                                onClick={() => window.print()}
+                                className="px-12 py-5 bg-slate-900 text-white rounded-[1.8rem] font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-indigo-600 transition-all border-b-8 border-slate-950 flex items-center gap-3"
+                            >
+                                <Icon name="library" className="w-5 h-5" />
+                                Export Report PDF
+                            </button>
+                        </div>
                     </footer>
                 </div>
             </div>

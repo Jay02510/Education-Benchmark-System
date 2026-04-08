@@ -5,6 +5,7 @@ import { useToast } from './ToastContext';
 import { auth, db, setSessionExpiration } from '../firebase';
 import { logger } from '../services/logger';
 import { SecurityService } from '../services/security';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 import { 
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
@@ -20,6 +21,7 @@ interface AuthContextType {
     loginDemo: () => void;
     signup: (name: string, email: string, password: string) => Promise<boolean>;
     logout: () => void;
+    upgradeToPremium: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +30,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const { showToast } = useToast();
+
+    const upgradeToPremium = async () => {
+        if (!user || user.isDemo) return;
+        try {
+            await setDoc(doc(db, 'users', user.id), { isPremium: true }, { merge: true });
+            setUser({ ...user, isPremium: true });
+            showToast("Successfully upgraded to Premium!", "success");
+        } catch (error) {
+            logger.error("Upgrade failed", error);
+            showToast("Failed to upgrade account.", "error");
+        }
+    };
 
     useEffect(() => {
         let isMounted = true;
@@ -56,8 +70,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         isDemo: false,
                         isPremium: userData.isPremium || false
                     });
-                } catch (e) {
+                } catch (e: any) {
                     logger.error("User Profile Fetch Failed", e);
+                    if (e?.message?.includes('Missing or insufficient permissions') || e?.code === 'permission-denied') {
+                        handleFirestoreError(e, OperationType.GET, `users/${firebaseUser.uid}`);
+                    }
                     // Fallback to basic auth info if profile fetch fails
                     setUser({
                         id: firebaseUser.uid,
@@ -68,6 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     });
                 }
             } else {
+
                 // Only clear user if we're not in demo mode
                 const stillDemo = localStorage.getItem('benchmark_demo_session');
                 if (!stillDemo) {
@@ -155,7 +173,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, isLoading, login, loginDemo, signup, logout }}>
+        <AuthContext.Provider value={{ user, isLoading, login, loginDemo, signup, logout, upgradeToPremium }}>
             {children}
         </AuthContext.Provider>
     );

@@ -84,7 +84,7 @@ const MainAppLayout: React.FC = () => {
                 <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl animate-bounce mb-6">
                     <Icon name="benchmark" className="w-8 h-8 text-white" strokeWidth={3} />
                 </div>
-                <p className="text-indigo-400 font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">Synchronizing Pedagogical Context...</p>
+                <p className="text-indigo-400 font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">Loading School Data...</p>
             </div>
         );
     }

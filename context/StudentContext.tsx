@@ -6,6 +6,7 @@ import { useToast } from './ToastContext.tsx';
 import { useAuth } from './AuthContext.tsx';
 import { useBenchmarks } from './BenchmarkContext.tsx';
 import { db } from '../firebase.ts';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler.ts';
 import { 
     collection, 
     addDoc, 
@@ -190,10 +191,18 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const unsubStudents = onSnapshot(qStudents, (snapshot) => {
                 const raw = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Student[];
                 setStudents(sortByName(raw));
+            }, (error: any) => {
+                if (error?.message?.includes('Missing or insufficient permissions') || error?.code === 'permission-denied') {
+                    handleFirestoreError(error, OperationType.LIST, 'students');
+                }
             });
             const qProfile = query(collection(db, 'class_profiles'), where('userId', '==', user.id));
             const unsubProfile = onSnapshot(qProfile, (snapshot) => {
                 if (!snapshot.empty) setClassProfile({ id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as ClassProfile);
+            }, (error: any) => {
+                if (error?.message?.includes('Missing or insufficient permissions') || error?.code === 'permission-denied') {
+                    handleFirestoreError(error, OperationType.LIST, 'class_profiles');
+                }
             });
             return () => { unsubStudents(); unsubProfile(); };
         }
@@ -333,7 +342,8 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             growthVelocity: velocity, 
             velocityBand,
             interventionStatus: rti, 
-            hasAnomaly: !!rti 
+            hasAnomaly: !!rti,
+            cachedReport: null
         };
 
         if (user.isDemo) {
@@ -360,7 +370,8 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
             growthVelocity: velocity, 
             velocityBand,
             interventionStatus: rti, 
-            hasAnomaly: !!rti 
+            hasAnomaly: !!rti,
+            cachedReport: null
         };
 
         if (user.isDemo) {
@@ -407,7 +418,8 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 growthVelocity: vel, 
                 velocityBand,
                 interventionStatus: rti, 
-                hasAnomaly: !!rti 
+                hasAnomaly: !!rti,
+                cachedReport: null
             };
             
             if (batch) {
@@ -430,9 +442,9 @@ export const StudentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const newLog = [...(student.actionLog || []), { ...entry, content: sanitizedContent, id: `log-${Date.now()}` }];
         
         if (user.isDemo) {
-            syncStudents(students.map(s => s.id === studentId ? { ...s, actionLog: newLog } : s));
+            syncStudents(students.map(s => s.id === studentId ? { ...s, actionLog: newLog, cachedReport: null } : s));
         } else {
-            await updateDoc(doc(db, 'students', studentId), { actionLog: newLog });
+            await updateDoc(doc(db, 'students', studentId), { actionLog: newLog, cachedReport: null });
         }
         showToast("Note recorded.");
     };

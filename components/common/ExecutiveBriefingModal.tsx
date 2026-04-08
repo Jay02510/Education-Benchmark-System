@@ -18,11 +18,11 @@ export const ExecutiveBriefingModal: React.FC<ExecutiveBriefingModalProps> = ({ 
     if (!data) return null;
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Executive Principal Briefing" size="lg">
+        <Modal isOpen={isOpen} onClose={onClose} title="Principal Briefing" size="lg">
             <div className="space-y-8">
                 <div className="flex items-center justify-between pb-6 border-b border-slate-100">
                     <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Institutional Context</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">School Context</p>
                         <h3 className="text-xl font-black text-slate-900">{className}</h3>
                     </div>
                     <div className="px-4 py-2 bg-indigo-50 rounded-xl text-indigo-600 text-[10px] font-black uppercase tracking-widest border border-indigo-100">
@@ -33,7 +33,7 @@ export const ExecutiveBriefingModal: React.FC<ExecutiveBriefingModalProps> = ({ 
                 <section>
                     <div className="flex items-center gap-3 mb-4">
                         <Icon name="analytics" className="w-5 h-5 text-indigo-600" />
-                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">Executive Summary</h4>
+                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">Summary</h4>
                     </div>
                     <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
                         <p className="text-sm text-slate-600 leading-relaxed font-bold italic">"{data.executiveSummary}"</p>
@@ -53,7 +53,7 @@ export const ExecutiveBriefingModal: React.FC<ExecutiveBriefingModalProps> = ({ 
                 <section>
                     <div className="flex items-center gap-3 mb-4">
                         <Icon name="check" className="w-5 h-5 text-emerald-500" />
-                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">Leadership Actions</h4>
+                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">Recommended Actions</h4>
                     </div>
                     <div className="space-y-3">
                         {data.leadershipActions.map((action, i) => (
@@ -65,12 +65,18 @@ export const ExecutiveBriefingModal: React.FC<ExecutiveBriefingModalProps> = ({ 
                     </div>
                 </section>
 
-                <div className="pt-6 border-t border-slate-100 flex justify-end">
+                <div className="pt-6 border-t border-slate-100 flex justify-end gap-3">
+                    <button 
+                        onClick={onClose}
+                        className="px-8 py-3 bg-white text-slate-400 border-2 border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+                    >
+                        Close
+                    </button>
                     <button 
                         onClick={() => window.print()}
                         className="px-8 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all border-b-4 border-black"
                     >
-                        Export Briefing PDF
+                        Export as PDF
                     </button>
                 </div>
             </div>

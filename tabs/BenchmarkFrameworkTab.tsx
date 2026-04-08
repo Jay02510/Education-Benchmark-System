@@ -68,7 +68,7 @@ const BenchmarkRow: React.FC<any> = ({ id, domain, target, actual, descriptor, c
                     {isEditing ? (
                         <div className="space-y-4 bg-slate-50 p-6 rounded-2xl border border-slate-100" onClick={e => e.stopPropagation()}>
                             <div>
-                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Pedagogical Success Criteria</label>
+                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Learning Goals</label>
                                 <textarea value={editDescriptor} onChange={e => setEditDescriptor(e.target.value)} className="w-full text-sm p-4 border-2 border-slate-200 rounded-xl focus:border-indigo-600 focus:outline-none font-bold text-slate-700" rows={3} />
                             </div>
                             <div className="flex items-center justify-between">
@@ -76,13 +76,13 @@ const BenchmarkRow: React.FC<any> = ({ id, domain, target, actual, descriptor, c
                                     <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Target %</label>
                                     <input type="number" value={editTarget} onChange={e => setEditTarget(Number(e.target.value))} className="w-24 border-2 border-slate-200 p-2.5 rounded-xl font-black text-indigo-600 text-center focus:border-indigo-600 outline-none" />
                                 </div>
-                                <button onClick={() => onSave(id, { target_percent: editTarget, descriptor_short: editDescriptor })} className="bg-indigo-600 text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">Update Strategy</button>
+                                <button onClick={() => onSave(id, { target_percent: editTarget, descriptor_short: editDescriptor })} className="bg-indigo-600 text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">Update Goals</button>
                             </div>
                         </div>
                     ) : (
                         <div className="group-hover:translate-x-1 transition-transform">
-                            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-2 block">Can-Do Statement:</span>
-                            <p className="text-md text-slate-700 font-bold leading-relaxed mb-4">"{descriptor || 'Loading international instructional protocol...'}"</p>
+                            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-2 block">Goal:</span>
+                            <p className="text-md text-slate-700 font-bold leading-relaxed mb-4">"{descriptor || 'Loading learning goals...'}"</p>
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-100">
                                     <Icon name="check" className="w-3.5 h-3.5 text-indigo-500" strokeWidth={3} />

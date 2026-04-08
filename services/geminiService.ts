@@ -33,15 +33,15 @@ export class GeminiService {
 
     private static generateLocalReport(students: Student[], className: string) {
         return {
-            title: `Synthesis: ${className}`,
-            introduction: "Institutional fallback analysis activated. Trends based on local mastery metrics.",
+            title: `Report: ${className}`,
+            introduction: "Analysis based on current student performance scores.",
             studentBreakdowns: students.map(s => ({
                 name: s.name,
-                excelsIn: "Consistent performance in tested modules.",
-                needsWork: "Higher-order application of core skills.",
-                strategy: "Deploy scaffolded task complexity."
+                excelsIn: "Doing well in tested areas.",
+                needsWork: "Needs more practice with advanced skills.",
+                strategy: "Provide more challenging tasks."
             })),
-            conclusion: "Cohort tracking within standard parameters."
+            conclusion: "Overall progress is within expected range."
         };
     }
 
@@ -79,8 +79,8 @@ export class GeminiService {
 
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `${this.STRICT_DATA_INSTRUCTION} \n\n Synthesize a Lead Researcher Case Study for class "${className}" containing exactly ${dataset.length} students: ${JSON.stringify(dataset)}. 
-                Identify excelsIn, needsWork, and strategy for EVERY student listed. Return JSON.`,
+                contents: `${this.STRICT_DATA_INSTRUCTION} \n\n Synthesize a Lead Researcher Case Study for class "${className}" containing ${dataset.length} students: ${JSON.stringify(dataset)}. 
+                Instead of analyzing every student, identify the 4 overarching student archetypes present in this cohort. For each archetype, provide a name, excelsIn, needsWork, and strategy. Return a JSON object with a 'studentBreakdowns' array containing these 4 archetypes.`,
                 config: {
                     maxOutputTokens: 8192,
                     responseMimeType: "application/json"
@@ -192,9 +192,13 @@ export class GeminiService {
         try {
             this.checkRateLimit();
             const ai = this.getAI();
+            const payload = {
+                scores: student.assessments[student.assessments.length-1]?.scores || {},
+                observations: student.actionLog?.map(log => log.content) || []
+            };
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
-                contents: `Report card narrative for ${student.name}. Use scores: ${JSON.stringify(student.assessments[student.assessments.length-1]?.scores)}. JSON { report_card: string }.`,
+                contents: `${this.STRICT_DATA_INSTRUCTION} \n\n Report card narrative for ${student.name}. Use this data: ${JSON.stringify(payload)}. Integrate the qualitative observations into the narrative. JSON { report_card: string }.`,
                 config: { responseMimeType: "application/json" }
             });
             return JSON.parse(this.cleanJsonResponse(response.text || '{}'));

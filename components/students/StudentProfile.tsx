@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import { GeminiService } from '../../services/geminiService';
 import { AddAssessmentModal } from './AddAssessmentModal';
 import { AddStudentModal } from './AddStudentModal';
+import { StudentReportModal } from './StudentReportModal';
 import { Tooltip } from '../common/Tooltip';
 import { InsightCard } from '../common/InsightCard';
 
@@ -60,6 +61,7 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
     const [activeSection, setActiveSection] = useState<'Overview' | 'Assessments' | 'Log' | 'Resources'>('Overview');
     const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
     const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [assessmentToEdit, setAssessmentToEdit] = useState<Assessment | null>(null);
     const [logText, setLogText] = useState('');
     const [logCategory, setLogCategory] = useState<StudentLogEntry['category']>('Observation');
@@ -122,9 +124,9 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
     return (
         <div className="flex flex-col h-full bg-[#F8FAFC] overflow-hidden">
             <div className="bg-white px-8 py-8 md:px-12 shrink-0 border-b border-slate-100 shadow-sm z-10">
-                <button onClick={onBack} className="flex items-center space-x-3 text-slate-400 hover:text-indigo-600 mb-8 transition font-black text-[10px] uppercase tracking-[0.2em] group">
+                <button onClick={onBack} className="flex items-center space-x-3 text-slate-400 hover:text-indigo-600 mb-8 transition font-black text-[10px] uppercase tracking-[0.2em] group bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 w-fit">
                     <Icon name="chevronLeft" className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                    <span>Roster Protocol</span>
+                    <span>Back to Roster</span>
                 </button>
 
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
@@ -154,6 +156,9 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                         </div>
                     </div>
                     <div className="flex gap-4">
+                        <button onClick={() => setIsReportModalOpen(true)} className="px-10 py-4 bg-white text-slate-900 border-2 border-slate-200 rounded-2xl font-black shadow-lg hover:bg-slate-50 active:scale-95 transition-all flex items-center gap-3 text-xs uppercase tracking-widest border-b-4">
+                            <Icon name="benchmark" className="w-5 h-5" /> Generate Report
+                        </button>
                         <button onClick={() => { setAssessmentToEdit(null); setIsAssessmentModalOpen(true); }} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-2xl shadow-indigo-200/40 hover:bg-indigo-600 active:scale-95 transition-all flex items-center gap-3 text-xs uppercase tracking-widest border-b-4 border-slate-950">
                             <Icon name="plus" className="w-5 h-5" /> Log Score
                         </button>
@@ -181,8 +186,8 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                                         <Icon name="brain" className="w-8 h-8" />
                                     </div>
                                     <div>
-                                        <h3 className="text-2xl font-black tracking-tight mb-1">AI Predictive Pathfinder</h3>
-                                        <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest">Active Velocity Synthesis</p>
+                                        <h3 className="text-2xl font-black tracking-tight mb-1">Learning Progress Prediction</h3>
+                                        <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest">Growth Rate Analysis</p>
                                     </div>
                                 </div>
                                 <div className="flex-1 max-w-xl">
@@ -201,7 +206,7 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                         </Card>
 
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                            <InsightCard title="Growth DNA Analysis" description="Institutional Performance Cycle">
+                            <InsightCard title="Performance Trends" description="Student growth over time">
                                 <div className="min-h-[350px]">
                                     <LongitudinalGrowthChart data={projectionData} lines={[{ key: 'score', color: '#4f46e5' }]} type="area" />
                                 </div>
@@ -273,7 +278,7 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                                     </div>
                                     <textarea value={logText} onChange={(e) => setLogText(e.target.value)} placeholder="Type diagnostic observation..." className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-600 outline-none transition-all font-bold text-slate-800 min-h-[120px]" />
                                     <div className="flex justify-end">
-                                        <button onClick={handleAddLog} disabled={!logText.trim()} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-600 transition-all disabled:opacity-50">Commit Observation</button>
+                                        <button onClick={handleAddLog} disabled={!logText.trim()} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-600 transition-all disabled:opacity-50">Save Observation</button>
                                     </div>
                                 </div>
                             </div>
@@ -281,7 +286,7 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                                 {student.actionLog?.length > 0 ? (
                                     [...student.actionLog].reverse().map(log => <LogEntryView key={log.id} entry={log} />)
                                 ) : (
-                                    <p className="text-center py-10 text-slate-400 font-bold italic">No observations committed to file.</p>
+                                    <p className="text-center py-10 text-slate-400 font-bold italic">No observations recorded yet.</p>
                                 )}
                             </div>
                         </div>
@@ -309,6 +314,7 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
 
             <AddAssessmentModal isOpen={isAssessmentModalOpen} onClose={() => { setIsAssessmentModalOpen(false); setAssessmentToEdit(null); }} onSave={(a) => updateAssessmentForStudent(student.id, a)} assessmentToEdit={assessmentToEdit} />
             <AddStudentModal isOpen={isEditProfileModalOpen} onClose={() => setIsEditProfileModalOpen(false)} studentToEdit={student} />
+            <StudentReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} student={student} />
         </div>
     );
 };

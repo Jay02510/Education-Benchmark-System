@@ -66,17 +66,17 @@ export const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) =>
         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-lg border border-slate-100">Level {student.level}</span>
       </div>
       
-      {/* Pedagogical Stats */}
+      {/* Performance Stats */}
       <div className="w-full grid grid-cols-2 gap-2 mt-auto">
          <div className="flex flex-col items-center py-2.5 bg-white/40 rounded-2xl group-hover:bg-white/80 transition-all duration-300 border border-white/20">
              <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest mb-0.5">
-               <Tooltip content="Current average across all tested domains.">Mastery</Tooltip>
+               <Tooltip content="Current average across all tested subjects.">Score</Tooltip>
              </span>
              <span className="text-xs font-black text-slate-700">{latestAvg}%</span>
          </div>
          <div className="flex flex-col items-center py-2.5 bg-white/40 rounded-2xl group-hover:bg-white/80 transition-all duration-300 border border-white/20">
               <span className="text-[8px] text-slate-400 font-black uppercase tracking-widest mb-0.5">
-                <Tooltip content="Percentage points gained or lost since last test cycle.">Velocity</Tooltip>
+                <Tooltip content="Percentage points gained or lost since last test cycle.">Growth Rate</Tooltip>
               </span>
               <span className={`text-xs font-black ${student.growthVelocity >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                 {student.growthVelocity > 0 ? '+' : ''}{student.growthVelocity}%

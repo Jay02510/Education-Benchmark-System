@@ -78,7 +78,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition"
+                        className="px-8 py-4 bg-white text-slate-400 border-2 border-slate-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
                     >
                         Discard
                     </button>

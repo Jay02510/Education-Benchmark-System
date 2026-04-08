@@ -27,10 +27,10 @@ export const OnboardingWizard: React.FC = () => {
         setIsInitializing(true);
         
         try {
-            // 1. Initialize logic engine
+            // 1. Set up subjects
             await initializeFramework(frameworkSource || 'master', customDomains);
             
-            // 2. Register class identity
+            // 2. Register class
             await registerClass({
                 id: `c-${Date.now()}`,
                 className,
@@ -38,13 +38,13 @@ export const OnboardingWizard: React.FC = () => {
                 academicYear: new Date().getFullYear().toString(),
             });
 
-            // 3. Populate roster
+            // 3. Add students
             if (studentNames.trim()) {
-                const names = studentNames.split('\n').filter(n => n.trim().length > 0);
+                const names = studentNames.trim().split('\n').filter(n => n.trim().length > 0);
                 await addStudentsBulk(names);
             }
             
-            showToast("Core engine initialized. Welcome to Benchmark.");
+            showToast("Setup complete. Welcome to Benchmark.");
         } catch (error: any) {
             console.error("Onboarding failed:", error);
             showToast("Initialization failed. Please check your network or try again.", "error");
@@ -61,10 +61,10 @@ export const OnboardingWizard: React.FC = () => {
     };
 
     const steps = [
-        { t: "Institutional", d: "Class Identity" },
-        { t: "Logic Path", d: "Master vs Custom" },
-        { t: "Blueprint", d: "Skill Validation" },
-        { t: "Intelligence", d: "Student Roster" }
+        { t: "School Info", d: "Class Identity" },
+        { t: "Setup Type", d: "Master vs Custom" },
+        { t: "Subjects", d: "Skill Validation" },
+        { t: "Students", d: "Student Roster" }
     ];
 
     return (
@@ -73,7 +73,7 @@ export const OnboardingWizard: React.FC = () => {
                 <Card className="p-0 shadow-[0_0_120px_rgba(0,0,0,0.8)] border-0 bg-white overflow-hidden rounded-[3.5rem]">
                     <div className="flex flex-col md:flex-row min-h-[750px]">
                         
-                        {/* Sidebar: Architect Roadmap */}
+                        {/* Sidebar: Setup Progress */}
                         <div className="w-full md:w-80 bg-slate-950 p-10 text-white flex flex-col justify-between relative overflow-hidden shrink-0 border-r border-white/5">
                             <div className="absolute inset-0 opacity-10 pointer-events-none">
                                 <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-indigo-500 via-transparent to-transparent"></div>
@@ -85,7 +85,7 @@ export const OnboardingWizard: React.FC = () => {
                                     <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-[0_0_20px_rgba(79,70,229,0.5)]">
                                         <Icon name="benchmark" className="w-6 h-6 text-white" />
                                     </div>
-                                    <h2 className="text-xl font-black tracking-tighter uppercase italic text-white">System Architect</h2>
+                                    <h2 className="text-xl font-black tracking-tighter uppercase italic text-white">Setup Guide</h2>
                                 </div>
                                 
                                 <div className="space-y-10">

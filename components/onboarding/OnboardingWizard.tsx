@@ -4,6 +4,7 @@ import { Card } from '../common/Card';
 import { Icon } from '../common/Icon';
 import { useStudents } from '../../context/StudentContext';
 import { useBenchmarks } from '../../context/BenchmarkContext';
+import { useToast } from '../../context/ToastContext';
 import { DOMAINS as MASTER_DOMAINS } from '../../constants';
 
 export const OnboardingWizard: React.FC = () => {
@@ -18,22 +19,37 @@ export const OnboardingWizard: React.FC = () => {
     const [newDomainInput, setNewDomainInput] = useState('');
     const [studentNames, setStudentNames] = useState('');
 
-    const handleComplete = async () => {
-        // 1. Initialize logic engine
-        await initializeFramework(frameworkSource || 'master', customDomains);
-        
-        // 2. Register class identity
-        await registerClass({
-            id: `c-${Date.now()}`,
-            className,
-            gradeLevel,
-            academicYear: new Date().getFullYear().toString(),
-        });
+    const [isInitializing, setIsInitializing] = useState(false);
+    const { showToast } = useToast();
 
-        // 3. Populate roster
-        if (studentNames.trim()) {
-            const names = studentNames.split('\n').filter(n => n.trim().length > 0);
-            addStudentsBulk(names);
+    const handleComplete = async () => {
+        if (isInitializing) return;
+        setIsInitializing(true);
+        
+        try {
+            // 1. Initialize logic engine
+            await initializeFramework(frameworkSource || 'master', customDomains);
+            
+            // 2. Register class identity
+            await registerClass({
+                id: `c-${Date.now()}`,
+                className,
+                gradeLevel,
+                academicYear: new Date().getFullYear().toString(),
+            });
+
+            // 3. Populate roster
+            if (studentNames.trim()) {
+                const names = studentNames.split('\n').filter(n => n.trim().length > 0);
+                await addStudentsBulk(names);
+            }
+            
+            showToast("Core engine initialized. Welcome to Benchmark.");
+        } catch (error: any) {
+            console.error("Onboarding failed:", error);
+            showToast("Initialization failed. Please check your network or try again.", "error");
+        } finally {
+            setIsInitializing(false);
         }
     };
 
@@ -303,11 +319,17 @@ export const OnboardingWizard: React.FC = () => {
                                         <button onClick={() => setStep(2)} className="text-[10px] font-black text-slate-300 uppercase tracking-widest px-4 py-2">Back</button>
                                         <button 
                                             onClick={handleComplete}
-                                            disabled={!studentNames.trim()}
+                                            disabled={!studentNames.trim() || isInitializing}
                                             className="px-20 py-8 bg-emerald-600 text-white rounded-[3rem] font-black shadow-[0_30px_70px_rgba(16,185,129,0.3)] flex items-center gap-8 active:scale-95 transition-all text-sm uppercase tracking-[0.4em] border-b-8 border-emerald-900 disabled:opacity-30"
                                         >
-                                            <div className="p-2 bg-white rounded-xl text-emerald-600"><Icon name="check" className="w-8 h-8" strokeWidth={3} /></div>
-                                            <span>Initialize Core Engine</span>
+                                            <div className="p-2 bg-white rounded-xl text-emerald-600">
+                                                {isInitializing ? (
+                                                    <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                    <Icon name="check" className="w-8 h-8" strokeWidth={3} />
+                                                )}
+                                            </div>
+                                            <span>{isInitializing ? 'Initializing...' : 'Initialize Core Engine'}</span>
                                         </button>
                                     </div>
                                 </div>

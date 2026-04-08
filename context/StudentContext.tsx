@@ -22,11 +22,11 @@ import {
 interface StudentContextType {
     students: Student[];
     classProfile: ClassProfile | null;
-    registerClass: (profile: ClassProfile) => void;
-    addStudent: (student: Student) => void;
-    addStudentsBulk: (names: string[]) => void;
-    updateStudent: (updatedStudent: Student) => void;
-    deleteStudent: (id: string) => void;
+    registerClass: (profile: ClassProfile) => Promise<void>;
+    addStudent: (student: Student) => Promise<void>;
+    addStudentsBulk: (names: string[]) => Promise<void>;
+    updateStudent: (updatedStudent: Student) => Promise<void>;
+    deleteStudent: (id: string) => Promise<void>;
     addAssessmentBulk: (assessments: { studentId: string, assessment: Assessment }[]) => Promise<void>;
     updateAssessmentForStudent: (studentId: string, assessment: Assessment) => Promise<void>;
     deleteAssessmentForStudent: (studentId: string, assessmentId: string) => Promise<void>;

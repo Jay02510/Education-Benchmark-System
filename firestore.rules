@@ -13,28 +13,38 @@ service cloud.firestore {
 
     // Students Collection
     match /students/{studentId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId || request.resource.data.userId);
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
     }
 
     // Class Profiles
     match /class_profiles/{profileId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId || request.resource.data.userId);
+      allow read, update, delete: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
     }
 
     // Framework Configs
     match /framework_configs/{configId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId || request.resource.data.userId);
+      allow read, update, delete: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
     }
 
     // Resources
     match /resources/{resourceId} {
-      allow read, write: if isSignedIn() && isOwner(resource.data.userId || request.resource.data.userId);
+      allow read, update, delete: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
+    }
+
+    // Benchmarks
+    match /benchmarks/{benchmarkId} {
+      allow read, update, delete: if isSignedIn() && isOwner(resource.data.userId);
+      allow create: if isSignedIn() && isOwner(request.resource.data.userId);
     }
 
     // User Profiles
     match /users/{userId} {
-      allow read, write: if isSignedIn() && isOwner(userId);
+      allow read, update, delete: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
     }
   }
 }

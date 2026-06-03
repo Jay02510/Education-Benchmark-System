@@ -116,6 +116,39 @@ export const mockResources: Resource[] = [
         type: ResourceType.MicroLesson,
         title: 'Clue Collector',
         description: 'A 3-minute activity where students read short sentences and circle "clue" words.',
-        content: 'Character: "Maria slammed the door."\nQuestion: Which word tells you Maria might be angry?',
+        content: 'Character: "Maria slammed the door."\nQuestion: Which word tells you Maria might be angry?\n\nAnswer: "slammed" describes high-velocity actions associated with frustration.'
+    },
+    {
+        id: 'r2',
+        domain: Domain.Phonics,
+        subdomain: 'Phonology Intro',
+        level: '5',
+        period: TestPeriod.Baseline,
+        type: ResourceType.QuickPractice,
+        title: 'Voice Wave Builders',
+        description: 'Phonetic drill focusing on initial consonants (s, a, t, p). Pair students to practice vocal intensity shifts.',
+        content: 'Action Loop:\n1. Vocalize "sssss" then snap to "aaaatt".\n2. Blend: "ssss-aaaa-tttt" -> "sat".\n3. Match word to flashcards representing "sat", "pat", and "tap".'
+    },
+    {
+        id: 'r3',
+        domain: Domain.Writing,
+        subdomain: 'Syntax & Forms',
+        level: '5',
+        period: TestPeriod.Baseline,
+        type: ResourceType.Worksheet,
+        title: 'Compound Connectors',
+        description: 'Interactive compound sentence creation scaffold. Guides students to combine isolated clauses.',
+        content: 'Sentence Fusion Guide:\n1. "The sun is hot." [AND] "The sky is blue."\n--> "The sun is hot and the sky is blue."\n\nChallenge 1:\n"Leo runs fast." [BUT] "The grass is wet."\n--> "Leo runs fast but the grass is wet."'
+    },
+    {
+        id: 'r4',
+        domain: Domain.Vocabulary,
+        subdomain: 'Categorization',
+        level: '5',
+        period: TestPeriod.Midline,
+        type: ResourceType.MiniReading,
+        title: 'Nature Context Explorer',
+        description: 'Short illustrated text used to teach natural category descriptors (forest, river, mountain).',
+        content: 'Passage:\n\n"The green forest is home to tall pine trees. A clean river flows down from the snowy mountain peaks."\n\nGroup Tasks:\n1. Highlight the blue elements (river).\n2. Circle the green elements (forest, trees).\n3. Match descriptors to context maps.'
     }
 ];

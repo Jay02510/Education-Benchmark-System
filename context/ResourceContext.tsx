@@ -5,6 +5,7 @@ import { useToast } from './ToastContext';
 import { useAuth } from './AuthContext';
 import { db } from '../firebase';
 import { logger } from '../services/logger';
+import { mockResources } from '../data/mockData.ts';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 import { collection, addDoc, deleteDoc, doc, query, where, onSnapshot } from 'firebase/firestore';
 
@@ -33,7 +34,8 @@ export const ResourceProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             if (localRes) {
                 setResources(JSON.parse(localRes));
             } else {
-                setResources([]);
+                setResources(mockResources);
+                localStorage.setItem('demo_resources', JSON.stringify(mockResources));
             }
         } else {
             const q = query(collection(db, 'resources'), where('userId', '==', user.id));

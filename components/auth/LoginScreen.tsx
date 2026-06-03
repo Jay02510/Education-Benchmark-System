@@ -390,7 +390,7 @@ export const LoginScreen: React.FC = () => {
                         </button>
                         <button 
                             onClick={() => openAuth('signup')} 
-                            className="relative group overflow-hidden px-5 py-2.5 rounded-2xl bg-white text-slate-950 text-xs font-extrabold uppercase hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all duration-300 active:scale-95 shrink-0"
+                            className="relative group overflow-hidden px-5 py-2.5 rounded-full bg-white text-slate-950 text-xs font-extrabold uppercase hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all duration-300 active:scale-95 shrink-0"
                         >
                             <span className="relative z-10">{t('nav_join')}</span>
                         </button>
@@ -439,7 +439,7 @@ export const LoginScreen: React.FC = () => {
                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
                         <button 
                             onClick={loginDemo} 
-                            className="group relative px-8 py-4 md:px-10 md:py-5 rounded-2.5xl bg-gradient-to-r from-indigo-600 to-purple-600 font-extrabold uppercase text-xs tracking-widest hover:brightness-110 shadow-lg shadow-indigo-500/10 active:scale-[0.98] transition-all text-white flex items-center justify-center gap-3 border-b-4 border-indigo-950"
+                            className="group relative px-8 py-4 md:px-10 md:py-5 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 font-extrabold uppercase text-xs tracking-widest hover:brightness-110 shadow-lg shadow-indigo-500/25 active:scale-[0.98] transition-all text-white flex items-center justify-center gap-3 hover:shadow-[0_0_30px_rgba(99,102,241,0.35)]"
                         >
                             <Icon name="brain" className="w-4.5 h-4.5 text-indigo-200 animate-pulse" />
                             <span>{language === 'EN' ? 'Launch Interactive Demo' : '인터랙티브 데모 체험'}</span>
@@ -448,7 +448,7 @@ export const LoginScreen: React.FC = () => {
                         
                         <button 
                             onClick={() => openAuth('signup')} 
-                            className="px-8 py-4 md:px-10 md:py-5 rounded-2.5xl bg-slate-950/40 border border-white/10 font-extrabold uppercase text-xs hover:bg-slate-900/60 hover:border-white/25 transition-all flex items-center justify-center gap-3"
+                            className="px-8 py-4 md:px-10 md:py-5 rounded-full bg-slate-950/40 border border-white/10 font-extrabold uppercase text-xs hover:bg-slate-900/60 hover:border-white/25 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)] transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
                         >
                             <Icon name="plus" className="w-4.5 h-4.5 text-indigo-400" />
                             <span>{t('nav_join')}</span>
@@ -661,7 +661,7 @@ export const LoginScreen: React.FC = () => {
                                 {/* Dynamic Band Badge Card */}
                                 <div className="flex flex-col justify-center">
                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">{language === 'EN' ? 'Velocity Pathways Tag' : '배정 성장 경로 지침'}</p>
-                                    <div className={`px-4 py-3 border rounded-2l font-black text-xs text-center tracking-widest transition-all duration-300 ${bandColors[velocityBand]}`}>
+                                    <div className={`px-4 py-3 border rounded-2xl font-black text-xs text-center tracking-widest transition-all duration-300 ${bandColors[velocityBand]}`}>
                                         {bandLabels[velocityBand]}
                                     </div>
                                 </div>

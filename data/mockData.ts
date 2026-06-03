@@ -43,25 +43,103 @@ export const mockStudents: Student[] = [
                 subdomainScores: {}
             },
         ],
-        interventionStatus: { tier: 1, domain: Domain.Reading, goal: 'Improve inferential skills by 10% in 3 weeks', trend: Trend.Stable, triggerReason: 'Low initial baseline', dateIdentified: '2023-09-20' },
-        actionLog: [],
+        interventionStatus: { tier: 2, domain: Domain.Reading, goal: 'Improve inferential reading skills by 10% in 5 weeks', trend: Trend.Stable, triggerReason: 'Reading slightly below midline average target', dateIdentified: '2023-09-20' },
+        actionLog: [
+            { id: 'l1', date: '2023-09-22', author: 'Teacher', category: 'Intervention', content: 'Assigned "Clue Collector" Micro-lesson sheet. Student completed it with peer helper.', impactScore: 4 },
+            { id: 'l2', date: '2023-11-10', author: 'Teacher', category: 'Parent Communication', content: 'Spoke to mother regarding reading reinforcement. Recommended standard library cards.', impactScore: 3 }
+        ],
     },
     {
         id: 's2',
         name: 'Bella Chen',
-        level: '6-1',
+        level: '5',
         class: 'Class A',
         photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bella',
         overallGrowth: 18,
-        growthVelocity: 6,
-        velocityBand: VelocityBand.Stable,
+        growthVelocity: 8,
+        velocityBand: VelocityBand.Fast,
         hasAnomaly: false,
         assessments: [
             { id: 'a3', type: TestPeriod.Baseline, date: '2023-09-15', scores: { [Domain.Reading]: 75, [Domain.Writing]: 72, [Domain.Grammar]: 80, [Domain.Vocabulary]: 78, [Domain.Phonics]: 85, [Domain.Listening]: 75, [Domain.Speaking]: 74, [Domain.DataLiteracy]: 70 }, subdomainScores: {} },
             { id: 'a4', type: TestPeriod.Midline, date: '2023-12-05', scores: { [Domain.Reading]: 85, [Domain.Writing]: 80, [Domain.Grammar]: 88, [Domain.Vocabulary]: 85, [Domain.Phonics]: 92, [Domain.Listening]: 83, [Domain.Speaking]: 82, [Domain.DataLiteracy]: 80 }, subdomainScores: {} },
         ],
         interventionStatus: null,
-        actionLog: [],
+        actionLog: [
+            { id: 'l3', date: '2023-10-05', author: 'Teacher', category: 'Goal Met', content: 'Student exceeded the baseline goal for Phonics and Speaking. Handed over long vowel materials.', impactScore: 5 }
+        ],
+    },
+    {
+        id: 's3',
+        name: 'Liam O\'Connor',
+        level: '5',
+        class: 'Class A',
+        photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Liam',
+        overallGrowth: 15,
+        growthVelocity: 6,
+        velocityBand: VelocityBand.Stable,
+        hasAnomaly: false,
+        assessments: [
+            { id: 'a5', type: TestPeriod.Baseline, date: '2023-09-16', scores: { [Domain.Reading]: 70, [Domain.Writing]: 55, [Domain.Grammar]: 65, [Domain.Vocabulary]: 72, [Domain.Phonics]: 78, [Domain.Listening]: 68, [Domain.Speaking]: 65, [Domain.DataLiteracy]: 60 }, subdomainScores: {} },
+            { id: 'a6', type: TestPeriod.Midline, date: '2023-12-04', scores: { [Domain.Reading]: 74, [Domain.Writing]: 68, [Domain.Grammar]: 70, [Domain.Vocabulary]: 78, [Domain.Phonics]: 84, [Domain.Listening]: 72, [Domain.Speaking]: 71, [Domain.DataLiteracy]: 65 }, subdomainScores: {} },
+        ],
+        interventionStatus: null,
+        actionLog: []
+    },
+    {
+        id: 's4',
+        name: 'Chloe Park',
+        level: '5',
+        class: 'Class A',
+        photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Chloe',
+        overallGrowth: 22,
+        growthVelocity: 11,
+        velocityBand: VelocityBand.Fast,
+        hasAnomaly: false,
+        assessments: [
+            { id: 'a7', type: TestPeriod.Baseline, date: '2023-09-15', scores: { [Domain.Reading]: 80, [Domain.Writing]: 78, [Domain.Grammar]: 75, [Domain.Vocabulary]: 82, [Domain.Phonics]: 88, [Domain.Listening]: 80, [Domain.Speaking]: 82, [Domain.DataLiteracy]: 75 }, subdomainScores: {} },
+            { id: 'a8', type: TestPeriod.Midline, date: '2023-12-06', scores: { [Domain.Reading]: 92, [Domain.Writing]: 89, [Domain.Grammar]: 86, [Domain.Vocabulary]: 94, [Domain.Phonics]: 96, [Domain.Listening]: 90, [Domain.Speaking]: 92, [Domain.DataLiteracy]: 88 }, subdomainScores: {} },
+        ],
+        interventionStatus: null,
+        actionLog: [
+            { id: 'l4', date: '2023-12-08', author: 'Teacher', category: 'Observation', content: 'Exhibits extremely high language retention. Promoted to work circle lead helper.', impactScore: 5 }
+        ]
+    },
+    {
+        id: 's5',
+        name: 'Hana Tanaka',
+        level: '5',
+        class: 'Class A',
+        photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Hana',
+        overallGrowth: 5,
+        growthVelocity: 1,
+        velocityBand: VelocityBand.AtRisk,
+        hasAnomaly: true,
+        assessments: [
+            { id: 'a9', type: TestPeriod.Baseline, date: '2023-09-15', scores: { [Domain.Reading]: 58, [Domain.Writing]: 52, [Domain.Grammar]: 55, [Domain.Vocabulary]: 60, [Domain.Phonics]: 62, [Domain.Listening]: 58, [Domain.Speaking]: 54, [Domain.DataLiteracy]: 50 }, subdomainScores: {} },
+            { id: 'a10', type: TestPeriod.Midline, date: '2023-12-05', scores: { [Domain.Reading]: 60, [Domain.Writing]: 54, [Domain.Grammar]: 57, [Domain.Vocabulary]: 64, [Domain.Phonics]: 65, [Domain.Listening]: 61, [Domain.Speaking]: 56, [Domain.DataLiteracy]: 52 }, subdomainScores: {} },
+        ],
+        interventionStatus: { tier: 3, domain: Domain.Writing, goal: 'Individualized 1:1 orthography drills 4x weekly', trend: Trend.Plateau, triggerReason: 'Critical writing & spelling gap beneath cohort standard', dateIdentified: '2023-09-17' },
+        actionLog: [
+            { id: 'l5', date: '2023-09-18', author: 'Teacher', category: 'Intervention', content: 'Commenced customized phonics flashcard drills. Progress is slow.', impactScore: 2 },
+            { id: 'l6', date: '2023-10-25', author: 'Teacher', category: 'Parent Communication', content: 'Parent agreed to secure a weekend language sandbox program to boost spelling consistency.', impactScore: 4 }
+        ]
+    },
+    {
+        id: 's6',
+        name: 'Jun Woo',
+        level: '5',
+        class: 'Class A',
+        photoUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jun',
+        overallGrowth: 10,
+        growthVelocity: 4,
+        velocityBand: VelocityBand.Stable,
+        hasAnomaly: false,
+        assessments: [
+            { id: 'a11', type: TestPeriod.Baseline, date: '2023-09-15', scores: { [Domain.Reading]: 72, [Domain.Writing]: 65, [Domain.Grammar]: 70, [Domain.Vocabulary]: 74, [Domain.Phonics]: 78, [Domain.Listening]: 75, [Domain.Speaking]: 70, [Domain.DataLiteracy]: 68 }, subdomainScores: {} },
+            { id: 'a12', type: TestPeriod.Midline, date: '2023-12-05', scores: { [Domain.Reading]: 77, [Domain.Writing]: 71, [Domain.Grammar]: 74, [Domain.Vocabulary]: 80, [Domain.Phonics]: 82, [Domain.Listening]: 81, [Domain.Speaking]: 75, [Domain.DataLiteracy]: 72 }, subdomainScores: {} },
+        ],
+        interventionStatus: null,
+        actionLog: []
     }
 ];
 

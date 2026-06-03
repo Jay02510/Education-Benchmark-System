@@ -36,6 +36,15 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
     useEffect(() => {
         if (isOpen) {
             const fetchBaseNarrative = async () => {
+                try {
+                    const localCache = localStorage.getItem('demo_cached_reports') || '{}';
+                    const parsedCache = JSON.parse(localCache);
+                    if (parsedCache[student.id]) {
+                        setNarrative(parsedCache[student.id]);
+                        return;
+                    }
+                } catch (err) {}
+
                 if (student.cachedReport) {
                     setNarrative(student.cachedReport);
                     return;
@@ -46,8 +55,15 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
                 try {
                     const analysis = await GeminiService.generateComprehensiveStudentAnalysis(student);
                     setNarrative(analysis.report_card);
-                    // Cache it
-                    await updateDoc(doc(db, 'students', student.id), { cachedReport: analysis.report_card });
+                    
+                    try {
+                        const localCache = localStorage.getItem('demo_cached_reports') || '{}';
+                        const parsedCache = JSON.parse(localCache);
+                        parsedCache[student.id] = analysis.report_card;
+                        localStorage.setItem('demo_cached_reports', JSON.stringify(parsedCache));
+                    } catch (cacheErr) {
+                        // Ignore local caching failures inside Sandbox
+                    }
                 } catch (e: any) {
                     setError(e.message || "Failed to generate report.");
                 } finally {

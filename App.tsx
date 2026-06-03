@@ -120,13 +120,13 @@ const MainAppLayout: React.FC = () => {
                 )}
 
                 <aside className={`
-                    fixed inset-y-0 left-0 z-40 bg-white flex flex-col shadow-[1px_0_40px_rgba(0,0,0,0.02)] border-r border-slate-100 transition-all duration-500 ease-out
+                    fixed inset-y-0 left-0 z-40 bg-white/75 backdrop-blur-2xl flex flex-col shadow-[4px_0_30px_rgba(0,0,0,0.015)] border-r border-slate-200/50 transition-all duration-500 ease-out
                     ${isSidebarCollapsed ? 'w-24 px-4' : 'w-72 p-6'}
                     lg:static print:hidden
                     ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'}
                 `}>
                     <div className={`flex items-center gap-3 mb-12 mt-4 transition-all duration-300 ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'}`}>
-                        <div className="w-10 h-10 shrink-0 rounded-2xl bg-slate-900 flex items-center justify-center shadow-2xl">
+                        <div className="w-10 h-10 shrink-0 rounded-2xl bg-slate-950 flex items-center justify-center shadow-xl shadow-indigo-500/10">
                             <Icon name="benchmark" className="w-6 h-6 text-indigo-400" strokeWidth={3} />
                         </div>
                         <div className={`transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
@@ -137,7 +137,7 @@ const MainAppLayout: React.FC = () => {
                     <nav className="flex-1 overflow-y-auto scrollbar-none space-y-12">
                         <div>
                             {!isSidebarCollapsed && <p className="px-4 text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] mb-4">Command</p>}
-                            <ul className="space-y-2">
+                            <ul className="space-y-1">
                                 <NavItem label={TABS.STUDENTS} iconName="students" isActive={activeTab === TABS.STUDENTS} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.STUDENTS)} />
                                 <NavItem label={TABS.INSIGHTS} iconName="analytics" isActive={activeTab === TABS.INSIGHTS} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.INSIGHTS)} />
                                 <NavItem label={TABS.LIBRARY} iconName="library" isActive={activeTab === TABS.LIBRARY} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.LIBRARY)} />
@@ -146,24 +146,24 @@ const MainAppLayout: React.FC = () => {
                         </div>
                     </nav>
 
-                    <div className={`pt-6 border-t border-slate-50 ${isSidebarCollapsed ? 'flex flex-col items-center gap-6' : 'px-2'}`}>
+                    <div className={`pt-6 border-t border-slate-100 ${isSidebarCollapsed ? 'flex flex-col items-center gap-6' : 'px-2'}`}>
                         <button 
                             onClick={() => setIsFeedbackOpen(true)}
-                            className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all mb-4 ${isSidebarCollapsed ? 'justify-center px-0 w-12' : ''}`}
+                            className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100/50 transition-all mb-4 ${isSidebarCollapsed ? 'justify-center px-0 w-12' : ''}`}
                             title="Feedback"
                         >
-                            <Icon name="chat" className="w-5 h-5" />
+                            <Icon name="chat" className="w-5 h-5 flex-shrink-0" />
                             {!isSidebarCollapsed && <span className="text-[10px] font-black uppercase tracking-widest">Feedback</span>}
                         </button>
 
                         <button 
                             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                            className={`hidden lg:flex items-center justify-center rounded-xl text-slate-300 hover:text-slate-900 hover:bg-slate-50 transition-colors mb-6 ${isSidebarCollapsed ? 'w-12 h-12' : 'w-full py-3 gap-2'}`}
+                            className={`hidden lg:flex items-center justify-center rounded-xl text-slate-300 hover:text-slate-900 hover:bg-slate-100/50 transition-colors mb-6 ${isSidebarCollapsed ? 'w-12 h-12' : 'w-full py-3 gap-2'}`}
                         >
                             <Icon name={isSidebarCollapsed ? "arrowRight" : "chevronLeft"} className="w-5 h-5" />
                         </button>
 
-                        <div className={`flex items-center gap-4 p-2 rounded-[1.5rem] transition-colors cursor-pointer group ${isSidebarCollapsed ? 'justify-center p-0' : 'hover:bg-slate-50'}`}>
+                        <div className={`flex items-center gap-4 p-2 rounded-[1.5rem] transition-colors cursor-pointer group ${isSidebarCollapsed ? 'justify-center p-0' : 'hover:bg-slate-100/50'}`}>
                             <div className="w-10 h-10 shrink-0 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-sm shadow-inner border border-indigo-100">
                                 {user?.name.charAt(0)}
                             </div>
@@ -180,8 +180,8 @@ const MainAppLayout: React.FC = () => {
                     </div>
                 </aside>
 
-                <main className="flex-1 relative flex flex-col w-full overflow-hidden print:overflow-visible print:h-auto print:w-full bg-[#F8FAFC]">
-                     <div className="lg:hidden bg-white border-b border-slate-100 p-4 flex items-center justify-between z-20 print:hidden">
+                <main className="flex-1 relative flex flex-col w-full overflow-hidden print:overflow-visible print:h-auto print:w-full bg-transparent">
+                     <div className="lg:hidden bg-white/80 backdrop-blur-md border-b border-slate-100 p-4 flex items-center justify-between z-20 print:hidden">
                          <button onClick={() => setIsMobileMenuOpen(true)} className="text-slate-900 p-2 -ml-2 rounded-xl bg-slate-50 transition flex items-center gap-2">
                              <Icon name="menu" className="w-6 h-6" /> 
                          </button>

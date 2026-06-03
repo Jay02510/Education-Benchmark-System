@@ -11,13 +11,13 @@ export const Card: React.FC<CardProps> = ({ children, className, onClick, varian
   const baseClasses = "rounded-[2.4rem] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden";
   
   const variantClasses = {
-    default: "bg-white border border-slate-100 shadow-[0_8px_40px_rgba(0,0,0,0.03)]",
-    glass: "bg-white/70 backdrop-blur-2xl border border-white/40 shadow-[0_20px_60px_rgba(0,0,0,0.04)]",
-    paper: "bg-[#FCFCFB] border border-[#F1F1EF] shadow-[0_1px_3px_rgba(0,0,0,0.05),0_10px_20px_rgba(0,0,0,0.02)] relative before:absolute before:inset-0 before:bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] before:opacity-5 before:pointer-events-none",
-    intelligence: "bg-slate-900 border border-slate-800 shadow-[0_30px_60px_rgba(0,0,0,0.2)] text-white"
+    default: "bg-white/90 backdrop-blur-lg border border-slate-200/50 shadow-premium hover:shadow-premium-hover transition-all duration-300",
+    glass: "bg-white/50 backdrop-blur-xl border border-white/60 shadow-[0_20px_50px_rgba(15,23,42,0.03)] hover:border-white/80 hover:bg-white/65 transition-all duration-300",
+    paper: "bg-[#fcfdfa] border border-[#ecece8] shadow-[0_12px_30px_rgba(40,40,30,0.03)] relative before:absolute before:inset-0 before:bg-[url('https://www.transparenttextures.com/patterns/natural-paper.png')] before:opacity-[0.03] before:pointer-events-none transition-all duration-300",
+    intelligence: "bg-[#0b0f19]/95 backdrop-blur-xl border border-[#1e293b]/50 shadow-[0_30px_60px_rgba(7,10,19,0.2)] text-white hover:border-indigo-500/20 transition-all duration-300"
   };
 
-  const clickableClasses = onClick ? "cursor-pointer hover:shadow-[0_40px_80px_rgba(99,102,241,0.12)] hover:-translate-y-2 active:scale-[0.97] hover:border-indigo-100" : "";
+  const clickableClasses = onClick ? "cursor-pointer hover:-translate-y-1.5 active:scale-[0.98] ring-1 ring-transparent hover:ring-indigo-500/10" : "";
   
   return (
     <div className={`${baseClasses} ${variantClasses[variant]} ${clickableClasses} ${className}`} onClick={onClick}>

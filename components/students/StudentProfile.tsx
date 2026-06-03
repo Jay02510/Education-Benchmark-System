@@ -122,9 +122,9 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
     }, [resources, sortedAssessments, student.level]);
 
     return (
-        <div className="flex flex-col h-full bg-[#F8FAFC] overflow-hidden">
-            <div className="bg-white px-8 py-8 md:px-12 shrink-0 border-b border-slate-100 shadow-sm z-10">
-                <button onClick={onBack} className="flex items-center space-x-3 text-slate-400 hover:text-indigo-600 mb-8 transition font-black text-[10px] uppercase tracking-[0.2em] group bg-slate-50 px-4 py-2 rounded-xl border border-slate-100 w-fit">
+        <div className="flex flex-col h-full bg-transparent overflow-hidden">
+            <div className="bg-white/85 backdrop-blur-xl px-8 py-8 md:px-12 shrink-0 border-b border-slate-200/60 shadow-[0_4px_30px_rgba(0,0,0,0.015)] z-10">
+                <button onClick={onBack} className="flex items-center space-x-3 text-slate-500 hover:text-indigo-600 mb-8 transition font-black text-[10px] uppercase tracking-[0.2em] group bg-white hover:bg-slate-50 px-4 py-2 rounded-xl border border-slate-200/80 w-fit shadow-sm">
                     <Icon name="chevronLeft" className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                     <span>Back to Roster</span>
                 </button>
@@ -137,18 +137,18 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                                     <Icon name="alert" className="w-5 h-5 text-white" strokeWidth={3} />
                                 </div>
                             )}
-                            <div className="w-24 h-24 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white transition-all group-hover:scale-110 z-10 bg-slate-100">
+                            <div className="w-24 h-24 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white transition-all group-hover:scale-105 duration-300 z-10 bg-slate-100">
                                 <img src={student.photoUrl} className="w-full h-full object-cover" alt="" />
                             </div>
-                            <button onClick={() => setIsEditProfileModalOpen(true)} className="absolute -bottom-2 -right-2 p-2 bg-white border border-slate-100 rounded-2xl shadow-xl text-slate-400 hover:text-indigo-600 transition-all z-20"><Icon name="settings" className="w-4 h-4" /></button>
+                            <button onClick={() => setIsEditProfileModalOpen(true)} className="absolute -bottom-2 -right-2 p-2 bg-white border border-slate-200 rounded-2xl shadow-xl text-slate-400 hover:text-indigo-600 transition-all z-20"><Icon name="settings" className="w-4 h-4" /></button>
                         </div>
                         <div>
                             <div className="flex items-center gap-4">
                                 <h1 className="text-5xl font-black text-slate-900 tracking-tighter">{student.name}</h1>
-                                {student.growthVelocity >= 10 && <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 text-[10px] font-black uppercase tracking-widest shadow-sm">Fast Track</div>}
+                                {student.growthVelocity >= 10 && <div className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">Fast Track</div>}
                             </div>
                             <div className="flex items-center gap-3 mt-3">
-                                <span className="text-[11px] font-black text-indigo-600 uppercase bg-indigo-50 px-3 py-1 rounded-xl border border-indigo-100 tracking-widest">Level {student.level}</span>
+                                <span className="text-[11px] font-black text-indigo-600 bg-indigo-50/50 px-3 py-1 rounded-xl border border-indigo-200 tracking-widest">Level {student.level}</span>
                                 <span className={`text-[10px] font-black px-3 py-1 rounded-xl shadow-sm border ${student.growthVelocity >= 10 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : student.growthVelocity < 0 ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                                     {student.growthVelocity > 0 ? '↑' : '↓'} {Math.abs(student.growthVelocity)} Velocity
                                 </span>
@@ -156,10 +156,10 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                         </div>
                     </div>
                     <div className="flex gap-4">
-                        <button onClick={() => setIsReportModalOpen(true)} className="px-10 py-4 bg-white text-slate-900 border-2 border-slate-200 rounded-2xl font-black shadow-lg hover:bg-slate-50 active:scale-95 transition-all flex items-center gap-3 text-xs uppercase tracking-widest border-b-4">
+                        <button onClick={() => setIsReportModalOpen(true)} className="px-10 py-4 bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-200 rounded-2xl font-black shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center gap-3 text-xs uppercase tracking-widest border-b-4">
                             <Icon name="benchmark" className="w-5 h-5" /> Generate Report
                         </button>
-                        <button onClick={() => { setAssessmentToEdit(null); setIsAssessmentModalOpen(true); }} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-2xl shadow-indigo-200/40 hover:bg-indigo-600 active:scale-95 transition-all flex items-center gap-3 text-xs uppercase tracking-widest border-b-4 border-slate-950">
+                        <button onClick={() => { setAssessmentToEdit(null); setIsAssessmentModalOpen(true); }} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl hover:bg-indigo-600 active:scale-95 transition-all flex items-center gap-3 text-xs uppercase tracking-widest border-b-4 border-slate-950">
                             <Icon name="plus" className="w-5 h-5" /> Log Score
                         </button>
                     </div>

@@ -8,6 +8,31 @@ import { useStudents } from '../../context/StudentContext';
 
 import { logger } from '../../services/logger';
 
+const RUBRIC_DESCRIPTIONS: Record<string, string> = {
+    "Decoding CVC list": "Decodes list of simple Consonant-Vowel-Consonant words. Check accuracy and sound blending.",
+    "Fluency passage 1": "Analyzes word accuracy, punctuation pacing, and emotional expression when reading aloud.",
+    "Literal Qs passage": "Tests immediate retrieval. 1 point for each correct direct fact recalled from the passage.",
+    "Inferential Qs": "Deductive context comprehension. Evaluates logical connections not explicitly mentioned.",
+    "Nonfiction short": "Identifies main non-fiction arguments, text structure, or thematic evidence.",
+    "Sentence writing": "Assesses syntax, spatial awareness, capitalization compliance, and accurate punctuation.",
+    "Situational writing": "Writes to a target scenario prompt (e.g., formal letter draft or dialogue completion).",
+    "Story writing": "Organizes ideas sequentially with creative vocabulary and proper narrative paragraphing.",
+    "Present tense task": "Tests active usage of standard verbs and irregular auxiliary conjugations in present tense.",
+    "Past tense task": "Requires converting base forms into standard and irregular past tense formations.",
+    "SV agreement task": "Ensures subject nouns properly correspond with correct singular or plural verb inflections.",
+    "Punct/Cap fix": "Requires locating and correcting missing sentence casing or ending symbols.",
+    "Sight word list": "Assesses automatic core sight-words matching speed and pronunciation accuracy.",
+    "Context cloze": "Measures sentence pattern logic by selecting fitting vocab for missing sentence holes.",
+    "Blend ID": "Phonics identification of consonant consonant consonant consonant blends (e.g., bl-, cl-, str-).",
+    "Digraph ID": "Identification of standard paired letter digraph sounds (e.g., sh-, ch-, th-, ee-).",
+    "Listening Details": "Tests audio retention or multiple-choice choices after listening to conversations.",
+    "Speaking Pronunciation": "Measures clear phonemic phonetic output, appropriate emphasis, and native-like articulation.",
+    "Oral Sentences": "Immediate oral restatement of audio stimuli with accurate structural syntax replication.",
+    "Speaking Fluency": "Sustained descriptive spoken output with general fluency and low vocal pause frequency.",
+    "Interaction Roleplay": "Tests conversational interactive capability: turn-taking fluency and context relevance.",
+    "Data chart Qs": "Requires interpreting trends and statistics from a visual chart and answering questions."
+};
+
 interface BulkAssessmentModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -21,6 +46,10 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
     const [gridData, setGridData] = useState<Record<string, Record<string, number>>>({});
     const [isSaving, setIsSaving] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    
+    // Accessibility, validation, and rubric states
+    const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+    const [showConfirmClose, setShowConfirmClose] = useState(false);
 
     // Layout & Adjustment State
     const [gridScale, setGridScale] = useState(1);
@@ -32,6 +61,16 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
 
     const getScore = (studentId: string, domain: Domain, subdomain: string) => {
         return gridData[studentId]?.[makeKey(domain, subdomain)] ?? '';
+    };
+
+    const isDirty = Object.values(gridData).some(studentData => Object.keys(studentData).length > 0);
+
+    const handleCloseAttempt = () => {
+        if (isDirty) {
+            setShowConfirmClose(true);
+        } else {
+            onClose();
+        }
     };
 
     const toggleFullscreen = () => {
@@ -70,7 +109,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
             return;
         }
 
-        const numValue = Math.min(maxScore, Math.max(0, Number(value)));
+        const numValue = Number(value);
         setGridData(prev => ({
             ...prev,
             [studentId]: {
@@ -80,8 +119,20 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
         }));
     };
 
+    const hasAnyCellErrors = Object.entries(gridData).some(([studentId, scores]) => {
+        return Object.entries(scores).some(([key, val]) => {
+            const [domain, subName] = key.split(':');
+            const subList = subdomains[domain as Domain] || [];
+            const sub = subList.find(s => s.name === subName);
+            if (sub && typeof val === 'number') {
+                return val < 0 || val > sub.maxScore;
+            }
+            return false;
+        });
+    });
+
     const handleSave = async () => {
-        if (isSaving) return;
+        if (isSaving || hasAnyCellErrors) return;
         
         const studentsToUpdate = students.filter(s => gridData[s.id] && Object.keys(gridData[s.id]).length > 0);
         
@@ -226,7 +277,7 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                             className="bg-transparent text-[11px] font-black outline-none w-24 hidden md:block" 
                         />
                     </div>
-                    <button onClick={onClose} disabled={isSaving} className="p-2 text-slate-400 hover:text-rose-500 transition-all rounded-lg hover:bg-rose-50">
+                    <button onClick={handleCloseAttempt} disabled={isSaving} className="p-2 text-slate-400 hover:text-rose-500 transition-all rounded-lg hover:bg-rose-50 focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500">
                         <Icon name="close" className="w-5 h-5" />
                     </button>
                 </div>
@@ -278,26 +329,64 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                                 >
                                     <div className="flex flex-wrap items-center gap-x-2 mb-1.5">
                                         <span className="text-[9px] font-black text-indigo-500 uppercase tracking-[0.15em]">{sub.domain}</span>
-                                        <span className="text-[9px] font-bold text-slate-300 uppercase">Limit: {sub.maxScore}</span>
+                                        <span className="text-[9px] font-bold text-slate-400 uppercase">Limit: {sub.maxScore}</span>
+                                        
+                                        {/* Rubric popover info icon */}
+                                        <div className="relative inline-flex items-center group/tooltip">
+                                            <button 
+                                                type="button"
+                                                onMouseEnter={() => setActiveTooltip(sub.name)}
+                                                onMouseLeave={() => setActiveTooltip(null)}
+                                                onClick={() => setActiveTooltip(activeTooltip === sub.name ? null : sub.name)}
+                                                className="text-slate-400 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full p-0.5"
+                                                aria-label={`View rubric for ${sub.name}`}
+                                            >
+                                                <Icon name="help" className="w-3.5 h-3.5" />
+                                            </button>
+                                            {activeTooltip === sub.name && (
+                                                <div className="absolute z-[3000] bottom-full left-0 mb-2 w-64 p-3 bg-slate-900 text-white text-[11px] font-semibold leading-relaxed rounded-xl shadow-xl border border-slate-800 pointer-events-none select-none animate-in fade-in zoom-in-95 duration-150">
+                                                    <p className="font-bold text-indigo-400 mb-1 leading-none">{sub.name} Rubric</p>
+                                                    <p className="normal-case tracking-normal text-slate-200">{RUBRIC_DESCRIPTIONS[sub.name] || "Score based on curriculum assessment rubrics."}</p>
+                                                    <div className="absolute top-full left-3 w-2 h-2 bg-slate-900 rotate-45 transform -translate-y-1"></div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <p className="font-bold text-slate-700 leading-tight text-xs md:text-sm">{sub.name}</p>
+                                    <p className="font-bold text-slate-800 leading-tight text-xs md:text-sm">{sub.name}</p>
                                 </td>
-                                {students.map((student) => (
-                                    <td 
-                                        key={student.id} 
-                                        className="p-0 border-r border-b border-slate-100 bg-white group-hover:bg-indigo-50/20 transition-colors"
-                                        style={{ height: inputHeight }}
-                                    >
-                                        <input 
-                                            type="number" min="0" max={sub.maxScore}
-                                            value={getScore(student.id, sub.domain, sub.name)}
-                                            disabled={isSaving}
-                                            onChange={(e) => handleScoreChange(student.id, sub.domain, sub.name, e.target.value, sub.maxScore)}
-                                            className="w-full h-full px-4 text-center font-black text-slate-800 bg-transparent outline-none focus:ring-4 focus:ring-inset focus:ring-indigo-500/20 text-lg transition-all"
-                                            placeholder="-"
-                                        />
-                                    </td>
-                                ))}
+                                {students.map((student) => {
+                                    const scoreVal = getScore(student.id, sub.domain, sub.name);
+                                    const isOver = typeof scoreVal === 'number' && (scoreVal < 0 || scoreVal > sub.maxScore);
+                                    return (
+                                        <td 
+                                            key={student.id} 
+                                            className={`p-0 border-r border-b border-slate-100 transition-colors ${
+                                                isOver ? 'bg-rose-50/70 group-hover:bg-rose-100/70' : 'bg-white group-hover:bg-indigo-50/20'
+                                            }`}
+                                            style={{ height: inputHeight }}
+                                        >
+                                            <div className="relative w-full h-full flex items-center justify-center">
+                                                <input 
+                                                    type="number" min="0" max={sub.maxScore}
+                                                    value={scoreVal}
+                                                    disabled={isSaving}
+                                                    onChange={(e) => handleScoreChange(student.id, sub.domain, sub.name, e.target.value, sub.maxScore)}
+                                                    className={`w-full h-full pl-6 pr-12 text-center font-black outline-none focus:ring-4 focus:ring-inset text-lg transition-all ${
+                                                        isOver 
+                                                            ? 'text-rose-600 bg-rose-50/35 focus:ring-rose-500/20' 
+                                                            : 'text-slate-800 bg-transparent focus:ring-indigo-500/20'
+                                                    }`}
+                                                    placeholder="-"
+                                                />
+                                                <span className={`absolute right-3 text-[10px] font-black pointer-events-none select-none ${
+                                                    isOver ? 'text-rose-400 animate-pulse' : 'text-slate-300'
+                                                }`}>
+                                                    / {sub.maxScore}
+                                                </span>
+                                            </div>
+                                        </td>
+                                    );
+                                })}
                                 <td className="bg-slate-50/20 border-b border-slate-100 w-32"></td>
                             </tr>
                         ))}
@@ -313,25 +402,69 @@ export const BulkAssessmentModal: React.FC<BulkAssessmentModalProps> = ({ isOpen
                     </div>
                     <div>
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] block mb-0.5 text-slate-900">Logic Check Active</span>
-                        <span className="text-[9px] font-bold uppercase tracking-widest">Growth Velocity will update upon sync</span>
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500">Growth Velocity will update upon sync</span>
                     </div>
                 </div>
                 <div className="flex gap-4 w-full md:w-auto">
                     <button 
-                        onClick={onClose} disabled={isSaving}
-                        className="flex-1 md:flex-none px-10 py-4 bg-white text-slate-400 border-2 border-slate-100 rounded-2xl font-black transition-all text-[10px] uppercase tracking-[0.2em] hover:bg-slate-50"
+                        onClick={handleCloseAttempt} disabled={isSaving}
+                        className="flex-1 md:flex-none px-10 py-4 bg-white text-slate-500 border-2 border-slate-100 rounded-2xl font-black transition-all text-[10px] uppercase tracking-[0.2em] hover:bg-slate-50 focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                     >
                         Discard
                     </button>
                     <button 
-                        onClick={handleSave} disabled={isSaving}
-                        className="flex-1 md:flex-none px-12 py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-indigo-600 transition-all shadow-2xl shadow-indigo-900/10 flex items-center justify-center gap-4 text-[10px] uppercase tracking-[0.3em] active:scale-95 disabled:bg-slate-300"
+                        onClick={handleSave} 
+                        disabled={isSaving || hasAnyCellErrors}
+                        className={`flex-1 md:flex-none px-12 py-4 text-white font-black rounded-2xl transition-all shadow-2xl flex items-center justify-center gap-4 text-[10px] uppercase tracking-[0.3em] active:scale-95 duration-200 focus-visible:outline-none focus:outline-none focus-visible:ring-2 ${
+                            hasAnyCellErrors 
+                                ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-900/10' 
+                                : 'bg-slate-900 hover:bg-indigo-600 shadow-indigo-900/10 disabled:bg-slate-300'
+                        }`}
                     >
-                        {isSaving ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="check" className="w-5 h-5 text-emerald-400" />}
-                        {isSaving ? 'Saving...' : 'Save All'}
+                        {isSaving ? (
+                            <Icon name="refresh" className="w-5 h-5 animate-spin" />
+                        ) : hasAnyCellErrors ? (
+                            <Icon name="close" className="w-5 h-5 text-rose-200" />
+                        ) : (
+                            <Icon name="check" className="w-5 h-5 text-emerald-400" />
+                        )}
+                        {isSaving ? 'Saving...' : hasAnyCellErrors ? 'Fix Errors' : 'Save All'}
                     </button>
                 </div>
             </div>
+
+            {/* Custom confirm close dialog over layer */}
+            {showConfirmClose && (
+                <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[1100000] backdrop-blur-sm p-4">
+                    <div className="w-full max-w-md bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                        <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 mb-6 border border-rose-100">
+                            <Icon name="help" className="w-6 h-6 animate-pulse" />
+                        </div>
+                        <h3 className="text-lg font-black text-slate-950 uppercase tracking-tighter mb-2">Discard Unsaved Scores?</h3>
+                        <p className="text-xs text-slate-500 leading-relaxed font-semibold mb-6">
+                            You have active edits in the protocol entry stack. Closing this protocol without synchronizing will permanently discard all entered student data.
+                        </p>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setShowConfirmClose(false)}
+                                className="flex-1 py-3 px-4 bg-slate-50 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest border border-slate-100 hover:bg-slate-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                            >
+                                Keep Editing
+                            </button>
+                            <button
+                                onClick={() => {
+                                    onClose();
+                                    setGridData({});
+                                    setShowConfirmClose(false);
+                                }}
+                                className="flex-1 py-3 px-4 bg-rose-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-rose-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                            >
+                                Discard All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

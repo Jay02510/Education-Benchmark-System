@@ -32,18 +32,19 @@ const NavItem: React.FC<{
     isCollapsed: boolean;
     onClick: () => void;
 }> = ({ label, iconName, isActive, isCollapsed, onClick }) => (
-    <li>
+    <li role="listitem">
         <button
             onClick={onClick}
             title={isCollapsed ? label : ''}
-            className={`group flex items-center w-full py-3 px-3 mx-auto rounded-2xl transition-all duration-300 ${
+            aria-current={isActive ? "page" : undefined}
+            className={`group flex items-center w-full py-3 px-3 mx-auto rounded-xl transition-all duration-300 focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
                 isActive
-                    ? 'bg-slate-900 text-white shadow-xl shadow-slate-200 font-black'
-                    : 'text-slate-400 hover:bg-slate-50 hover:text-slate-900 font-bold'
+                    ? 'bg-slate-900 text-white shadow-sm font-black'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
             } ${isCollapsed ? 'justify-center w-12 h-12 px-0' : ''}`}
         >
             <div className={`flex items-center justify-center shrink-0 w-8 h-8`}>
-                <Icon name={iconName} className={`w-5 h-5 ${isActive ? 'text-indigo-400' : 'text-slate-300 group-hover:text-slate-600'}`} strokeWidth={isActive ? 3 : 2} />
+                <Icon name={iconName} className={`w-5 h-5 ${isActive ? 'text-indigo-400' : 'text-slate-600 group-hover:text-slate-800'}`} strokeWidth={isActive ? 3 : 2} />
             </div>
             <span className={`text-xs uppercase tracking-widest ml-3 transition-all duration-300 origin-left ${isCollapsed ? 'w-0 opacity-0 scale-x-0 hidden' : 'w-auto opacity-100 scale-x-100'}`}>
                 {label}
@@ -95,16 +96,16 @@ const MainAppLayout: React.FC = () => {
         <div className="flex flex-col h-screen bg-[#F8FAFC] font-sans overflow-hidden text-slate-800 print:h-auto print:overflow-visible">
             {/* 💡 PERSISTENT DEMO BAR */}
             {user?.isDemo && (
-                <div className="bg-indigo-600 text-white px-4 py-2.5 text-center text-[10px] font-black uppercase tracking-[0.2em] relative z-[1000] flex items-center justify-center gap-6 shadow-xl">
+                <div className="bg-amber-50/90 border-b border-amber-200 text-amber-900 px-4 py-2 text-center text-[10px] font-bold uppercase tracking-widest relative z-[1000] flex items-center justify-center gap-6 shadow-sm">
                     <div className="flex items-center gap-2">
-                        <Icon name="brain" className="w-3 h-3 text-indigo-200" />
-                        <span>{language === 'EN' ? 'Interactive Demo Mode Active' : '인터랙티브 데모 모드 활성'}</span>
+                        <Icon name="brain" className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                        <span className="font-black">{language === 'EN' ? 'Interactive Demo Mode Active' : '인터랙티브 데모 모드 활성'}</span>
                     </div>
-                    <span className="hidden md:inline opacity-60">|</span>
-                    <span className="hidden md:inline font-bold normal-case tracking-normal">
+                    <span className="hidden md:inline text-amber-300">|</span>
+                    <span className="hidden md:inline font-semibold normal-case tracking-normal text-amber-800 text-[11px]">
                         {language === 'EN' ? 'Changes are not saved. Create an account to manage your own students.' : '변경사항은 저장되지 않습니다. 학생 관리를 시작하려면 계정을 만드세요.'}
                     </span>
-                    <button onClick={logout} className="px-4 py-1 bg-white text-indigo-600 rounded-lg hover:bg-slate-100 transition-colors shadow-sm active:scale-95">
+                    <button onClick={logout} className="px-4 py-1 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-sm active:scale-95 text-[10px] font-bold tracking-normal uppercase focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
                         {language === 'EN' ? 'Create Account' : '계정 생성'}
                     </button>
                 </div>
@@ -116,10 +117,17 @@ const MainAppLayout: React.FC = () => {
                 <ChatWidget />
 
                 {isMobileMenuOpen && (
-                    <div className="fixed inset-0 bg-slate-900/60 z-[100] lg:hidden backdrop-blur-sm transition-opacity print:hidden" onClick={() => setIsMobileMenuOpen(false)} />
+                    <div 
+                        aria-hidden="true"
+                        role="presentation"
+                        className="fixed inset-0 bg-slate-900/60 z-[100] lg:hidden backdrop-blur-sm transition-opacity print:hidden" 
+                        onClick={() => setIsMobileMenuOpen(false)} 
+                    />
                 )}
 
-                <aside className={`
+                <aside 
+                    aria-label="Main navigation"
+                    className={`
                     fixed inset-y-0 left-0 z-40 bg-white/75 backdrop-blur-2xl flex flex-col shadow-[4px_0_30px_rgba(0,0,0,0.015)] border-r border-slate-200/50 transition-all duration-500 ease-out
                     ${isSidebarCollapsed ? 'w-24 px-4' : 'w-72 p-6'}
                     lg:static print:hidden
@@ -136,8 +144,8 @@ const MainAppLayout: React.FC = () => {
                     
                     <nav className="flex-1 overflow-y-auto scrollbar-none space-y-12">
                         <div>
-                            {!isSidebarCollapsed && <p className="px-4 text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] mb-4">Command</p>}
-                            <ul className="space-y-1">
+                            {!isSidebarCollapsed && <p className="px-4 text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4">Command</p>}
+                            <ul role="list" className="space-y-1">
                                 <NavItem label={TABS.STUDENTS} iconName="students" isActive={activeTab === TABS.STUDENTS} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.STUDENTS)} />
                                 <NavItem label={TABS.INSIGHTS} iconName="analytics" isActive={activeTab === TABS.INSIGHTS} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.INSIGHTS)} />
                                 <NavItem label={TABS.LIBRARY} iconName="library" isActive={activeTab === TABS.LIBRARY} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.LIBRARY)} />
@@ -149,7 +157,7 @@ const MainAppLayout: React.FC = () => {
                     <div className={`pt-6 border-t border-slate-100 ${isSidebarCollapsed ? 'flex flex-col items-center gap-6' : 'px-2'}`}>
                         <button 
                             onClick={() => setIsFeedbackOpen(true)}
-                            className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-slate-100/50 transition-all mb-4 ${isSidebarCollapsed ? 'justify-center px-0 w-12' : ''}`}
+                            className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl text-slate-600 focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 hover:text-indigo-600 hover:bg-slate-100/50 transition-all mb-4 ${isSidebarCollapsed ? 'justify-center px-0 w-12' : ''}`}
                             title="Feedback"
                         >
                             <Icon name="chat" className="w-5 h-5 flex-shrink-0" />
@@ -157,8 +165,17 @@ const MainAppLayout: React.FC = () => {
                         </button>
 
                         <button 
+                            onClick={() => setIsGuideOpen(true)}
+                            className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl text-slate-600 focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 hover:text-indigo-600 hover:bg-slate-100/50 transition-all mb-4 ${isSidebarCollapsed ? 'justify-center px-0 w-12' : ''}`}
+                            title="Platform Guide"
+                        >
+                            <Icon name="help" className="w-5 h-5 flex-shrink-0" />
+                            {!isSidebarCollapsed && <span className="text-[10px] font-black uppercase tracking-widest">Platform Guide</span>}
+                        </button>
+
+                        <button 
                             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                            className={`hidden lg:flex items-center justify-center rounded-xl text-slate-300 hover:text-slate-900 hover:bg-slate-100/50 transition-colors mb-6 ${isSidebarCollapsed ? 'w-12 h-12' : 'w-full py-3 gap-2'}`}
+                            className={`hidden lg:flex items-center justify-center rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100/50 transition-colors focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 mb-6 ${isSidebarCollapsed ? 'w-12 h-12' : 'w-full py-3 gap-2'}`}
                         >
                             <Icon name={isSidebarCollapsed ? "arrowRight" : "chevronLeft"} className="w-5 h-5" />
                         </button>
@@ -169,10 +186,10 @@ const MainAppLayout: React.FC = () => {
                             </div>
                             <div className={`flex-1 overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
                                 <p className="text-xs font-black text-slate-800 truncate uppercase tracking-widest">{user?.name}</p>
-                                <p className="text-[9px] font-bold text-slate-400 uppercase">{user?.role}</p>
+                                <p className="text-[9px] font-bold text-slate-600 uppercase">{user?.role}</p>
                             </div>
                              {!isSidebarCollapsed && (
-                                 <button onClick={logout} className="text-slate-300 hover:text-rose-500 transition p-2">
+                                 <button onClick={logout} className="text-slate-400 hover:text-rose-500 transition p-2 rounded-lg focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500">
                                      <Icon name="logout" className="w-5 h-5" />
                                  </button>
                              )}
@@ -180,7 +197,10 @@ const MainAppLayout: React.FC = () => {
                     </div>
                 </aside>
 
-                <main className="flex-1 relative flex flex-col w-full overflow-hidden print:overflow-visible print:h-auto print:w-full bg-transparent">
+                <main 
+                    aria-label={`${activeTab} Content`}
+                    className="flex-1 relative flex flex-col w-full overflow-hidden print:overflow-visible print:h-auto print:w-full bg-transparent"
+                >
                      <div className="lg:hidden bg-white/80 backdrop-blur-md border-b border-slate-100 p-4 flex items-center justify-between z-20 print:hidden">
                          <button onClick={() => setIsMobileMenuOpen(true)} className="text-slate-900 p-2 -ml-2 rounded-xl bg-slate-50 transition flex items-center gap-2">
                              <Icon name="menu" className="w-6 h-6" /> 

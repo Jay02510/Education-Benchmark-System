@@ -16,8 +16,8 @@ const KPICard: React.FC<{
     const colors = {
         blue: 'text-[oklch(0.72_0.18_145)]',
         purple: 'text-zinc-100',
-        orange: 'text-amber-500',
-        rose: 'text-rose-455',
+        orange: 'text-[oklch(0.65_0.20_25)]',
+        rose: 'text-rose-500',
     };
 
     return (
@@ -127,7 +127,7 @@ export const AnalyticsTab: React.FC = () => {
             </div>
 
             {!hasData ? (
-                 <div className="flex flex-col items-center justify-center py-24 bg-zinc-950 rounded-[4px] border border-zinc-900 shadow-xl">
+                 <div className="flex flex-col items-center justify-center py-24 bg-zinc-950 rounded-[4px] border border-zinc-900 shadow-md">
                     <Icon name="analytics" className="w-12 h-12 text-zinc-650 mb-4 select-none" />
                     <h2 className="text-xs font-mono text-zinc-300 uppercase tracking-wider mb-2">No Active Assessment Data</h2>
                     <p className="text-xs text-zinc-500 max-w-sm text-center leading-relaxed">Please log complete assessment profiles to view aggregated performance curves and distribution metrics.</p>

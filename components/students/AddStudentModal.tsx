@@ -164,7 +164,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
                         
                         <div 
                             ref={cropperRef}
-                            className="relative w-64 h-64 mx-auto rounded-[4px] overflow-hidden bg-zinc-900 cursor-move border border-zinc-805 shadow-2xl group"
+                            className="relative w-64 h-64 mx-auto rounded-[4px] overflow-hidden bg-zinc-900 cursor-move border border-zinc-805 shadow-md group"
                             onMouseDown={handleMouseDown}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}

@@ -24,7 +24,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
         <div className="fixed inset-0 bg-zinc-950/60 backdrop-blur-md z-[100] flex justify-center items-center p-4 overflow-y-auto animate-in fade-in duration-300">
             <div 
                 id="modal-window"
-                className={`bg-zinc-950 border border-zinc-850 rounded-[8px] shadow-2xl w-full mx-4 sm:mx-0 max-h-[88vh] flex flex-col relative ${sizeClasses[size]} transform transition-all duration-300 scale-100 animate-in zoom-in-95`}
+                className={`bg-zinc-950 border border-zinc-850 rounded-[8px] shadow-md w-full mx-4 sm:mx-0 max-h-[88vh] flex flex-col relative ${sizeClasses[size]} transform transition-all duration-300 scale-100 animate-in zoom-in-95`}
             >
                 {/* Header Container with Title & minimal Icon closure */}
                 <div className="flex justify-between items-center px-6 py-5 border-b border-zinc-900 shrink-0">

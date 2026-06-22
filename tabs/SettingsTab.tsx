@@ -123,16 +123,16 @@ export const SettingsTab: React.FC = () => {
 
                 {/* Destructive Actions Section (danger color, visually separated with extra spacing at bottom) */}
                 <div className="pt-20 border-t border-zinc-900/40">
-                    <h2 className="text-[13px] font-sans text-red-500/80 font-normal lowercase mb-2">danger zone</h2>
+                    <h2 className="text-[13px] font-sans text-rose-500/80 font-normal lowercase mb-2">danger zone</h2>
                     
                     <div className="flex items-center justify-between py-4 border-b border-[0.5px] border-zinc-900">
                         <div>
-                            <span className="text-xs text-red-500 font-medium block">Scrub sandbox database</span>
+                            <span className="text-xs text-rose-500 font-medium block">Scrub sandbox database</span>
                             <span className="text-[10px] text-zinc-600 block mt-0.5">Purge local client state and clean up workspace registers</span>
                         </div>
                         <button 
                             onClick={handleReset}
-                            className="px-4 py-1.5 border border-red-950/60 hover:border-red-650/40 bg-red-950/20 text-red-400 rounded-[4px] text-[10px] font-mono tracking-wider uppercase transition-colors cursor-pointer"
+                            className="px-4 py-1.5 border border-[oklch(0.65_0.20_25)]/30 hover:border-[oklch(0.65_0.20_25)] hover:bg-[oklch(0.65_0.20_25)]/10 text-rose-400 hover:text-rose-300 rounded-[4px] text-[10px] font-mono tracking-wider uppercase transition-colors cursor-pointer"
                         >
                             Purge State
                         </button>

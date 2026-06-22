@@ -780,7 +780,7 @@ export const LoginScreen: React.FC = () => {
             {/* --- SYSTEM CREDENTIAL PORTAL GLASS OVERLAY MODAL --- */}
             {isLoginModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/75 backdrop-blur-md">
-                    <div className="bg-[oklch(0.14_0.01_250)] border border-zinc-800 text-white w-full max-w-sm p-6 md:p-8 rounded-[8px] shadow-2xl relative overflow-hidden clean-animate-ui">
+                    <div className="bg-[oklch(0.14_0.01_250)] border border-zinc-800 text-white w-full max-w-sm p-6 md:p-8 rounded-[8px] shadow-md relative overflow-hidden clean-animate-ui">
                         
                         {/* High-end minimalist close trigger */}
                         <button 

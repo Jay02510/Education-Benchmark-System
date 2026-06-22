@@ -41,13 +41,17 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     <div 
                         key={toast.id}
                         className={`
-                            flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border border-opacity-20 animate-in slide-in-from-right duration-300
-                            ${toast.type === 'success' ? 'bg-white border-emerald-500 text-emerald-700' : ''}
-                            ${toast.type === 'error' ? 'bg-white border-rose-500 text-rose-700' : ''}
-                            ${toast.type === 'info' ? 'bg-white border-blue-500 text-blue-700' : ''}
+                            flex items-center gap-3 px-4 py-3 rounded-[4px] shadow-md border animate-in slide-in-from-right duration-300
+                            ${toast.type === 'success' ? 'bg-zinc-950 border-[oklch(0.72_0.18_145)]/20 text-[oklch(0.72_0.18_145)]' : ''}
+                            ${toast.type === 'error' ? 'bg-zinc-950 border-[oklch(0.65_0.20_25)]/20 text-[oklch(0.65_0.20_25)]' : ''}
+                            ${toast.type === 'info' ? 'bg-zinc-950 border-zinc-850 text-zinc-300' : ''}
                         `}
                     >
-                        <div className={`p-1 rounded-full ${toast.type === 'success' ? 'bg-emerald-100' : toast.type === 'error' ? 'bg-rose-100' : 'bg-blue-100'}`}>
+                        <div className={`p-1 rounded-[4px] ${
+                            toast.type === 'success' ? 'bg-[oklch(0.72_0.18_145)]/10 text-[oklch(0.72_0.18_145)]' : 
+                            toast.type === 'error' ? 'bg-[oklch(0.65_0.20_25)]/10 text-[oklch(0.65_0.20_25)]' : 
+                            'bg-zinc-900 text-zinc-400'
+                        }`}>
                             <Icon name={toast.type === 'success' ? 'check' : toast.type === 'error' ? 'alert' : 'brain'} className="w-4 h-4" />
                         </div>
                         <span className="font-semibold text-sm">{toast.message}</span>

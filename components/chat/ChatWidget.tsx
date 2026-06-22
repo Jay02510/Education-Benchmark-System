@@ -117,7 +117,7 @@ export const ChatWidget: React.FC = () => {
             <div 
                 id="chat-copilot-window"
                 className={`
-                    pointer-events-auto absolute bg-zinc-950/98 w-[340px] border border-zinc-900 overflow-hidden transition-all duration-300 flex flex-col rounded-[6px] shadow-2xl
+                    pointer-events-auto absolute bg-zinc-950/98 w-[340px] border border-zinc-900 overflow-hidden transition-all duration-300 flex flex-col rounded-[6px] shadow-md
                     ${isOpen ? 'opacity-100 scale-100 h-[480px] max-h-[70vh]' : 'opacity-0 scale-95 h-0 overflow-hidden pointer-events-none'}
                     ${openLeft ? 'right-0' : 'left-0'}
                     ${openUp ? 'bottom-14' : 'top-14'}

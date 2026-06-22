@@ -87,7 +87,7 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
                     <div className="flex items-center gap-6">
                         <div className="relative group">
                             {student.hasAnomaly && (
-                                <div className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-red-600 rounded-full border border-zinc-950 z-30 flex items-center justify-center">
+                                <div className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-[oklch(0.65_0.20_25)] rounded-full border border-zinc-950 z-30 flex items-center justify-center">
                                     <Icon name="alert" className="w-3 h-3 text-white" strokeWidth={3} />
                                 </div>
                             )}

@@ -69,7 +69,7 @@ export const OnboardingWizard: React.FC = () => {
     return (
         <div className="fixed inset-0 bg-zinc-950/98 backdrop-blur-md z-[1000] flex items-center justify-center p-4 overflow-y-auto font-sans">
             <div className="w-full max-w-5xl animate-in zoom-in-95 duration-300 my-auto">
-                <Card className="p-0 border border-zinc-900 bg-zinc-950 overflow-hidden rounded-[6px] shadow-2xl">
+                <Card className="p-0 border border-zinc-900 bg-zinc-950 overflow-hidden rounded-[6px] shadow-md">
                     <div className="flex flex-col md:flex-row min-h-[580px]">
                         
                         {/* Sidebar: Progress */}

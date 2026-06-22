@@ -33,7 +33,7 @@ export const CommandCenter: React.FC = () => {
 
     return (
         <div className="fixed inset-0 z-[200000] bg-black/60 flex items-start justify-center pt-[15vh] px-4 font-sans" onClick={() => setIsOpen(false)}>
-            <div className="w-full max-w-2xl bg-zinc-950 border border-zinc-900 rounded-[4px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="w-full max-w-2xl bg-zinc-950 border border-zinc-900 rounded-[4px] shadow-md overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center px-6 py-4 border-b border-zinc-900">
                     <Icon name="search" className="w-4 h-4 text-zinc-500 mr-4 shrink-0" />
                     <input 

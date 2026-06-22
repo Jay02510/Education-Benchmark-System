@@ -19,7 +19,7 @@ import {
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-[oklch(0.18_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-[4px] p-3 text-left font-mono select-none shadow-xl">
+            <div className="bg-[oklch(0.18_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-[4px] p-3 text-left font-mono select-none shadow-md">
                 <p className="text-[11px] font-semibold text-white mb-2 pb-1 border-b border-[oklch(0.60_0_0_/_0.10)] uppercase tracking-wide">
                     {label || payload[0].name}
                 </p>

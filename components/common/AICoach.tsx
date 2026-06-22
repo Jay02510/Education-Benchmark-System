@@ -26,7 +26,7 @@ export const AICoach: React.FC = () => {
     return (
         <div className="fixed bottom-24 right-8 z-[1000] font-sans">
             {isOpen && (
-                <div className="absolute bottom-14 right-0 w-72 bg-zinc-950 text-zinc-100 p-5 rounded-[4px] shadow-2xl border border-zinc-900 animate-in slide-in-from-bottom-2 duration-200">
+                <div className="absolute bottom-14 right-0 w-72 bg-zinc-950 text-zinc-100 p-5 rounded-[4px] shadow-md border border-zinc-900 animate-in slide-in-from-bottom-2 duration-200">
                     <div className="flex justify-between items-center mb-3 pb-2 border-b border-zinc-900">
                         <div className="flex items-center gap-2 select-none">
                             <Icon name="brain" className="w-3.5 h-3.5 text-[oklch(0.72_0.18_145)] animate-fade-in" />
@@ -53,7 +53,7 @@ export const AICoach: React.FC = () => {
             )}
             <button 
                 onClick={handleAskCoach}
-                className="w-10 h-10 bg-zinc-950 border border-zinc-900 rounded-full shadow-2xl flex items-center justify-center text-[oklch(0.72_0.18_145)] hover:bg-zinc-900/60 transition-all cursor-pointer active:scale-95"
+                className="w-10 h-10 bg-zinc-950 border border-zinc-900 rounded-full shadow-md flex items-center justify-center text-[oklch(0.72_0.18_145)] hover:bg-zinc-900/60 transition-all cursor-pointer active:scale-95"
                 title="What does this mean?"
             >
                 <Icon name="info" className="w-4 h-4" />

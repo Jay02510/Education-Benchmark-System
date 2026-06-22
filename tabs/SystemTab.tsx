@@ -262,7 +262,7 @@ export const SystemTab: React.FC = () => {
                                                 </button>
                                                 <button 
                                                     onClick={() => deleteDomain(d)}
-                                                    className="text-xs text-red-400 hover:text-red-500 transition-colors cursor-pointer"
+                                                    className="text-xs text-rose-400 hover:text-rose-500 transition-colors cursor-pointer"
                                                 >
                                                     Remove Domain
                                                 </button>
@@ -280,7 +280,7 @@ export const SystemTab: React.FC = () => {
                                                             </div>
                                                             <button 
                                                                 onClick={() => deleteSubdomain(d, sub.name)} 
-                                                                className="text-zinc-500 hover:text-red-500 transition-colors cursor-pointer font-sans"
+                                                                className="text-zinc-500 hover:text-rose-500 transition-colors cursor-pointer font-sans"
                                                             >
                                                                 Delete
                                                             </button>
@@ -428,13 +428,13 @@ export const SystemTab: React.FC = () => {
                         
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-5" style={{ borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}>
                             <div className="flex-1 pr-6">
-                                <div className="text-sm font-medium text-red-500">Reset benchmark structures</div>
+                                <div className="text-sm font-medium text-rose-550">Reset benchmark structures</div>
                                 <div className="text-xs text-zinc-500 mt-1">Deletes all newly defined domains, nested skill criteria, and thresholds. Restores systems to initial settings. This action is final.</div>
                             </div>
                             <div className="mt-4 sm:mt-0 shrink-0">
                                 <button 
                                     onClick={() => { if(window.confirm("WARNING: This resets all custom domains and goals to defaults. Proceed?")) resetBenchmarks(); }} 
-                                    className="px-4 py-2 border border-red-500/30 hover:border-red-500 hover:bg-red-500/10 text-red-400 hover:text-red-550 text-xs font-semibold rounded transition-colors cursor-pointer"
+                                    className="px-4 py-2 border border-[oklch(0.65_0.20_25)]/30 hover:border-[oklch(0.65_0.20_25)] hover:bg-[oklch(0.65_0.20_25)]/10 text-rose-400 hover:text-rose-300 text-xs font-semibold rounded-[4px] transition-colors cursor-pointer"
                                 >
                                     Reset to Default
                                 </button>

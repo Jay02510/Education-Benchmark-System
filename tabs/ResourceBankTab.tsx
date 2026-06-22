@@ -8,12 +8,12 @@ import { useResources } from '../context/ResourceContext';
 
 const ResourceCard: React.FC<{ resource: Resource, onClick: () => void }> = ({ resource, onClick }) => {
     const typeLabelStyle: Record<ResourceType, string> = {
-        [ResourceType.MicroLesson]: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+        [ResourceType.MicroLesson]: "bg-[oklch(0.72_0.18_145)]/10 text-[oklch(0.72_0.18_145)] border-[oklch(0.72_0.18_145)]/20",
         [ResourceType.QuickPractice]: "bg-[oklch(0.72_0.18_145)]/10 text-[oklch(0.72_0.18_145)] border-[oklch(0.72_0.18_145)]/20",
-        [ResourceType.MiniReading]: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-        [ResourceType.Worksheet]: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-        [ResourceType.InterventionPacket]: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-        [ResourceType.ParentPractice]: "bg-pink-500/10 text-pink-400 border-pink-500/20",
+        [ResourceType.MiniReading]: "bg-[oklch(0.65_0.20_25)]/10 text-[oklch(0.65_0.20_25)] border-[oklch(0.65_0.20_25)]/20",
+        [ResourceType.Worksheet]: "bg-[oklch(0.60_0_0)]/10 text-[oklch(0.60_0_0)] border-[oklch(0.60_0_0)]/20",
+        [ResourceType.InterventionPacket]: "bg-[oklch(0.65_0.20_25)]/10 text-[oklch(0.65_0.20_25)] border-[oklch(0.65_0.20_25)]/20",
+        [ResourceType.ParentPractice]: "bg-[oklch(0.20_0.06_145)]/10 text-[oklch(0.20_0.06_145)] border-[oklch(0.20_0.06_145)]/20",
     };
 
     return (

@@ -4,14 +4,14 @@ import { useLanguage } from '../../context/LanguageContext';
 import { Icon } from '../common/Icon';
 import { LegalModal } from '../common/LegalModal';
 
-// --- SUB-WIDGET 1: TYPEWRITER CHAT SIMULATOR ---
+// --- SUB-WIDGET 1: TYPEWRITER CHAT SIMULATOR (RE-STYLED) ---
 const ChatSimulator: React.FC<{ language: string }> = ({ language }) => {
     const messages = language === 'EN' ? [
-        { q: "How's the class doing in Phonics?", a: "AI Analysis: Class average has increased by 12% this week. 3 students have mastered CVC short vowels, entering the 'Fast Track' velocity band." },
-        { q: "Who needs immediate intervention?", a: "AI Strategy: Lucas and Chloe are at risk in phoneme segmentation. Custom phonics sheets have been compiled in the Resource Bank." }
+        { q: "How is the class doing in Phonics?", a: "Weekly phonics average shows a 12% increase. Three students mastered short vowel CVC patterns, moving into the optimal growth corridor." },
+        { q: "Which students require immediate intervention?", a: "Lucas and Chloe show segmentation gaps. Custom worksheets have been loaded in the resource catalog." }
     ] : [
-        { q: "클래스의 파닉스 성취도는 어떤가요?", a: "AI 분석: 이번 주 반 평균이 12% 상승했습니다. 3명의 학생이 단모음 CVC 패턴을 완벽히 마스터하며 우수 성장 단계에 진입했습니다." },
-        { q: "즉각적인 보충 학습이 필요한 학생은 누구인가요?", a: "AI 처방: 루카스와 클로이가 음소 분절에서 보조가 필요합니다. 맞춤형 음소 훈련 학습지가 자료 탱크에 긴급 편성되었습니다." }
+        { q: "학급의 파닉스 성취 현황은 어떤가요?", a: "금주 파닉스 평균 성취도가 12% 상승했습니다. 3명의 학생이 단모음 CVC 패턴을 마스터하며 우수 성장 진로에 안착했습니다." },
+        { q: "즉각 보강이 필요한 학생은 누구인가요?", a: "루카스와 클로이가 음소 발음 구분에 한계를 보입니다. 전용 학습지가 보강 자료 은행에 맞춤 배정되어 배치되었습니다." }
     ];
 
     const [msgIdx, setMsgIdx] = useState(0);
@@ -26,7 +26,7 @@ const ChatSimulator: React.FC<{ language: string }> = ({ language }) => {
             setTypedAnswer("");
             const timer = setTimeout(() => {
                 if (!isCancelled) setPhase('typing');
-            }, 1000);
+            }, 800);
             return () => clearTimeout(timer);
         } else if (phase === 'typing') {
             let currentStr = "";
@@ -42,7 +42,7 @@ const ChatSimulator: React.FC<{ language: string }> = ({ language }) => {
                     clearInterval(interval);
                     setPhase('waiting');
                 }
-            }, 25);
+            }, 20);
             return () => clearInterval(interval);
         } else if (phase === 'waiting') {
             const timer = setTimeout(() => {
@@ -50,7 +50,7 @@ const ChatSimulator: React.FC<{ language: string }> = ({ language }) => {
                     setMsgIdx((prev) => (prev + 1) % messages.length);
                     setPhase('question');
                 }
-            }, 3500);
+            }, 4000);
             return () => clearTimeout(timer);
         }
 
@@ -58,25 +58,21 @@ const ChatSimulator: React.FC<{ language: string }> = ({ language }) => {
     }, [phase, msgIdx, language]);
 
     return (
-        <div className="w-full h-full flex flex-col justify-between py-1 px-1 text-left">
+        <div className="w-full h-full flex flex-col justify-between py-1 px-1 text-left clean-font-sans">
             <div className="space-y-4">
                 {/* Question bubble */}
-                <div className="flex items-start gap-2.5 justify-end">
-                    <div className="bg-indigo-600/95 font-medium text-white text-[11px] px-4 py-2.5 rounded-2xl rounded-tr-sm shadow-md max-w-[85%] border border-white/5 tracking-wide">
+                <div className="flex items-start justify-end">
+                    <div className="clean-surface-raised border clean-border-muted clean-text-ink text-xs px-4 py-2.5 rounded-[8px] max-w-[85%]">
                         {messages[msgIdx].q}
                     </div>
                 </div>
 
                 {/* Answer bubble */}
                 {(phase === 'typing' || phase === 'waiting') && (
-                    <div className="flex items-start gap-2.5 justify-start animate-fade-in">
-                        <div className="bg-slate-950/60 border border-slate-800 text-slate-200 text-[11px] px-4 py-3 rounded-2xl rounded-tl-sm max-w-[95%] font-mono leading-relaxed shadow-inner">
-                            <div className="flex items-center gap-1.5 mb-2">
-                                <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-ping"></span>
-                                <span className="font-bold text-indigo-400 text-[9px] uppercase tracking-widest">CO-PILOT CONTEXT ENGINE</span>
-                            </div>
-                            <span className="text-slate-300">{typedAnswer}</span>
-                            {phase === 'typing' && <span className="inline-block w-1.5 h-3.5 bg-indigo-400 ml-1 animate-pulse">|</span>}
+                    <div className="flex items-start justify-start clean-animate-ui">
+                        <div className="clean-surface border clean-border-muted text-xs px-4 py-3 rounded-[8px] max-w-[95%] leading-relaxed">
+                            <span className="clean-text-ink">{typedAnswer}</span>
+                            {phase === 'typing' && <span className="inline-block w-1.5 h-3.5 bg-emerald-500 ml-1 animate-pulse">|</span>}
                         </div>
                     </div>
                 )}
@@ -85,49 +81,49 @@ const ChatSimulator: React.FC<{ language: string }> = ({ language }) => {
     );
 };
 
-// --- SUB-WIDGET 2: GRAPH SIMULATOR WITH FLUCTUATION ---
+// --- SUB-WIDGET 2: GRAPH SIMULATOR (RE-STYLED WITH SOLID METRICS) ---
 const TrackingSimulator: React.FC = () => {
     const [heights, setHeights] = useState([65, 45, 80, 50, 95, 70]);
 
     useEffect(() => {
         const interval = setInterval(() => {
             setHeights(prev => prev.map(h => {
-                const delta = Math.floor(Math.random() * 11) - 5; // gentle change (-5 to 5)
+                const delta = Math.floor(Math.random() * 9) - 4; // subtle change (-4 to +4)
                 return Math.max(30, Math.min(100, h + delta));
             }));
-        }, 2000);
+        }, 3000);
         return () => clearInterval(interval);
     }, []);
 
-    const skills = ["Acoustics", "Vocabulary", "Syntax", "Reading", "Fluency", "Comprehension"];
+    const skills = ["acoustics", "vocabulary", "syntax", "reading", "fluency", "comprehension"];
 
     return (
-        <div className="w-full flex flex-col gap-4 py-1 px-1 text-left">
-            <div className="flex items-center justify-between p-3.5 bg-slate-950/45 rounded-2xl border border-slate-800/85">
+        <div className="w-full flex flex-col gap-4 py-1 px-1 text-left clean-font-sans">
+            <div className="flex items-center justify-between p-3.5 clean-surface rounded-[8px] border clean-border-muted">
                 <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-300 font-mono text-[9px] font-black">ST-04</div>
+                    <div className="px-2 py-0.5 rounded-[4px] clean-surface-raised border clean-border-muted clean-text-muted clean-font-mono text-[11px] font-medium">st-08</div>
                     <div className="space-y-1">
-                        <div className="h-1.5 w-16 bg-slate-700 rounded"></div>
-                        <div className="h-1 w-10 bg-slate-800 rounded"></div>
+                        <div className="h-1.5 w-16 bg-zinc-800 rounded"></div>
+                        <div className="h-1 w-10 bg-zinc-900 rounded"></div>
                     </div>
                 </div>
                 <div className="text-right">
-                    <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 font-mono">+18% VELOCITY</span>
+                    <span className="text-[11px] font-semibold clean-text-accent bg-[oklch(0.20_0.06_145)] px-2 py-0.5 rounded-[4px] border clean-border-accent clean-font-mono">+18% growth velocity</span>
                 </div>
             </div>
             
-            <div className="h-28 w-full flex items-end justify-between gap-3 px-2 pt-2 border-b border-white/5">
+            <div className="h-28 w-full flex items-end justify-between gap-3 px-2 pt-2 border-b clean-border-muted">
                 {heights.map((h, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative h-full justify-end">
                         <div 
-                            className="w-full bg-gradient-to-t from-indigo-700/70 to-indigo-400 rounded-t-md transition-all duration-1000 ease-out shadow-lg shadow-indigo-500/5 relative" 
+                            className="w-full bg-[oklch(0.72_0.18_145)] rounded-t-[4px] transition-all duration-1000 ease-out" 
                             style={{ height: `${h}%` }}
                         >
-                            <div className="absolute -top-7 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 bg-slate-950 border border-slate-800 text-[8px] font-mono font-bold text-white px-1.5 py-0.5 rounded transition-all duration-150 z-10">
+                            <div className="absolute -top-6 left-1/2 -translate-x-1/2 scale-0 group-hover:scale-100 clean-surface border clean-border-muted text-[11px] clean-font-mono clean-text-ink px-1.5 py-0.5 rounded-[4px] transition-all duration-150 z-10">
                                 {Math.round(h)}%
                             </div>
                         </div>
-                        <span className="text-[7.5px] font-bold uppercase text-slate-500 tracking-wider truncate max-w-full mt-1.5 font-mono">
+                        <span className="text-[11px] font-medium clean-text-muted truncate max-w-full mt-1.5 clean-font-mono lowercase">
                             {skills[i]}
                         </span>
                     </div>
@@ -137,18 +133,18 @@ const TrackingSimulator: React.FC = () => {
     );
 };
 
-// --- SUB-WIDGET 3: DOCUMENT REPORT ASSEMBLER ---
+// --- SUB-WIDGET 3: DOCUMENT REPORT ASSEMBLER (RE-STYLED) ---
 const ReportSimulator: React.FC<{ language: string }> = ({ language }) => {
     const steps = language === 'EN' ? [
-        "Acoustic phonological audit configured...",
-        "Morphosyntactic structure layout mapped...",
-        "Developmental reading trajectory compiled...",
-        "Individualised parent portal report live"
+        "Phonological acoustic profile calculated",
+        "Syntactic structure baseline assigned",
+        "Developmental writing velocity indexed",
+        "Individualised parent memorandum synced"
     ] : [
-        "포괄적 음향 음소 분석 초기화...",
-        "문법/통사론 구조적 편차 구조화...",
-        "개인별 연간 발달 성장 곡선 예측...",
-        "학부모용 실시간 교육 보고서 발행"
+        "음소 음향 분석 발달 프로파일 측정 완료",
+        "문법 통사 기초 오차 성취 레벨 배정 완료",
+        "개인별 주간 성장 가속 지표 인덱싱 완료",
+        "학부모용 피드백 설명 리포트 실시간 동기화 완료"
     ];
 
     const [activeStep, setActiveStep] = useState(0);
@@ -156,47 +152,40 @@ const ReportSimulator: React.FC<{ language: string }> = ({ language }) => {
     useEffect(() => {
         const interval = setInterval(() => {
             setActiveStep((prev) => (prev + 1) % (steps.length + 1));
-        }, 1500);
+        }, 1800);
         return () => clearInterval(interval);
     }, [steps.length]);
 
     return (
-        <div className="w-full h-full flex flex-col justify-between py-1 text-left font-mono">
-            <div>
-                <div className="flex items-center gap-2 mb-4 bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-500/20 w-fit">
-                    <Icon name="benchmark" className="w-3 h-3 text-indigo-400" />
-                    <span className="text-[9px] font-black uppercase text-indigo-300 tracking-widest">REPORT DISPATCH v3.2</span>
-                </div>
-                
-                <div className="space-y-2.5">
-                    {steps.map((step, idx) => (
-                        <div key={idx} className="flex items-center gap-2.5 text-[10px]">
-                            <div className={`w-4 h-4 rounded-md flex items-center justify-center transition-all duration-300 border ${
-                                idx < activeStep 
-                                    ? 'bg-emerald-500 border-emerald-400 text-white shadow shadow-emerald-500/20' 
-                                    : idx === activeStep
-                                    ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-400 animate-pulse'
-                                    : 'border-slate-800 text-transparent'
-                            }`}>
-                                <Icon name="check" className="w-3 h-3" strokeWidth={4} />
-                            </div>
-                            <span className={idx < activeStep ? 'text-slate-400 line-through opacity-50' : idx === activeStep ? 'text-white font-bold' : 'text-slate-600'}>
-                                {step}
-                            </span>
+        <div className="w-full h-full flex flex-col justify-between py-1 text-left clean-font-mono">
+            <div className="space-y-3.5">
+                {steps.map((step, idx) => (
+                    <div key={idx} className="flex items-center gap-3 text-[11px]">
+                        <div className={`w-3.5 h-3.5 rounded-[4px] flex items-center justify-center transition-all duration-300 border ${
+                            idx < activeStep 
+                                ? 'bg-[oklch(0.72_0.18_145)] border-[oklch(0.72_0.18_145)] text-zinc-950' 
+                                : idx === activeStep
+                                ? 'border-[oklch(0.72_0.18_145)] text-[oklch(0.72_0.18_145)]'
+                                : 'border-zinc-800 text-transparent'
+                        }`}>
+                            {idx < activeStep ? (
+                                <Icon name="check" className="w-2.5 h-2.5" strokeWidth={4} />
+                            ) : (
+                                <div className="w-1.5 h-1.5 bg-[oklch(0.72_0.18_145)] rounded-full"></div>
+                            )}
                         </div>
-                    ))}
-                </div>
+                        <span className={`text-[11px] uppercase ${idx < activeStep ? 'clean-text-muted line-through opacity-60' : idx === activeStep ? 'clean-text-ink font-semibold' : 'text-zinc-600'}`}>
+                            {step}
+                        </span>
+                    </div>
+                ))}
             </div>
 
             {activeStep === steps.length && (
-                <div className="mt-3 p-3 bg-emerald-500/15 rounded-xl border border-emerald-500/20 animate-in zoom-in-95 duration-200 flex items-center justify-between">
-                    <div>
-                        <p className="text-[8px] uppercase tracking-widest text-[#10b981] font-black">SECURE COMPLIANT</p>
-                        <p className="text-[10px] text-slate-300 mt-0.5">{language === 'EN' ? 'Hagwon Dashboard Released' : '학원 관리소 송출 준비 완료'}</p>
-                    </div>
-                    <div className="text-[9px] bg-emerald-500 text-white font-black px-2 py-1 rounded tracking-widest">
-                        AUTO-SYNC
-                    </div>
+                <div className="mt-3 p-3 bg-[oklch(0.20_0.06_145)] rounded-[4px] border clean-border-accent clean-animate-ui flex items-center justify-between">
+                    <span className="text-[11px] font-medium clean-text-accent">
+                        {language === 'EN' ? 'report compiled and synced' : '발송 전송 리포트 완료'}
+                    </span>
                 </div>
             )}
         </div>
@@ -236,15 +225,15 @@ export const LoginScreen: React.FC = () => {
     else if (simVelocity < 5) velocityBand = 'at-risk';
 
     const bandLabels = {
-        fast: language === 'EN' ? "🚀 FAST TRACK" : "🚀 가속 우수 진로",
-        stable: language === 'EN' ? "⚡ STABLE PATH" : "⚡ 안정 발달 진로",
-        'at-risk': language === 'EN' ? "⚠️ CAUTION REQUIRED" : "⚠️ 특별 집중 관리"
+        fast: language === 'EN' ? "OPTIMAL VELOCITY" : "우수 가속 단계",
+        stable: language === 'EN' ? "STABLE VELOCITY" : "안정 표준 단계",
+        'at-risk': language === 'EN' ? "CARE REQUIRED" : "보강 집중 관리"
     };
 
     const bandColors = {
-        fast: "border-emerald-500/30 text-emerald-400 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.15)]",
-        stable: "border-indigo-500/30 text-indigo-400 bg-indigo-500/10 shadow-[0_0_20px_rgba(99,102,241,0.15)]",
-        'at-risk': "border-rose-500/30 text-rose-400 bg-rose-500/10 shadow-[0_0_20px_rgba(244,63,94,0.15)]"
+        fast: "border-[oklch(0.72_0.18_145)] text-[oklch(0.72_0.18_145)] bg-[oklch(0.20_0.06_145)]",
+        stable: "border-zinc-800 text-zinc-300 bg-zinc-900/60",
+        'at-risk': "border-[oklch(0.65_0.20_25)] text-[oklch(0.65_0.20_25)] bg-[oklch(0.20_0.06_25)]"
     };
 
     const FEATURES = [
@@ -253,7 +242,7 @@ export const LoginScreen: React.FC = () => {
             title: t('feature_chat'),
             description: t('feature_chat_desc'),
             icon: "chat",
-            badge: "24/7 CO-COACH",
+            badge: "ASSISTANT PROTOCOL",
             ui: <ChatSimulator language={language} />
         },
         {
@@ -261,7 +250,7 @@ export const LoginScreen: React.FC = () => {
             title: t('feature_tracking'),
             description: t('feature_tracking_desc'),
             icon: "analytics",
-            badge: "成長 궤적 추적",
+            badge: "TRAJECTORY METRIC",
             ui: <TrackingSimulator />
         },
         {
@@ -269,7 +258,7 @@ export const LoginScreen: React.FC = () => {
             title: t('feature_case'),
             description: t('feature_case_desc'),
             icon: "benchmark",
-            badge: "CASE COMPLIATION",
+            badge: "COMPILING UTILITY",
             ui: <ReportSimulator language={language} />
         }
     ];
@@ -350,174 +339,213 @@ export const LoginScreen: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#070a13] text-white font-sans overflow-x-hidden relative">
+        <div className="min-h-screen clean-bg clean-font-sans clean-text-ink overflow-x-hidden relative">
             
-            {/* --- PREMIUM FIXED GLASS NAVIGATION --- */}
-            <nav className="fixed top-0 left-0 right-0 z-50 bg-[#070a13]/65 backdrop-blur-xl border-b border-white/5 py-4 px-6 md:px-12 transition-all duration-300">
+            {/* INJECT INLINE CUSTOM STYLE DECLARATIONS MANDATED BY THE PALETTE AND GEOMETRY RULES */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap');
+                
+                :root {
+                    --clean-bg: oklch(0.10 0.01 250);
+                    --clean-surface: oklch(0.14 0.01 250);
+                    --clean-surface-raised: oklch(0.18 0.01 250);
+                    --clean-ink: oklch(0.97 0 0);
+                    --clean-ink-muted: oklch(0.60 0 0);
+                    --clean-accent: oklch(0.72 0.18 145);
+                    --clean-accent-dim: oklch(0.20 0.06 145);
+                    --clean-danger: oklch(0.65 0.20 25);
+                    --clean-success: oklch(0.70 0.15 145);
+                }
+
+                .clean-bg { background-color: var(--clean-bg); }
+                .clean-surface { background-color: var(--clean-surface); }
+                .clean-surface-raised { background-color: var(--clean-surface-raised); }
+                
+                .clean-text-ink { color: var(--clean-ink); }
+                .clean-text-muted { color: var(--clean-ink-muted); }
+                .clean-text-accent { color: var(--clean-accent); }
+                .clean-text-danger { color: var(--clean-danger); }
+                
+                .clean-border-muted { border-color: oklch(0.97 0 0 / 0.08); }
+                .clean-border-accent { border-color: var(--clean-accent); }
+                
+                .clean-font-sans { font-family: 'Inter', system-ui, sans-serif !important; }
+                .clean-font-mono { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace !important; }
+                
+                /* Animations mapped at perfect acceleration and prefers-reduced-motion bounds */
+                @media (prefers-reduced-motion: no-preference) {
+                    .clean-animate-entry {
+                        animation: cleanEntry 600ms cubic-bezier(0.16, 1, 0.32, 1) forwards;
+                    }
+                    .clean-animate-ui {
+                        animation: cleanUi 400ms cubic-bezier(0.16, 1, 0.32, 1) forwards;
+                    }
+                }
+                
+                @keyframes cleanEntry {
+                    from { opacity: 0; transform: translateY(8px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                
+                @keyframes cleanUi {
+                    from { opacity: 0; transform: scale(0.98); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+            `}} />
+
+            {/* --- RESTRAINED NAVIGATION PANEL --- */}
+            <nav className="fixed top-0 left-0 right-0 z-50 clean-bg border-b clean-border-muted py-4 px-6 md:px-12">
                 <div className="max-w-7xl mx-auto flex justify-between items-center">
-                    <div className="flex items-center gap-3 group cursor-pointer">
-                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 duration-300">
-                            <Icon name="benchmark" className="w-5.5 h-5.5 text-white" strokeWidth={3} />
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-[4px] bg-[oklch(0.72_0.18_145)] flex items-center justify-center text-zinc-950 font-bold">
+                            <Icon name="benchmark" className="w-5 h-5 text-zinc-950" strokeWidth={3} />
                         </div>
                         <div className="flex flex-col text-left">
-                            <span className="font-extrabold text-lg tracking-tight italic bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-100 to-indigo-300">Benchmark AI</span>
-                            <span className="text-[7.5px] font-black uppercase text-indigo-400/80 tracking-[0.3em] leading-none mt-0.5">Instructional Layer</span>
+                            <span className="font-semibold text-base tracking-tight text-white uppercase select-none">BENCHMARK AI</span>
                         </div>
                     </div>
                     
-                    <div className="flex items-center gap-4 md:gap-6">
-                        {/* Language Switch */}
-                        <div className="bg-slate-950/80 p-1 rounded-2xl border border-white/10 flex items-center shadow-inner">
+                    <div className="flex items-center gap-5 md:gap-7">
+                        {/* Compact language toggler */}
+                        <div className="p-0.5 rounded-[4px] clean-surface-raised border clean-border-muted flex items-center">
                             <button 
                                 onClick={() => setLanguage('EN')} 
-                                className={`px-3 py-1.5 text-[9px] font-black rounded-xl transition-all duration-300 ${language === 'EN' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
+                                className={`px-2.5 py-1 text-[11px] font-medium rounded-[4px] transition-all clean-font-mono lowercase ${language === 'EN' ? 'bg-[oklch(0.72_0.18_145)] text-zinc-950 font-semibold' : 'clean-text-muted hover:text-white'}`}
                             >
-                                EN
+                                en
                             </button>
                             <button 
                                 onClick={() => setLanguage('KO')} 
-                                className={`px-3 py-1.5 text-[9px] font-black rounded-xl transition-all duration-300 ${language === 'KO' ? 'bg-indigo-600 text-white shadow' : 'text-slate-500 hover:text-slate-300'}`}
+                                className={`px-2.5 py-1 text-[11px] font-medium rounded-[4px] transition-all clean-font-mono lowercase ${language === 'KO' ? 'bg-[oklch(0.72_0.18_145)] text-zinc-950 font-semibold' : 'clean-text-muted hover:text-white'}`}
                             >
-                                KO
+                                ko
                             </button>
                         </div>
                         
                         <button 
                             onClick={() => openAuth('login')} 
-                            className="text-xs font-bold uppercase text-slate-400 hover:text-white transition-colors duration-200"
+                            className="text-xs font-medium clean-text-muted hover:clean-text-ink transition-colors"
                         >
-                            {t('nav_login')}
+                            {language === 'EN' ? 'Log in' : '로그인'}
                         </button>
                         <button 
                             onClick={() => openAuth('signup')} 
-                            className="relative group overflow-hidden px-5 py-2.5 rounded-full bg-white text-slate-950 text-xs font-extrabold uppercase hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all duration-300 active:scale-95 shrink-0"
+                            className="px-4 py-2 rounded-[4px] bg-[oklch(0.72_0.18_145)] hover:brightness-110 text-zinc-950 text-xs font-medium transition active:scale-95 shrink-0"
                         >
-                            <span className="relative z-10">{t('nav_join')}</span>
+                            {language === 'EN' ? 'Create account' : '계정 등록'}
                         </button>
                     </div>
                 </div>
             </nav>
 
-            {/* --- HERO SECTION --- */}
-            <section className="pt-32 md:pt-44 pb-20 px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center relative z-10">
+            {/* --- HERO SECTION (RHYTHMIC OFFSET 96PX) --- */}
+            <section className="pt-36 md:pt-44 pb-12 px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center relative z-10 clean-animate-entry">
                 
-                {/* Left Text Detail */}
-                <div className="lg:col-span-7 text-left space-y-8 animate-in fade-in slide-in-from-left duration-1000">
-                    {/* Futuristic Badge */}
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.1)] w-fit">
-                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping"></span>
-                        <span className="text-[9px] font-black text-indigo-300 tracking-[0.25em] uppercase">Gen-3 Artificial Cognition</span>
+                {/* Left informational block */}
+                <div className="lg:col-span-12 xl:col-span-7 text-left space-y-8">
+                    
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-[4px] clean-surface-raised border clean-border-muted w-fit select-none">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[oklch(0.72_0.18_145)]"></span>
+                        <span className="text-[11px] font-medium clean-text-accent clean-font-mono lowercase">Diagnostic analytics built for EFL</span>
                     </div>
 
-                    <h1 className="text-5xl sm:text-6xl md:text-7.5xl font-black tracking-tight mb-4 italic leading-[0.9] text-white">
+                    <h1 
+                        className="font-semibold text-white tracking-tight leading-[1.08] block m-0 p-0"
+                        style={{ fontSize: "clamp(2.5rem, 5.5vw, 5rem)" }}
+                    >
                         {t('hero_title_1')}{' '}
-                        <span className="block mt-1 text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-indigo-400 to-purple-400 filter drop-shadow-sm font-black">
+                        <span className="block mt-1 clean-text-accent">
                             {t('hero_title_2')}
                         </span>
                     </h1>
 
-                    <p className="text-base sm:text-lg text-slate-400 max-w-2xl font-medium leading-relaxed">
+                    <p className="text-base clean-text-muted max-w-[65ch] leading-[1.7] font-normal font-sans">
                         {t('hero_sub')}
                     </p>
 
-                    {/* Quick credential highlights */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 py-2">
-                        <div className="flex items-center gap-2">
-                            <Icon name="shield" className="w-4.5 h-4.5 text-indigo-400" />
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">COPPA Secured</span>
+                    {/* Highly quiet metrics block - NO gradient background - NO fancy cards */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 py-2 border-y clean-border-muted">
+                        <div className="flex items-center gap-2 py-1">
+                            <Icon name="shield" className="w-4 h-4 text-emerald-500" />
+                            <span className="clean-font-mono text-[11px] clean-text-muted">coppa secured</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <Icon name="globe" className="w-4.5 h-4.5 text-indigo-400" />
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bilingual Ready</span>
+                        <div className="flex items-center gap-2 py-1">
+                            <Icon name="globe" className="w-4 h-4 text-emerald-500" />
+                            <span className="clean-font-mono text-[11px] clean-text-muted">bilingual ready</span>
                         </div>
-                        <div className="flex items-center gap-2 col-span-2 sm:col-span-1">
-                            <Icon name="star" className="w-4.5 h-4.5 text-indigo-400" />
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hagwon Scaled</span>
+                        <div className="flex items-center gap-2 py-1 col-span-2 sm:col-span-1">
+                            <Icon name="star" className="w-4 h-4 text-emerald-500" />
+                            <span className="clean-font-mono text-[11px] clean-text-muted">hagwon scaled</span>
                         </div>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
                         <button 
                             onClick={loginDemo} 
-                            className="group relative px-8 py-4 md:px-10 md:py-5 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 font-extrabold uppercase text-xs tracking-widest hover:brightness-110 shadow-lg shadow-indigo-500/25 active:scale-[0.98] transition-all text-white flex items-center justify-center gap-3 hover:shadow-[0_0_30px_rgba(99,102,241,0.35)]"
+                            className="px-6 py-3 rounded-[4px] bg-[oklch(0.72_0.18_145)] hover:brightness-110 text-zinc-950 font-medium text-xs transition active:scale-[0.98] flex items-center justify-center gap-2"
                         >
-                            <Icon name="brain" className="w-4.5 h-4.5 text-indigo-200 animate-pulse" />
-                            <span>{language === 'EN' ? 'Launch Interactive Demo' : '인터랙티브 데모 체험'}</span>
-                            <Icon name="arrowRight" className="w-4 h-4 text-white opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+                            <span>{language === 'EN' ? 'Launch demo' : '데모 실행하기'}</span>
+                            <Icon name="arrowRight" className="w-4 h-4 text-zinc-950" />
                         </button>
                         
                         <button 
                             onClick={() => openAuth('signup')} 
-                            className="px-8 py-4 md:px-10 md:py-5 rounded-full bg-slate-950/40 border border-white/10 font-extrabold uppercase text-xs hover:bg-slate-900/60 hover:border-white/25 hover:shadow-[0_0_30px_rgba(255,255,255,0.05)] transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+                            className="px-6 py-3 rounded-[4px] clean-surface-raised border clean-border-muted clean-text-ink text-xs font-medium hover:bg-zinc-800 transition flex items-center justify-center gap-2 active:scale-[0.98]"
                         >
-                            <Icon name="plus" className="w-4.5 h-4.5 text-indigo-400" />
-                            <span>{t('nav_join')}</span>
+                            <span>{language === 'EN' ? 'Create account' : '계정 등록'}</span>
                         </button>
                     </div>
                 </div>
 
                 {/* Right Interactive Center Column */}
-                <div className="lg:col-span-5 animate-in fade-in slide-in-from-right duration-1000 relative">
-                    {/* Background glow effects strictly local */}
-                    <div className="absolute inset-0 bg-indigo-500/10 rounded-[3.5rem] filter blur-3xl -z-10"></div>
-                    
-                    {/* Outer frame */}
-                    <div className="relative w-full bg-slate-950/70 border border-white/10 p-6 md:p-8 rounded-[3rem] box-shadow-xl shadow-2xl overflow-hidden backdrop-blur-xl">
+                <div className="lg:col-span-12 xl:col-span-5 relative mt-4 xl:mt-0">
+                    <div className="relative w-full clean-surface border clean-border-muted p-5 rounded-[8px] overflow-hidden">
                         
-                        {/* Terminal Header */}
-                        <div className="flex items-center justify-between pb-6 border-b border-white/5 mb-6">
-                            <div className="flex items-center gap-2">
-                                <div className="flex gap-1.5">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-red-500/70"></span>
-                                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70"></span>
-                                    <span className="w-2.5 h-2.5 rounded-full bg-green-500/70"></span>
-                                </div>
-                                <span className="text-[9px] font-mono font-bold text-slate-500 ml-2">CORE_NODE::ACTIVE</span>
+                        {/* Quiet interface header */}
+                        <div className="flex items-center justify-between pb-4 border-b clean-border-muted mb-5 select-none text-[11px] clean-font-mono clean-text-muted">
+                            <div className="flex items-center gap-2 lowercase">
+                                <div className="w-1.5 h-1.5 rounded-full bg-[oklch(0.72_0.18_145)]"></div>
+                                <span>active trace layer</span>
                             </div>
-                            <div className="px-2 py-0.5 rounded bg-slate-900 text-slate-400 text-[8px] font-mono uppercase tracking-widest border border-white/5">
-                                SECURE LAYER
-                            </div>
+                            <span className="uppercase text-[10px]">secure metrics</span>
                         </div>
 
-                        {/* Interactive carousel tabs switcher */}
-                        <div className="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-2xl border border-white/5 mb-6 shadow-inner">
+                        {/* Quiet feature custom navigation tabs */}
+                        <div className="grid grid-cols-3 gap-1 bg-zinc-950 p-1 rounded-[4px] border clean-border-muted mb-5">
                             {FEATURES.map((feat, idx) => (
                                 <button
                                     key={feat.id}
                                     onClick={() => handleTabSelect(idx)}
-                                    className={`relative py-2.5 px-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-300 ${
+                                    className={`py-1.5 rounded-[4px] text-[11px] clean-font-mono lowercase transition-all duration-300 ${
                                         activeFeature === idx 
-                                            ? 'bg-slate-900 text-white shadow' 
-                                            : 'text-slate-500 hover:text-slate-300'
+                                            ? 'bg-[oklch(0.72_0.18_145)] text-zinc-950 font-semibold' 
+                                            : 'clean-text-muted hover:text-white'
                                     }`}
                                 >
-                                    <span className="relative z-10">{feat.title.split(' ')[0]}</span>
-                                    {activeFeature === idx && (
-                                        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/5 -z-10 border border-indigo-500/20"></div>
-                                    )}
+                                    {feat.title.split(' ')[0]}
                                 </button>
                             ))}
                         </div>
 
-                        {/* Custom visual module card */}
-                        <div className="bg-black/40 rounded-[2.2rem] border border-white/5 h-64 flex items-center justify-center p-6 transition-all duration-300">
+                        {/* Interactive UI card wrapper */}
+                        <div className="bg-zinc-950/40 rounded-[4px] border clean-border-muted h-64 flex items-center justify-center p-5 transition-all duration-300">
                             {FEATURES[activeFeature].ui}
                         </div>
 
-                        {/* Description & Auto-timeline bar */}
-                        <div className="mt-6 text-left space-y-4">
-                            <div className="flex items-center justify-between text-[8px] tracking-[0.2em] font-black text-indigo-400 uppercase">
-                                <span>{FEATURES[activeFeature].badge}</span>
-                                <span>LIVE PREVIEW</span>
+                        {/* Strategic outcome section */}
+                        <div className="mt-5 text-left space-y-3.5">
+                            <div className="flex items-center justify-between text-[11px] clean-font-mono clean-text-accent font-medium">
+                                <span className="lowercase">{FEATURES[activeFeature].badge}</span>
+                                <span>Preview</span>
                             </div>
-                            <p className="text-slate-400 font-medium text-xs md:text-sm leading-relaxed italic">
+                            <p className="clean-text-muted font-normal text-xs leading-relaxed">
                                 "{FEATURES[activeFeature].description}"
                             </p>
 
-                            {/* Timeline Fill Bar */}
-                            <div className="w-full h-1 bg-slate-900 rounded-full overflow-hidden">
+                            {/* Minimal slide timeline indicator */}
+                            <div className="w-full h-0.5 bg-zinc-950 rounded-full overflow-hidden">
                                 <div 
-                                    className="h-full bg-indigo-500 rounded-full transition-all duration-80 ease-linear" 
+                                    className="h-full bg-[oklch(0.72_0.18_145)] transition-all duration-80 ease-linear" 
                                     style={{ width: `${carouselProgress}%` }}
                                 ></div>
                             </div>
@@ -526,72 +554,52 @@ export const LoginScreen: React.FC = () => {
                 </div>
             </section>
 
-            {/* --- INSTITUTIONAL TRUST BAR --- */}
-            <section className="py-12 border-y border-white/5 bg-[#030611]/30 relative z-10">
+            {/* --- ONE LINE TRUTHFUL TRUST BAR OVER RHYTHMIC OFFSET 48PX --- */}
+            <section className="py-12 border-y clean-border-muted bg-zinc-950/20 relative z-10">
                 <div className="max-w-7xl mx-auto px-6 text-center">
-                    <p className="text-[10px] font-black uppercase text-indigo-400/80 tracking-[0.34em] mb-8">
-                        {language === 'EN' ? 'TRUSTED BY INNOVATIVE ESL ACADEMIES & PREP SCHOOLS' : '학습 혁신을 선도하는 국내외 명문 학원 및 예비 학교 협약'}
+                    <p className="clean-font-sans text-xs clean-text-muted max-w-[65ch] mx-auto select-none font-medium">
+                        {language === 'EN' 
+                          ? 'Built by an EFL educator with 10+ years in Korean hagwons.' 
+                          : '10년 이상 대치·목동 등 실제 학원 현장에서 교수법과 성과 증명을 연구해온 EFL 교육자가 설계하였습니다.'}
                     </p>
-                    <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 md:gap-x-16 text-slate-500 text-xs font-mono font-bold uppercase tracking-widest">
-                        <div className="flex items-center gap-1.5 grayscale opacity-60 hover:opacity-100 hover:grayscale-0 cursor-default transition">
-                            <span className="inline-block w-2.5 h-2.5 rounded bg-indigo-500"></span>
-                            <span>AEGIS INT. PREP</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 grayscale opacity-60 hover:opacity-100 hover:grayscale-0 cursor-default transition">
-                            <span className="inline-block w-2.5 h-2.5 rounded bg-amber-500"></span>
-                            <span>MAPLE KIDS DEPT.</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 grayscale opacity-60 hover:opacity-100 hover:grayscale-0 cursor-default transition">
-                            <span className="inline-block w-2.5 h-2.5 rounded bg-emerald-500"></span>
-                            <span>PRESTIGE PRIMARY</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 grayscale opacity-60 hover:opacity-100 hover:grayscale-0 cursor-default transition">
-                            <span className="inline-block w-2.5 h-2.5 rounded bg-purple-500"></span>
-                            <span>OLYMPUS HAGWON</span>
-                        </div>
-                    </div>
                 </div>
             </section>
 
-            {/* --- INTERACTIVE STATS / BENTO BOX FEATURES --- */}
-            <section className="py-24 px-6 max-w-7xl mx-auto relative z-10 space-y-20">
+            {/* --- SECTIONS SPACING RHYTHMIC OVER 96PX --- */}
+            <section className="py-24 px-6 max-w-7xl mx-auto relative z-10 space-y-12">
                 
-                <div className="text-center space-y-4 max-w-3xl mx-auto">
-                    <div className="inline-flex gap-2.5 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[9px] font-black tracking-widest text-indigo-300 uppercase">
-                        Product Dashboard Core API
-                    </div>
-                    <h2 className="text-3xl sm:text-5xl font-black text-white italic tracking-tight">
-                        {language === 'EN' ? 'Decisions Over Databases.' : '단순 조회를 넘어선, 수업 방향의 즉각 처방.'}
+                <div className="text-left space-y-4 max-w-3xl">
+                    <h2 className="clean-font-sans text-3xl font-medium text-white tracking-tight">
+                        {language === 'EN' ? 'Decisions Over Databases.' : '성적 조회 차트 조작에서 즉각적인 맞춤 처방으로.'}
                     </h2>
-                    <p className="text-slate-400 text-base font-medium leading-relaxed">
+                    <p className="clean-text-muted text-sm leading-relaxed max-w-[65ch]">
                         {language === 'EN' 
                           ? 'Why waste hours in spreadsheets? Benchmark AI instantly maps child diagnostics to ready-to-print learning resources and individual parent updates.' 
-                          : '엑셀 앞에서 고민하던 수많은 시간들과 지루한 성적 발송 전송을 단 몇 번의 마우스 조작과 지능형 AI 가이드로 완전히 바꿉니다.'}
+                          : '학업 진행 정보를 단순 나열하여 엑셀이나 정산 통계판으로 돌리는 낡은 구조는 끝났습니다. 막힌 음소, 취약한 문법 오차 데이터를 즉각 찾아 실시간 과제 세트 연계 및 가이드문 발송 출력을 돕습니다.'}
                     </p>
                 </div>
 
-                {/* --- INTERACTIVE LIVE GROWTH VELOCITY SIMULATOR --- */}
-                <div className="bg-slate-950/55 rounded-[3.5rem] border border-white/10 p-8 md:p-12 shadow-2xl relative overflow-hidden backdrop-blur-xl">
-                    <div className="absolute top-0 right-0 p-6">
-                        <span className="text-[7.5px] font-mono text-slate-500">MODULE_ID: ESL_SIMUL_1.0</span>
+                {/* --- LIVE SIMULATOR CONSOLES --- */}
+                <div className="clean-surface rounded-[8px] border clean-border-muted p-6 md:p-10 shadow-lg relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 select-none">
+                        <span className="text-[11px] clean-font-mono clean-text-muted lowercase">esl_simul_1.0</span>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-12 items-center">
                         
-                        {/* Simulation Controls Left (5 cols) */}
-                        <div className="lg:col-span-5 text-left space-y-8">
+                        {/* Simulation configuration interface */}
+                        <div className="lg:col-span-12 xl:col-span-5 text-left space-y-8">
                             <div className="space-y-2">
-                                <span className="text-indigo-400 text-[10px] font-black uppercase tracking-widest font-mono">STEP 01 — INPUTS</span>
-                                <h3 className="text-xl md:text-2xl font-black italic text-white">{language === 'EN' ? 'Student Skill Parameter Simulation' : '실시간 연령별 및 학업 강도 통계 시뮬레이션'}</h3>
-                                <p className="text-xs text-slate-400">{language === 'EN' ? 'Slide elements to test how AI configures growth velocity profiles immediately.' : '슬라이더 또는 시간 설정 값을 변경하여 실시간 대응 성장 곡선의 민감도 가속을 체크하세요.'}</p>
+                                <h3 className="text-xl font-medium clean-text-ink">{language === 'EN' ? 'Student Level Parameter Simulation' : '실시간 연령별 및 학업 강도 통계 시뮬레이션'}</h3>
+                                <p className="text-xs clean-text-muted leading-relaxed font-normal max-w-[65ch]">{language === 'EN' ? 'Slide parameters to simulate growth velocity profiles in real time.' : '슬라이더 정보와 시간 변인 설정치를 임의 변경하며 실시간 생성되는 성장 곡선을 탐색하세요.'}</p>
                             </div>
 
                             <div className="space-y-6">
-                                {/* Level Slider */}
+                                {/* Academic level slider */}
                                 <div className="space-y-2.5">
                                     <div className="flex justify-between items-center text-xs">
-                                        <label className="font-extrabold uppercase text-slate-300 tracking-wider text-[10px]">{language === 'EN' ? 'ESL Skill Level' : '현재 ESL 권장 학업 학년'}</label>
-                                        <span className="font-mono text-indigo-300 font-bold bg-[#141b31]/40 px-2 py-0.5 rounded border border-white/5">LEVEL {simLevel}</span>
+                                        <label className="font-semibold clean-text-muted clean-font-mono text-[11px] lowercase">{language === 'EN' ? 'esl skill level' : '권장 학습 스킬 레벨'}</label>
+                                        <span className="clean-font-mono clean-text-accent font-medium bg-[oklch(0.20_0.06_145)] px-2 py-0.5 rounded-[4px] border clean-border-accent">lvl {simLevel}</span>
                                     </div>
                                     <input 
                                         type="range" 
@@ -599,15 +607,15 @@ export const LoginScreen: React.FC = () => {
                                         max="10" 
                                         value={simLevel} 
                                         onChange={(e) => setSimLevel(Number(e.target.value))}
-                                        className="w-full accent-indigo-500 h-1.5 bg-slate-900 rounded-lg cursor-pointer"
+                                        className="w-full accent-[oklch(0.72_0.18_145)] h-1 bg-zinc-950 rounded cursor-pointer"
                                     />
                                 </div>
 
-                                {/* Phonics Score Slider */}
+                                {/* Phonics achievement slider */}
                                 <div className="space-y-2.5">
                                     <div className="flex justify-between items-center text-xs">
-                                        <label className="font-extrabold uppercase text-slate-300 tracking-wider text-[10px]">{language === 'EN' ? 'Phonemic Foundation Mastery' : '파닉스 알파벳 및 결합 마스터율'}</label>
-                                        <span className="font-mono text-indigo-300 font-bold bg-[#141b31]/40 px-2 py-0.5 rounded border border-white/5">{simPhonics}%</span>
+                                        <label className="font-semibold clean-text-muted clean-font-mono text-[11px] lowercase">{language === 'EN' ? 'phonemic foundation mastery' : '기초 음소 및 음절 결합 인지 마스터율'}</label>
+                                        <span className="clean-font-mono clean-text-accent font-medium bg-[oklch(0.20_0.06_145)] px-2 py-0.5 rounded-[4px] border clean-border-accent">{simPhonics}%</span>
                                     </div>
                                     <input 
                                         type="range" 
@@ -615,25 +623,25 @@ export const LoginScreen: React.FC = () => {
                                         max="100" 
                                         value={simPhonics} 
                                         onChange={(e) => setSimPhonics(Number(e.target.value))}
-                                        className="w-full accent-indigo-500 h-1.5 bg-slate-900 rounded-lg cursor-pointer"
+                                        className="w-full accent-[oklch(0.72_0.18_145)] h-1 bg-zinc-950 rounded cursor-pointer"
                                     />
                                 </div>
 
-                                {/* Study Intensity Buttons */}
+                                {/* Hours component */}
                                 <div className="space-y-3.5">
-                                    <label className="font-extrabold uppercase text-slate-300 tracking-wider text-[10px] block">{language === 'EN' ? 'Weekly Instructional Intensity' : '주간 평균 집중 이수 강도'}</label>
+                                    <label className="font-semibold clean-text-muted clean-font-mono text-[11px] block lowercase">{language === 'EN' ? 'weekly instructional intensity' : '주간 평균 강의 투입 시간'}</label>
                                     <div className="grid grid-cols-3 gap-2">
                                         {[2, 4, 6].map((hrs) => (
                                             <button
                                                 key={hrs}
                                                 onClick={() => setSimHours(hrs)}
-                                                className={`py-3.5 px-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition duration-200 border ${
+                                                className={`py-2 px-3 rounded-[4px] text-xs font-semibold transition border clean-font-sans ${
                                                     simHours === hrs 
-                                                        ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg' 
-                                                        : 'bg-slate-950 border-white/5 text-slate-400 hover:text-white'
+                                                        ? 'bg-[oklch(0.72_0.18_145)] border-[oklch(0.72_0.18_145)] text-zinc-950 font-semibold shadow-sm' 
+                                                        : 'bg-zinc-950 border-zinc-800 clean-text-muted hover:text-white'
                                                 }`}
                                             >
-                                                {hrs} {language === 'EN' ? 'Hrs / Wk' : '시간 / 주'}
+                                                {hrs} {language === 'EN' ? 'hrs/wk' : '시간 / 주'}
                                             </button>
                                         ))}
                                     </div>
@@ -641,99 +649,108 @@ export const LoginScreen: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Simulator Visualization Right (7 cols) */}
-                        <div className="lg:col-span-7 bg-[#040812]/70 border border-white/5 p-6 md:p-8 rounded-[2.5rem] text-left space-y-6">
-                            <div className="flex items-center justify-between">
-                                <span className="text-emerald-400 text-[10px] font-black uppercase tracking-widest font-mono">STEP 02 — DIAGNOSTIC PROJECTION</span>
-                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-6 border-b border-white/5">
-                                {/* Large Velocity Number */}
+                        {/* Metric result output */}
+                        <div className="lg:col-span-12 xl:col-span-7 clean-surface-raised border clean-border-muted p-6 md:p-8 rounded-[8px] text-left space-y-6">
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-6 border-b clean-border-muted">
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{language === 'EN' ? 'Growth Velocity Rating' : '예상 성장 속도 등급'}</p>
+                                    <p className="text-[11px] font-semibold clean-text-muted clean-font-mono lowercase">{language === 'EN' ? 'calculated velocity score' : '산출된 성장 가속도 점치지'}</p>
                                     <div className="flex items-baseline gap-2">
-                                        <span className="text-4xl md:text-5xl font-black italic text-white font-mono">{simVelocity > 0 ? `+${simVelocity}` : simVelocity}</span>
-                                        <span className="text-indigo-400 font-bold text-xs uppercase font-mono">Units/Mo</span>
+                                        <span className="text-4xl font-semibold clean-text-ink clean-font-mono">{simVelocity > 0 ? `+${simVelocity}` : simVelocity}</span>
+                                        <span className="clean-text-muted font-medium text-xs clean-font-mono lowercase">units/mo</span>
                                     </div>
                                 </div>
 
-                                {/* Dynamic Band Badge Card */}
                                 <div className="flex flex-col justify-center">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">{language === 'EN' ? 'Velocity Pathways Tag' : '배정 성장 경로 지침'}</p>
-                                    <div className={`px-4 py-3 border rounded-2xl font-black text-xs text-center tracking-widest transition-all duration-300 ${bandColors[velocityBand]}`}>
+                                    <p className="text-[11px] font-semibold clean-text-muted clean-font-mono lowercase mb-1.5">{language === 'EN' ? 'trajectory profile assigned' : '자동 분화 경로 지정 식별 결과'}</p>
+                                    <div className={`px-4 py-2 border rounded-[4px] font-medium text-xs text-center transition-all duration-300 clean-font-mono ${bandColors[velocityBand]}`}>
                                         {bandLabels[velocityBand]}
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Generative Message Container */}
+                            {/* Generated analysis statement */}
                             <div className="space-y-2">
-                                <div className="flex items-center gap-1.5">
-                                    <Icon name="brain" className="w-3.5 h-3.5 text-indigo-400" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest font-mono text-indigo-300">AUTO-GENERATED STRATEGIC MEMO</span>
+                                <div className="flex items-center gap-2">
+                                    <Icon name="brain" className="w-3.5 h-3.5 clean-text-accent" />
+                                    <span className="text-[11px] font-semibold clean-text-muted clean-font-mono lowercase">strategic dynamic memo</span>
                                 </div>
-                                <div className="p-4 bg-slate-950 rounded-2xl border border-white/5">
-                                    <p className="text-slate-300 font-medium text-xs sm:text-sm leading-relaxed transition-all duration-300">
+                                <div className="p-4 bg-zinc-950 rounded-[4px] border clean-border-muted">
+                                    <p className="clean-text-muted font-normal text-xs sm:text-sm leading-[1.7] transition-all duration-300 max-w-[65ch]">
                                         {getSandboxMessage(velocityBand, simLevel, simHours, language)}
                                     </p>
                                 </div>
                             </div>
 
-                            {/* Demo Action Trigger */}
+                            {/* Demo engagement trigger */}
                             <button 
                                 onClick={loginDemo}
-                                className="w-full py-4 bg-white hover:bg-slate-100 text-slate-950 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:shadow-indigo-500/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-[oklch(0.72_0.18_145)] hover:brightness-110 text-zinc-950 rounded-[4px] font-medium text-xs transition-all flex items-center justify-center gap-2"
                             >
-                                <Icon name="brain" className="w-4 h-4 text-indigo-600" />
-                                {language === 'EN' ? 'Test Custom Class Profiles' : '진짜 클래스 프로필로 테스트 하기'}
+                                <Icon name="brain" className="w-4 h-4 text-zinc-950" />
+                                <span>{language === 'EN' ? 'Analyze class profile' : '학원 실제 학생 리스트 데이터 입력 분석'}</span>
                             </button>
                         </div>
 
                     </div>
                 </div>
 
-                {/* Additional Bento Features Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* card 1 */}
-                    <div className="bg-slate-950/45 border border-white/10 rounded-[2.5rem] p-8 text-left space-y-4 hover:border-indigo-500/30 transition-all duration-300 flex flex-col justify-between backdrop-blur-xl">
-                        <div className="space-y-4">
-                            <div className="w-12 h-12 bg-indigo-600/10 rounded-2xl flex items-center justify-center border border-indigo-500/20 text-indigo-400">
-                                <Icon name="students" className="w-6 h-6" />
-                            </div>
-                            <h3 className="text-xl font-black text-white italic">{language === 'EN' ? 'Active Pods Assembly' : '자동 소그룹 소모임 편성'}</h3>
-                            <p className="text-xs text-slate-400 leading-relaxed font-semibold">
+                {/* --- CONCISE STEPPED FLOW TABLE (REPLACES 3-CARD GRID) --- */}
+                <div className="space-y-4 pt-4">
+                    {/* Column labels */}
+                    <div className="hidden md:grid grid-cols-12 gap-6 px-6 py-2 text-[11px] clean-font-mono clean-text-muted lowercase border-b clean-border-muted select-none">
+                        <div className="col-span-1 text-center">sequence</div>
+                        <div className="col-span-3 text-left">instructional function</div>
+                        <div className="col-span-8 text-left">operational workflow description</div>
+                    </div>
+
+                    {/* Step 1 */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 clean-surface border clean-border-muted rounded-[8px] items-center">
+                        <div className="md:col-span-1 flex items-center justify-center">
+                            <span className="clean-font-mono text-xs clean-text-accent font-semibold select-none">01</span>
+                        </div>
+                        <div className="md:col-span-3 text-left">
+                            <h3 className="clean-font-sans text-sm font-medium clean-text-ink">{language === 'EN' ? 'Active Pods Assembly' : '자동 소그룹 소모임 편성'}</h3>
+                        </div>
+                        <div className="md:col-span-8 text-left">
+                            <p className="clean-font-sans text-xs clean-text-muted leading-relaxed max-w-[65ch]">
                                 {language === 'EN' 
                                   ? 'No manual profiling. Our system gathers students sharing matching phonics or syntactic gaps and packs them into designated peer work groups automatically.' 
-                                  : '더 이상의 피곤한 학생별 개별 분류 조작은 없습니다. 성취도 파닉스가 완전히 일치하는 학생들을 찾아 즉시 소그룹 분화 및 짝 매칭 솔루션을 도출해 제공합니다.'}
+                                  : '원장이 피곤하게 반별 수작업 구성을 만질 요량은 없습니다. 오답 결합이나 특정 인지 단계의 도미노 탈락이 겹친 학생을 묶어 맞춤 소모임 워크시트를 즉시 조립합니다.'}
                             </p>
                         </div>
                     </div>
-                    {/* card 2 */}
-                    <div className="bg-slate-950/45 border border-white/10 rounded-[2.5rem] p-8 text-left space-y-4 hover:border-indigo-500/30 transition-all duration-300 flex flex-col justify-between backdrop-blur-xl">
-                        <div className="space-y-4">
-                            <div className="w-12 h-12 bg-indigo-600/10 rounded-2xl flex items-center justify-center border border-indigo-500/20 text-indigo-400">
-                                <Icon name="robot" className="w-6 h-6" />
-                            </div>
-                            <h3 className="text-xl font-black text-white italic">{language === 'EN' ? 'Automated Parent Portals' : '클릭 한번으로 학부모 보고서'}</h3>
-                            <p className="text-xs text-slate-400 leading-relaxed font-semibold">
+
+                    {/* Step 2 */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 clean-surface border clean-border-muted rounded-[8px] items-center">
+                        <div className="md:col-span-1 flex items-center justify-center">
+                            <span className="clean-font-mono text-xs clean-text-accent font-semibold select-none">02</span>
+                        </div>
+                        <div className="md:col-span-3 text-left">
+                            <h3 className="clean-font-sans text-sm font-medium clean-text-ink">{language === 'EN' ? 'Automated Parent Portals' : '클릭 한번으로 학부모 보고서'}</h3>
+                        </div>
+                        <div className="md:col-span-8 text-left">
+                            <p className="clean-font-sans text-xs clean-text-muted leading-relaxed max-w-[65ch]">
                                 {language === 'EN' 
                                   ? 'Generate non-clinical, comprehensive narratives for parents instantly. Multilingual translations ensure perfect transparency and Hagwon retention.' 
-                                  : '데이터를 읽지 못하는 학부모를 위해, 전문 용어가 완전히 보제된 심층 설명 편지를 즉시 조립 인쇄합니다. 정기 발송으로 학부모와 돈독한 연대감을 세우세요.'}
+                                  : '데이터 장벽이 높은 부모들을 위하여 기술용어가 제거된 일상 언어 기반 학업성취 진단지 안내 편지를 자동 출력합니다. 정기 발송으로 안심 환불 방어가 편해집니다.'}
                             </p>
                         </div>
                     </div>
-                    {/* card 3 */}
-                    <div className="bg-slate-950/45 border border-white/10 rounded-[2.5rem] p-8 text-left space-y-4 hover:border-indigo-500/30 transition-all duration-300 flex flex-col justify-between backdrop-blur-xl">
-                        <div className="space-y-4">
-                            <div className="w-12 h-12 bg-indigo-600/10 rounded-2xl flex items-center justify-center border border-indigo-500/20 text-indigo-400">
-                                <Icon name="library" className="w-6 h-6" />
-                            </div>
-                            <h3 className="text-xl font-black text-white italic">{language === 'EN' ? 'Integrated Resource Bank' : '실시간 훈련 콘텐츠 즉각 연계'}</h3>
-                            <p className="text-xs text-slate-400 leading-relaxed font-semibold">
+
+                    {/* Step 3 */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-6 clean-surface border clean-border-muted rounded-[8px] items-center">
+                        <div className="md:col-span-1 flex items-center justify-center">
+                            <span className="clean-font-mono text-xs clean-text-accent font-semibold select-none">03</span>
+                        </div>
+                        <div className="md:col-span-3 text-left">
+                            <h3 className="clean-font-sans text-sm font-medium clean-text-ink">{language === 'EN' ? 'Integrated Resource Bank' : '실시간 훈련 콘텐츠 즉각 연계'}</h3>
+                        </div>
+                        <div className="md:col-span-8 text-left">
+                            <p className="clean-font-sans text-xs clean-text-muted leading-relaxed max-w-[65ch]">
                                 {language === 'EN' 
                                   ? 'Identify grammatical trends or phonetic plateaus, and access direct worksheets custom-designed for those exact learning obstacles.' 
-                                  : '과제 수행 결과 분석을 완료하는 즉시, 학생이 막힌 특정 발음 구조나 문장의 장애율을 해소시킬 수 있는 리소스 교재 파일을 즉시 화면에 연계시켜 다운로드 권장합니다.'}
+                                  : '학생별 막힌 영역에 따라 학습 극복에 즉시 투입 가능한 다운로드 전용 파닉스 워크북 및 문법 가이드 도표 교환 자료들을 대시보드 화면상에 실시간 연계시킵니다.'}
                             </p>
                         </div>
                     </div>
@@ -741,113 +758,110 @@ export const LoginScreen: React.FC = () => {
 
             </section>
 
-            {/* --- SYSTEM STATS TICKER FOOTER BANNER --- */}
-            <footer className="py-12 border-t border-white/5 bg-[#030611]/60 relative z-10 text-slate-500 text-xs text-center">
+            {/* --- RESTRAINED SYSTEM FOOTER PANEL --- */}
+            <footer className="py-12 border-t clean-border-muted clean-bg relative z-10 text-slate-500 text-xs text-center">
                 <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-[10px]">B</div>
-                        <span className="font-bold tracking-tight text-slate-400">Benchmark AI Core Alpha.</span>
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-[4px] bg-[oklch(0.72_0.18_145)] flex items-center justify-center text-zinc-950 font-bold text-[10px]">B</div>
+                        <span className="font-semibold text-xs tracking-tight text-slate-400">BENCHMARK AI</span>
                     </div>
                     
-                    <div className="flex flex-wrap justify-center gap-6 text-[10px] uppercase font-black tracking-widest text-slate-500">
-                        <button onClick={() => { setLegalTab('privacy'); setIsLegalModalOpen(true); }} className="hover:text-slate-300">{language === 'EN' ? 'Privacy Policy' : '개인정보 지침'}</button>
-                        <button onClick={() => { setLegalTab('terms'); setIsLegalModalOpen(true); }} className="hover:text-slate-300">{language === 'EN' ? 'Terms of Service' : '이용 약관'}</button>
-                        <button onClick={() => { setLegalTab('dpa'); setIsLegalModalOpen(true); }} className="hover:text-slate-300">DPA</button>
-                        <button onClick={() => { setLegalTab('billing'); setIsLegalModalOpen(true); }} className="hover:text-slate-300">{language === 'EN' ? 'Pricing Policy' : '결제 규약'}</button>
+                    <div className="flex flex-wrap justify-center gap-6 text-[11px] clean-font-mono lowercase text-slate-500">
+                        <button onClick={() => { setLegalTab('privacy'); setIsLegalModalOpen(true); }} className="hover:text-white transition-colors">{language === 'EN' ? 'Privacy Policy' : '개인정보 보호방침'}</button>
+                        <button onClick={() => { setLegalTab('terms'); setIsLegalModalOpen(true); }} className="hover:text-white transition-colors">{language === 'EN' ? 'Terms of Service' : '이용 약관'}</button>
+                        <button onClick={() => { setLegalTab('dpa'); setIsLegalModalOpen(true); }} className="hover:text-white transition-colors">dpa</button>
+                        <button onClick={() => { setLegalTab('billing'); setIsLegalModalOpen(true); }} className="hover:text-white transition-colors">{language === 'EN' ? 'Pricing Policy' : '과금 약관'}</button>
                     </div>
 
-                    <p className="text-[10px] font-mono text-slate-600">© 2026 BENCHMARK EDUCATION INFRASTRUCTURE.</p>
+                    <p className="text-[11px] clean-font-mono clean-text-muted">© 2026 BENCHMARK EDUCATION INFRASTRUCTURE.</p>
                 </div>
             </footer>
 
-            {/* --- PREMIUM PORTAL GLASS MODAL (AUTH) --- */}
+            {/* --- SYSTEM CREDENTIAL PORTAL GLASS OVERLAY MODAL --- */}
             {isLoginModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xl animate-in fade-in duration-300">
-                    <div className="bg-[#0b0e17]/95 border border-[#1e293b]/70 text-white w-full max-w-md p-8 md:p-10 rounded-[3rem] md:rounded-[3.5rem] shadow-[0_45px_100px_rgba(7,10,19,0.8)] relative overflow-hidden transition-all duration-300 scale-100 animate-in zoom-in-95">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/75 backdrop-blur-md">
+                    <div className="bg-[oklch(0.14_0.01_250)] border border-zinc-800 text-white w-full max-w-sm p-6 md:p-8 rounded-[8px] shadow-2xl relative overflow-hidden clean-animate-ui">
                         
-                        {/* Interactive floating blur orb in auth */}
-                        <div className="absolute -top-12 -left-12 w-48 h-48 bg-indigo-500/10 filter blur-3xl -z-10 rounded-full"></div>
-                        
-                        {/* Close button with high-end feel */}
+                        {/* High-end minimalist close trigger */}
                         <button 
                             onClick={() => setIsLoginModalOpen(false)} 
-                            className="absolute top-8 right-8 p-1.5 text-slate-500 hover:text-white transition-colors bg-white/5 hover:bg-white/10 rounded-xl"
+                            className="absolute top-6 right-6 p-1.5 clean-text-muted hover:text-white transition-colors hover:bg-zinc-800 rounded-[4px]"
                         >
                             <Icon name="close" className="w-4 h-4" />
                         </button>
 
-                        <div className="flex items-center gap-2 mb-6">
-                            <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white">
-                                <Icon name="benchmark" className="w-5.5 h-5.5" strokeWidth={3} />
+                        <div className="flex items-center gap-2 mb-6 text-left justify-start">
+                            <div className="w-6 h-6 rounded-[4px] bg-[oklch(0.72_0.18_145)] flex items-center justify-center text-zinc-950">
+                                <Icon name="benchmark" className="w-4.5 h-4.5 text-zinc-950" strokeWidth={3} />
                             </div>
-                            <span className="text-[9px] font-mono text-indigo-400 font-extrabold tracking-[0.25em] uppercase">SYSTEM CREDENTIALING PORTAL</span>
+                            <span className="text-[11px] font-semibold clean-text-accent clean-font-mono lowercase">system gateway</span>
                         </div>
 
-                        <h2 className="text-3xl md:text-4xl font-extrabold mb-2 tracking-tight italic text-left bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-300">
+                        <h2 className="text-xl font-medium tracking-tight mb-2 text-white text-left">
                             {authMode === 'login' ? t('auth_login_title') : t('auth_signup_title')}
                         </h2>
                         
-                        <p className="text-xs text-slate-400 text-left mb-6 font-medium leading-relaxed">
+                        <p className="text-xs clean-text-muted text-left mb-6 leading-relaxed font-normal">
                             {authMode === 'login' 
-                              ? (language === 'EN' ? 'Initiate secure login session to map metrics.' : '클래스 계정 지표 확인을 위한 보안 키 인증 절차.')
-                              : (language === 'EN' ? 'Register a new institutional profile node.' : '새로운 학원 또는 지점 연구 관리 노드 생성.')}
+                              ? (language === 'EN' ? 'Initiate secure login session to map metrics.' : '학원 데이터 분석 제어판 개방을 위한 로그인 및 장치인증 절차.')
+                              : (language === 'EN' ? 'Register institutional profile details.' : '새로운 학원 계정 지표 가동 노드 추가 등록.')}
                         </p>
 
-                        {/* Error Alert Box */}
+                        {/* Error box */}
                         {authError && (
-                            <div className="mb-6 p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-rose-300 text-xs text-left flex items-start gap-2.5 animate-pulse">
-                                <Icon name="alert" className="w-4.5 h-4.5 text-rose-400 shrink-0 mt-0.5" />
-                                <span className="font-bold leading-relaxed">{authError}</span>
+                            <div className="mb-5 p-3.5 bg-red-950/45 rounded-[4px] border border-red-900/60 text-[oklch(0.65_0.20_25)] text-xs text-left flex items-start gap-2 animate-pulse">
+                                <Icon name="alert" className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                                <span className="font-medium leading-relaxed">{authError}</span>
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5 text-left">
+                        <form onSubmit={handleSubmit} className="space-y-4 text-left">
                             {authMode === 'signup' && (
-                                <div className="space-y-1">
-                                    <label className="text-[8px] font-black uppercase text-indigo-300/80 ml-1.5 font-mono">{t('field_name')}</label>
+                                <div className="space-y-1.5">
+                                    <label className="text-[11px] font-semibold clean-text-muted clean-font-mono lowercase block ml-0.5">{t('field_name')}</label>
                                     <input 
                                         type="text" 
                                         required 
                                         value={name} 
                                         onChange={e => setName(e.target.value)} 
-                                        className="w-full px-5 py-4 bg-slate-900 border border-slate-800 rounded-2xl focus:border-indigo-500 outline-none font-bold text-sm transition text-white placeholder-slate-600" 
+                                        className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-[4px] focus:clean-border-accent outline-none font-medium text-sm transition text-white placeholder-zinc-700" 
                                         placeholder={language === 'EN' ? "Director Name" : "성함 입력"} 
                                     />
                                 </div>
                             )}
-                            <div className="space-y-1">
-                                <label className="text-[8px] font-black uppercase text-indigo-300/80 ml-1.5 font-mono">{t('field_email')}</label>
+                            <div className="space-y-1.5">
+                                <label className="text-[11px] font-semibold clean-text-muted clean-font-mono lowercase block ml-0.5">{t('field_email')}</label>
                                 <input 
                                     type="email" 
                                     required 
                                     value={email} 
                                     onChange={e => setEmail(e.target.value)} 
-                                    className="w-full px-5 py-4 bg-slate-900 border border-slate-800 rounded-2xl focus:border-indigo-500 outline-none font-bold text-sm transition text-white placeholder-slate-600" 
+                                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-[4px] focus:clean-border-accent outline-none font-medium text-sm transition text-white placeholder-zinc-700" 
                                     placeholder="director@school.edu" 
                                 />
                             </div>
-                            <div className="space-y-1">
-                                <label className="text-[8px] font-black uppercase text-indigo-300/80 ml-1.5 font-mono">{t('field_pass')}</label>
+                            <div className="space-y-1.5">
+                                <label className="text-[11px] font-semibold clean-text-muted clean-font-mono lowercase block ml-0.5">{t('field_pass')}</label>
                                 <input 
                                     type="password" 
                                     required 
                                     value={password} 
                                     onChange={e => setPassword(e.target.value)} 
-                                    className="w-full px-5 py-4 bg-slate-900 border border-slate-800 rounded-2xl focus:border-indigo-500 outline-none font-bold text-sm transition text-white placeholder-slate-600" 
+                                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-[4px] focus:clean-border-accent outline-none font-medium text-sm transition text-white placeholder-zinc-700" 
                                     placeholder="••••••••" 
                                 />
                             </div>
                             
                             {authMode === 'login' && (
-                                <div className="flex items-center gap-2.5 px-1 pb-2">
+                                <div className="flex items-center gap-2 px-0.5 pb-1">
                                     <input 
                                         type="checkbox" 
                                         id="rememberMeCheckbox" 
                                         checked={rememberMe} 
                                         onChange={e => setRememberMe(e.target.checked)}
-                                        className="w-4 h-4 rounded-md border-slate-800 bg-slate-900 text-indigo-600 focus:ring-indigo-500 accent-indigo-500"
+                                        className="w-3.5 h-3.5 rounded-[4px] border-zinc-800 bg-zinc-950 text-[oklch(0.72_0.18_145)] focus:ring-emerald-500 accent-emerald-500"
                                     />
-                                    <label htmlFor="rememberMeCheckbox" className="text-[9px] font-black uppercase text-slate-400 tracking-wider cursor-pointer">
+                                    <label htmlFor="rememberMeCheckbox" className="text-xs clean-text-muted cursor-pointer select-none">
                                         {language === 'EN' ? 'Keep session active (30 days)' : '인증 유효 세션 유지 (30일)'}
                                     </label>
                                 </div>
@@ -856,11 +870,11 @@ export const LoginScreen: React.FC = () => {
                             <button 
                                 type="submit" 
                                 disabled={isLoading} 
-                                className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:brightness-110 shadow-lg active:scale-[0.98] transition border-b-4 border-indigo-950"
+                                className="w-full py-2.5 bg-[oklch(0.72_0.18_145)] hover:brightness-110 text-zinc-950 rounded-[4px] font-medium text-xs transition shadow-sm"
                             >
                                 {isLoading 
-                                  ? (language === 'EN' ? 'CONNECTING INTERPRETER...' : '인증 매핑 진행중...') 
-                                  : (authMode === 'login' ? t('btn_auth') : t('btn_init'))}
+                                  ? (language === 'EN' ? 'Connecting login...' : '서버 계정 로딩...') 
+                                  : (authMode === 'login' ? (language === 'EN' ? 'Continue login' : '보안 로그인') : (language === 'EN' ? 'Create account' : '계정 등록하기'))}
                             </button>
                         </form>
 
@@ -869,7 +883,7 @@ export const LoginScreen: React.FC = () => {
                                 setAuthMode(authMode === 'login' ? 'signup' : 'login');
                                 setAuthError('');
                             }} 
-                            className="mt-6 w-full text-indigo-400 font-extrabold text-[9px] uppercase tracking-widest hover:underline text-center"
+                            className="mt-5 w-full text-[oklch(0.72_0.18_145)] font-semibold text-xs hover:underline text-center"
                         >
                             {authMode === 'login' ? t('link_request') : t('link_existing')}
                         </button>

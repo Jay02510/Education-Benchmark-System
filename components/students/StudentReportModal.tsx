@@ -1,12 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../common/Modal';
 import { Student } from '../../types';
 import { Icon } from '../common/Icon';
 import { GeminiService } from '../../services/geminiService';
-import { useStudents } from '../../context/StudentContext';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../firebase';
 
 interface StudentReportModalProps {
     isOpen: boolean;
@@ -88,94 +84,111 @@ export const StudentReportModal: React.FC<StudentReportModalProps> = ({ isOpen, 
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Student Performance Report" size="xl">
-            <div className="bg-white p-10 border border-slate-100 shadow-sm mx-auto max-w-4xl rounded-[3rem] print:shadow-none print:border-none">
-                <div className="flex justify-between items-end border-b-4 border-slate-900 pb-6 mb-10">
+            <div className="bg-zinc-950 p-6 md:p-8 border border-zinc-900 mx-auto max-w-4xl rounded-[4px] print:shadow-none print:border-none print:bg-white print:text-black">
+                {/* Header Container */}
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b-2 border-zinc-900 pb-5 mb-8 print:border-black">
                     <div>
-                        <div className="flex items-center gap-3 mb-2">
-                             <div className="w-8 h-8 bg-slate-900 text-indigo-400 flex items-center justify-center rounded-lg shadow-lg"><Icon name="benchmark" className="w-5 h-5" /></div>
-                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]">Official Report</span>
+                        <div className="flex items-center gap-2.5 mb-2">
+                             <div className="w-6 h-6 bg-zinc-900 border border-zinc-800 text-[oklch(0.72_0.18_145)] flex items-center justify-center rounded-[4px]"><Icon name="benchmark" className="w-3.5 h-3.5" /></div>
+                             <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Official Diagnostics Report</span>
                         </div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase leading-none">{student.name}</h1>
-                        <p className="text-slate-400 mt-2 font-black text-xs uppercase tracking-widest italic">Level {student.level} • {date}</p>
+                        <h1 className="text-3xl font-medium text-zinc-100 tracking-tight uppercase leading-none print:text-black">{student.name}</h1>
+                        <p className="text-zinc-500 mt-2 font-mono text-[10px] uppercase tracking-wider italic">Level {student.level} • {date}</p>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                        <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner no-print">
-                            {LANGUAGES.map(l => (
-                                <button key={l.value} onClick={() => handleTranslate(l.value)} className={`px-3 py-1.5 text-[8px] font-black uppercase rounded-lg transition-all ${activeLang === l.value ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>{l.value}</button>
+                    <div className="flex flex-col items-end gap-2 mt-4 sm:mt-0">
+                        <div className="flex bg-zinc-900 border border-zinc-850 p-0.5 rounded-[4px] no-print">
+                            {LANGUAGES.slice(0, 4).map(l => (
+                                <button 
+                                    key={l.value} 
+                                    onClick={() => handleTranslate(l.value)} 
+                                    className={`px-2.5 py-1 text-[9px] font-mono uppercase rounded-[2px] transition-colors cursor-pointer ${
+                                        activeLang === l.value 
+                                            ? 'bg-[oklch(0.72_0.18_145)]/10 text-[oklch(0.72_0.18_145)] font-semibold' 
+                                            : 'text-zinc-500 hover:text-zinc-300'
+                                    }`}
+                                >
+                                    {l.value}
+                                </button>
                             ))}
                         </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-6 mb-12">
-                    <div className="p-8 bg-indigo-50/50 rounded-[2.5rem] border border-indigo-100 relative overflow-hidden group">
-                        <Icon name="trendUp" className="absolute -bottom-4 -right-4 w-24 h-24 text-indigo-100/50 group-hover:scale-110 transition-transform" />
-                        <span className="text-[9px] font-black uppercase text-indigo-400 tracking-widest relative z-10">Growth Rate</span>
-                        <p className="text-4xl font-black text-indigo-600 relative z-10 tracking-tighter">{student.growthVelocity}%</p>
+                {/* Analytical Stats Panel */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div className="p-5 bg-zinc-900/40 rounded-[4px] border border-zinc-900 relative overflow-hidden">
+                        <span className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Growth velocity</span>
+                        <p className="text-3xl font-mono text-[oklch(0.72_0.18_145)] font-medium tabular-nums">{student.growthVelocity}%</p>
                     </div>
-                    <div className="p-8 bg-emerald-50/50 rounded-[2.5rem] border border-emerald-100 relative overflow-hidden group">
-                        <Icon name="check" className="absolute -bottom-4 -right-4 w-24 h-24 text-emerald-100/50 group-hover:scale-110 transition-transform" />
-                        <span className="text-[9px] font-black uppercase text-emerald-400 tracking-widest relative z-10">Overall Score</span>
-                        <p className="text-4xl font-black text-emerald-600 relative z-10 tracking-tighter">82%</p>
+                    <div className="p-5 bg-zinc-900/40 rounded-[4px] border border-zinc-900 relative overflow-hidden">
+                        <span className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Cumulative score</span>
+                        <p className="text-3xl font-mono text-emerald-450 font-medium tabular-nums">82%</p>
                     </div>
-                    <div className="p-8 bg-slate-900 rounded-[2.5rem] shadow-xl relative overflow-hidden group">
-                         <Icon name="shield" className="absolute -bottom-4 -right-4 w-24 h-24 text-white/5 group-hover:scale-110 transition-transform" />
-                        <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest relative z-10">Support Level</span>
-                        <p className="text-4xl font-black text-white relative z-10 tracking-tighter">Tier {student.interventionStatus?.tier || 1}</p>
+                    <div className="p-5 bg-zinc-900/40 rounded-[4px] border border-zinc-900 relative overflow-hidden">
+                        <span className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Intervention Status</span>
+                        <p className="text-3xl font-mono text-zinc-100 font-medium whitespace-nowrap">Tier {student.interventionStatus?.tier || 1}</p>
                     </div>
                 </div>
 
-                <div className="mb-12">
-                    <div className="flex items-center gap-3 mb-6">
-                        <Icon name="brain" className="w-6 h-6 text-indigo-600" />
-                        <h3 className="text-xs font-black uppercase text-slate-400 tracking-[0.3em]">Learning Summary ({activeLang})</h3>
+                {/* Learning Summary Box */}
+                <div className="mb-8">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Icon name="brain" className="w-4 h-4 text-[oklch(0.72_0.18_145)]" />
+                        <h3 className="text-xs font-medium text-zinc-300 uppercase tracking-wider font-mono">Learning Summary ({activeLang})</h3>
                     </div>
-                    <div className="p-10 bg-slate-50 border border-slate-100 rounded-[3.5rem] min-h-[220px] relative">
+                    <div className="p-6 md:p-8 bg-zinc-900/20 border border-zinc-900 rounded-[4px] min-h-[180px] relative">
                         {isGenerating ? (
-                            <div className="flex flex-col items-center justify-center h-full py-10 gap-3">
-                                <Icon name="refresh" className="w-10 h-10 text-indigo-300 animate-spin" />
-                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Analyzing Data...</span>
+                            <div className="flex flex-col items-center justify-center min-h-[140px] gap-2.5">
+                                <Icon name="refresh" className="w-6 h-6 text-zinc-500 animate-spin" />
+                                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Analyzing Performance Metrics...</span>
                             </div>
                         ) : error ? (
-                            <div className="flex flex-col items-center justify-center h-full py-10 gap-3 text-rose-500">
-                                <Icon name="alert" className="w-10 h-10" />
-                                <span className="text-[10px] font-black uppercase tracking-widest">{error}</span>
+                            <div className="flex flex-col items-center justify-center min-h-[140px] gap-2.5 text-red-400">
+                                <Icon name="alert" className="w-6 h-6" />
+                                <span className="text-[10px] font-mono uppercase tracking-wider">{error}</span>
                             </div>
                         ) : isTranslating ? (
-                            <div className="flex flex-col items-center justify-center h-full py-10 gap-3">
-                                <Icon name="refresh" className="w-10 h-10 text-indigo-300 animate-spin" />
-                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Translating to {activeLang}...</span>
+                            <div className="flex flex-col items-center justify-center min-h-[140px] gap-2.5">
+                                <Icon name="refresh" className="w-6 h-6 text-zinc-500 animate-spin" />
+                                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">Translating Narrative...</span>
                             </div>
                         ) : (
-                            <p className="text-lg text-slate-700 font-bold leading-relaxed italic whitespace-pre-wrap">
-                                "{translatedNarrative || narrative || 'Analyzing performance history...'}"
+                            <p className="text-sm text-zinc-300 leading-relaxed italic whitespace-pre-wrap font-sans">
+                                "{translatedNarrative || narrative || 'Analyzing student diagnostic history...'}"
                             </p>
                         )}
-                        <div className="absolute -bottom-3 -right-6 px-4 py-2 bg-white border border-slate-100 rounded-xl shadow-lg flex items-center gap-2">
-                             <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                             <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">AI Analysis Complete</span>
+                        <div className="absolute bottom-3 right-4 px-3 py-1 bg-zinc-950 border border-zinc-900 rounded-[4px] flex items-center gap-2 no-print">
+                             <div className="w-1.5 h-1.5 rounded-full bg-[oklch(0.72_0.18_145)] animate-pulse"></div>
+                             <span className="text-[9px] font-mono uppercase text-zinc-500">AI Report Verified</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="flex justify-between items-center mt-12 pt-10 border-t border-slate-100 no-print">
-                    <div className="flex items-center gap-4">
-                        <input type="checkbox" checked={isReviewed} onChange={e => setIsReviewed(e.target.checked)} className="w-6 h-6 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] cursor-pointer">I have reviewed this report</label>
-                    </div>
+                {/* Footer Controls */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mt-8 pt-6 border-t border-zinc-900 no-print">
                     <div className="flex items-center gap-3">
+                        <input 
+                            id="review-checkbox"
+                            type="checkbox" 
+                            checked={isReviewed} 
+                            onChange={e => setIsReviewed(e.target.checked)} 
+                            className="w-4 h-4 rounded-[4px] border-zinc-800 bg-zinc-950 text-[oklch(0.72_0.18_145)] focus:ring-[oklch(0.72_0.18_145)] accent-[oklch(0.72_0.18_145)] cursor-pointer" 
+                        />
+                        <label htmlFor="review-checkbox" className="text-[10px] font-mono uppercase text-zinc-500 tracking-wider cursor-pointer select-none">I have reviewed and approved this report</label>
+                    </div>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
                         <button 
                             onClick={onClose} 
-                            className="px-8 py-5 bg-white text-slate-400 border-2 border-slate-100 rounded-[1.8rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-slate-50 transition-all active:scale-95"
+                            className="flex-1 sm:flex-none px-4 py-2 border border-zinc-900 hover:border-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-[4px] text-xs transition-colors cursor-pointer"
                         >
                             Close
                         </button>
                         <button 
                             onClick={() => window.print()} 
                             disabled={!isReviewed} 
-                            className="px-12 py-5 bg-slate-900 text-white rounded-[1.8rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl disabled:opacity-30 hover:bg-indigo-600 transition-all active:scale-95 border-b-8 border-slate-950"
+                            className="flex-1 sm:flex-none px-5 py-2 bg-zinc-100 disabled:opacity-30 hover:bg-zinc-200 text-zinc-950 rounded-[4px] text-xs font-semibold transition-all cursor-pointer"
                         >
-                            Export as PDF
+                            Print Report
                         </button>
                     </div>
                 </div>

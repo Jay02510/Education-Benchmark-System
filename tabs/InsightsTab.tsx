@@ -1,45 +1,158 @@
-
-import React, { useState, useMemo } from 'react';
-import { Card } from '../components/common/Card';
-import { DomainPerformanceChart, RadarPerformanceChart, SupportTierChart } from '../components/charts/Charts';
-import { Icon } from '../components/common/Icon';
+import React, { useState, useMemo, useTransition } from 'react';
 import { useStudents } from '../context/StudentContext';
 import { useBenchmarks } from '../context/BenchmarkContext';
 import { useAuth } from '../context/AuthContext';
-import { Domain, Student } from '../types';
-import { InsightCard } from '../components/common/InsightCard';
+import { Domain } from '../types';
+import { Icon } from '../components/common/Icon';
 import { AtRiskDetailsModal } from '../components/students/AtRiskDetailsModal';
 import { GeminiService } from '../services/geminiService';
 import { ExecutiveBriefingModal } from '../components/common/ExecutiveBriefingModal';
 import { CaseStudyModal } from '../components/common/CaseStudyModal';
 import { useToast } from '../context/ToastContext';
 import { Modal } from '../components/common/Modal';
+import { 
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
+    Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis 
+} from 'recharts';
 
-const DashboardWidget: React.FC<{ title: string; value: string | number; subtext: string; icon: string; gradient: string; onClick?: () => void; }> = ({ title, value, subtext, icon, gradient, onClick }) => (
-    <button 
-        onClick={onClick}
-        className={`w-full text-left relative overflow-hidden p-8 rounded-[2.5rem] bg-gradient-to-br ${gradient} shadow-2xl transition-all hover:-translate-y-2 group active:scale-[0.97]`}
-    >
-        <div className="relative z-20 text-white">
-            <div className="flex justify-between items-start mb-6">
-                <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-lg border border-white/10">
-                    <Icon name={icon} className="w-6 h-6" />
+// Custom tooltip designed to matches visual system: surface-raised, 1px border, 4px radius, IBM Plex Mono values
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-[oklch(0.18_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-[4px] p-3 text-left font-mono select-none shadow-xl">
+                <p className="text-[11px] font-semibold text-white mb-2 pb-1 border-b border-[oklch(0.60_0_0_/_0.10)] uppercase tracking-wide">
+                    {label || payload[0].name}
+                </p>
+                <div className="space-y-1.5">
+                    {payload.map((p: any, i: number) => (
+                        <div key={i} className="flex items-center justify-between gap-5 text-[11px]">
+                            <span className="text-[oklch(0.60_0_0)] font-normal">{p.name}:</span>
+                            <span className="font-semibold text-white tabular-nums">
+                                {typeof p.value === 'number' ? `${p.value}%` : p.value}
+                            </span>
+                        </div>
+                    ))}
                 </div>
             </div>
-            <h3 className="text-5xl font-black mb-1 tracking-tighter">{value}</h3>
-            <p className="font-bold text-sm mb-4 opacity-90">{subtext}</p>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-50">{title}</p>
-        </div>
-        <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-1000"></div>
-    </button>
-);
+        );
+    }
+    return null;
+};
+
+// Local compliant Bar Chart for Domain Matrix
+const LocalDomainBarChart: React.FC<{ data: any[] }> = ({ data }) => {
+    return (
+        <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={data} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                <CartesianGrid 
+                    stroke="oklch(0.60 0 0)" 
+                    strokeOpacity={0.15} 
+                    strokeWidth={0.5} 
+                    strokeDasharray="3 3" 
+                    vertical={false} 
+                />
+                <XAxis 
+                    dataKey="domain" 
+                    tick={{ fontSize: 11, fill: 'oklch(0.60 0 0)', fontFamily: 'IBM Plex Mono' }} 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tickMargin={10}
+                />
+                <YAxis 
+                    domain={[0, 100]}
+                    tick={{ fontSize: 11, fill: 'oklch(0.60 0 0)', fontFamily: 'IBM Plex Mono' }} 
+                    axisLine={false} 
+                    tickLine={false} 
+                />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'oklch(0.60 0 0 / 0.05)' }} />
+                <Legend 
+                    verticalAlign="bottom" 
+                    height={36} 
+                    iconType="rect" 
+                    iconSize={10} 
+                    wrapperStyle={{ fontSize: '11px', fontFamily: 'IBM Plex Mono', color: 'oklch(0.60 0 0)', paddingTop: '15px' }} 
+                />
+                <Bar 
+                    dataKey="score" 
+                    fill="oklch(0.72 0.18 145)" 
+                    name="Current Score" 
+                    unit="%" 
+                    radius={0} 
+                    barSize={16} 
+                />
+                <Bar 
+                    dataKey="target" 
+                    fill="oklch(0.60 0 0 / 0.3)" 
+                    name="Target Benchmark" 
+                    unit="%" 
+                    radius={0} 
+                    barSize={16} 
+                />
+            </BarChart>
+        </ResponsiveContainer>
+    );
+};
+
+// Local compliant Radar Chart for Domain Matrix
+const LocalRadarPerformanceChart: React.FC<{ data: any[] }> = ({ data }) => {
+    const radarData = data.map(d => ({
+        subject: d.domain,
+        A: d.score,
+        B: d.target,
+    }));
+
+    return (
+        <ResponsiveContainer width="100%" height={350}>
+            <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                <PolarGrid stroke="oklch(0.60 0 0)" strokeOpacity={0.15} strokeWidth={0.5} />
+                <PolarAngleAxis 
+                    dataKey="subject" 
+                    tick={{ fill: 'oklch(0.60 0 0)', fontSize: 10, fontFamily: 'IBM Plex Mono' }} 
+                />
+                <PolarRadiusAxis 
+                    angle={30} 
+                    domain={[0, 100]} 
+                    tick={{ fill: 'oklch(0.60 0 0)', fontSize: 9, fontFamily: 'IBM Plex Mono' }} 
+                    axisLine={false} 
+                />
+                <Radar 
+                    name="Current Score" 
+                    dataKey="A" 
+                    stroke="oklch(0.72 0.18 145)" 
+                    strokeWidth={1.5} 
+                    fill="oklch(0.72 0.18 145)" 
+                    fillOpacity={0.15} 
+                />
+                <Radar 
+                    name="Target Benchmark" 
+                    dataKey="B" 
+                    stroke="oklch(0.60 0 0)" 
+                    strokeOpacity={0.3} 
+                    strokeWidth={1.5} 
+                    strokeDasharray="4 4" 
+                    fill="oklch(0.60 0 0)" 
+                    fillOpacity={0.05} 
+                />
+                <Legend 
+                    verticalAlign="bottom" 
+                    height={36} 
+                    iconType="rect" 
+                    iconSize={10} 
+                    wrapperStyle={{ fontSize: '11px', fontFamily: 'IBM Plex Mono', color: 'oklch(0.60 0 0)' }} 
+                />
+                <Tooltip content={<CustomTooltip />} />
+            </RadarChart>
+        </ResponsiveContainer>
+    );
+};
 
 export const InsightsTab: React.FC = () => {
     const { students, classProfile } = useStudents();
     const { domains, benchmarks } = useBenchmarks();
-    const { user, logout, upgradeToPremium } = useAuth();
+    const { user, upgradeToPremium } = useAuth();
     const { showToast } = useToast();
     
+    const [isPending, startTransition] = useTransition();
     const [chartType, setChartType] = useState<'radar' | 'bar'>('radar');
     const [isAtRiskModalOpen, setIsAtRiskModalOpen] = useState(false);
     const [isBriefingModalOpen, setIsBriefingModalOpen] = useState(false);
@@ -52,6 +165,10 @@ export const InsightsTab: React.FC = () => {
     const [isGeneratingStudy, setIsGeneratingStudy] = useState(false);
     const [smartGroups, setSmartGroups] = useState<{ groupName: string, studentIds: string[], focus: string }[]>([]);
     const [isGrouping, setIsGrouping] = useState(false);
+
+    // Sorting indicators for At-Risk table
+    const [atRiskSortBy, setAtRiskSortBy] = useState<'name' | 'velocity'>('name');
+    const [atRiskSortOrder, setAtRiskSortOrder] = useState<'asc' | 'desc'>('asc');
 
     const analytics = useMemo(() => {
         if (!students.length) return null;
@@ -72,9 +189,9 @@ export const InsightsTab: React.FC = () => {
         });
 
         const tiers = [
-            { name: 'On Track', value: 0, color: '#10b981', students: [] },
-            { name: 'Needs Monitoring', value: 0, color: '#f59e0b', students: [] },
-            { name: 'Needs Help', value: 0, color: '#f43f5e', students: [] }
+            { name: 'On Track', value: 0 },
+            { name: 'Needs Monitoring', value: 0 },
+            { name: 'Needs Help', value: 0 }
         ];
 
         students.forEach(s => {
@@ -88,6 +205,25 @@ export const InsightsTab: React.FC = () => {
 
         return { domainData, tiers, atRiskList, avgVelocity, healthScore, classAvg: Math.round(domainData.reduce((a,b) => a+b.score, 0) / domainData.length) };
     }, [students, domains, benchmarks, classProfile]);
+
+    const toggleAtRiskSort = (field: 'name' | 'velocity') => {
+        setAtRiskSortBy(field);
+        setAtRiskSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    };
+
+    const sortedAtRiskStudents = useMemo(() => {
+        if (!analytics?.atRiskList) return [];
+        const result = [...analytics.atRiskList];
+        return result.sort((a, b) => {
+            if (atRiskSortBy === 'name') {
+                const val = a.name.localeCompare(b.name);
+                return atRiskSortOrder === 'asc' ? val : -val;
+            } else {
+                const val = a.growthVelocity - b.growthVelocity;
+                return atRiskSortOrder === 'asc' ? val : -val;
+            }
+        });
+    }, [analytics?.atRiskList, atRiskSortBy, atRiskSortOrder]);
 
     const handleGenerateGroups = async () => {
         setIsGrouping(true);
@@ -131,137 +267,342 @@ export const InsightsTab: React.FC = () => {
         } finally { setIsGeneratingStudy(false); }
     };
 
+    // Compliant Empty State: 1 sentence, 1 action button, no decorative SVGs or sad icons
     if (!students.length) {
         return (
-            <div className="p-12 flex flex-col items-center justify-center min-h-[60vh] text-center">
-                <div className="w-24 h-24 bg-slate-100 rounded-[2.5rem] flex items-center justify-center text-slate-300 mb-8"><Icon name="analytics" className="w-12 h-12" /></div>
-                <h2 className="text-3xl font-black text-slate-900 mb-2">Insufficient Data</h2>
-                <p className="text-slate-400 font-bold max-w-sm">Log scores for your students to unlock insights.</p>
+            <div className="p-12 md:p-24 flex flex-col items-center justify-center min-h-[60vh] text-center max-w-[1600px] mx-auto select-none">
+                <p className="text-[oklch(0.60_0_0)] font-sans text-sm mb-6 max-w-md">
+                    Log student scores in the Roster tab to compute strategic intelligence, group analysis, and longitudinal distributions.
+                </p>
+                <button 
+                    onClick={() => {
+                        showToast("Roster module initialization requested.", "info");
+                    }}
+                    className="px-5 py-2.5 bg-[oklch(0.72_0.18_145)] text-zinc-950 rounded-[4px] font-sans font-semibold text-xs hover:brightness-110 active:scale-95 transition-all"
+                >
+                    Initialize Roster
+                </button>
             </div>
         );
     }
 
     return (
-        <div className="p-6 md:p-12 space-y-12 max-w-[1600px] mx-auto pb-48">
-            <div className="flex flex-col md:flex-row justify-between items-end gap-8">
-                <div>
-                    <h1 className="text-7xl font-black text-slate-900 tracking-tighter mb-2 uppercase italic leading-[0.85]">Strategic <br/>Intelligence</h1>
-                    <p className="text-slate-400 font-bold text-2xl italic tracking-tight">Focus: <span className="text-indigo-600">{classProfile?.className} ({students.length} students)</span></p>
+        <div className="p-6 md:p-10 space-y-10 max-w-[1600px] mx-auto pb-32 overflow-y-auto h-full scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+            
+            {/* Minimal redesigned swiss header block and triggers */}
+            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center pb-6 border-b border-[oklch(0.60_0_0_/_0.15)] gap-6 select-none">
+                <div className="space-y-1">
+                    <h2 className="text-xl font-semibold text-white tracking-tight">Intelligence Ledger</h2>
+                    <p className="text-xs text-[oklch(0.60_0_0)] font-sans">
+                        Analytical insights, priority tiers, and strategic clustering for cohort <span className="text-[oklch(0.72_0.18_145)] font-medium font-mono">{classProfile?.className}</span>
+                    </p>
                 </div>
-                <div className="flex flex-wrap gap-4">
+                
+                {/* Visual Actions toolbelt aligned with StudentsTab design */}
+                <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
                     <button 
                         onClick={handleGenerateCaseStudy}
-                        className={`group px-8 py-6 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-xl transition-all flex items-center gap-3 active:scale-95 bg-white border-2 border-slate-200 text-slate-800 hover:bg-slate-50`}
+                        className="bg-[oklch(0.14_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] text-white hover:bg-[oklch(0.18_0.01_250)] font-sans font-normal rounded-[4px] h-10 px-4 flex items-center justify-center gap-2 active:scale-95 transition-all text-sm"
                     >
-                        {isGeneratingStudy ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="benchmark" className="w-5 h-5 text-indigo-400" />}
-                        Generate Case Study
-                        {user?.isDemo && <span className="ml-2 px-2 py-0.5 bg-indigo-50 text-[8px] rounded border border-indigo-100">DEMO</span>}
+                        {isGeneratingStudy ? <Icon name="refresh" className="w-4 h-4 animate-spin text-[oklch(0.72_0.18_145)]" /> : <Icon name="benchmark" className="w-4 h-4 text-[oklch(0.72_0.18_145)]" />}
+                        Cohort Case Study
                     </button>
                     <button 
                         onClick={handleGenerateBriefing}
-                        className={`group relative px-12 py-6 rounded-[2rem] font-black text-xs uppercase tracking-widest shadow-2xl transition-all active:scale-95 border-b-8 bg-slate-900 text-white hover:bg-indigo-600 border-slate-950`}
+                        className="bg-[oklch(0.72_0.18_145)] text-zinc-950 font-sans font-semibold rounded-[4px] h-10 px-4 flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all text-sm w-full sm:w-auto"
                     >
-                        {isGeneratingBrief ? <Icon name="refresh" className="w-5 h-5 animate-spin" /> : <Icon name="brain" className="w-5 h-5 text-indigo-400" />}
-                        Leadership Briefing
-                        {user?.isDemo && <span className="ml-2 px-2 py-0.5 bg-white/10 text-[8px] rounded border border-white/20">DEMO</span>}
+                        {isGeneratingBrief ? <Icon name="refresh" className="w-4 h-4 animate-spin" /> : <Icon name="brain" className="w-4 h-4 text-zinc-950" />}
+                        Executive Briefing
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <DashboardWidget title="Risk Protocol" value={analytics?.atRiskList.length || 0} subtext={`${students.length} Total Units`} icon="alert" gradient="from-rose-500 to-pink-600" onClick={() => setIsAtRiskModalOpen(true)} />
-                <DashboardWidget title="School Health" value={`${analytics?.healthScore}%`} subtext="Class Efficiency" icon="shield" gradient="from-indigo-600 to-violet-700" />
-                <DashboardWidget title="Mastery Median" value={`${analytics?.classAvg}%`} subtext="Cohort Aggregate" icon="analytics" gradient="from-slate-800 to-slate-950" />
+            {/* METRIC SUMMARY CARDS: tight horizontal row, block/group layout, label above value, no icons, no bars, 1 accent color metrics */}
+            <div className="flex flex-col md:flex-row items-stretch justify-start bg-[oklch(0.14_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-none select-none divide-y md:divide-y-0 md:divide-x divide-[oklch(0.60_0_0_/_0.15)]">
+                {/* Metric 1 */}
+                <button 
+                    onClick={() => setIsAtRiskModalOpen(true)}
+                    className="flex-1 flex flex-col items-start p-6 focus:outline-none hover:bg-[oklch(0.18_0.01_250)] transition-colors text-left"
+                >
+                    <span className="font-sans text-[12px] font-normal text-[oklch(0.60_0_0)] tracking-tight mb-2">Class Risk Protocol</span>
+                    <span className="font-mono text-2xl font-semibold text-white tracking-tight tabular-nums">
+                        {analytics?.atRiskList.length || 0}
+                    </span>
+                </button>
+                
+                {/* Metric 2 - ACCENT ENABLED (The single most important highlight metric) */}
+                <div className="flex-1 flex flex-col items-start p-6">
+                    <span className="font-sans text-[12px] font-normal text-[oklch(0.60_0_0)] tracking-tight mb-2">School Health Unit</span>
+                    <span className="font-mono text-2xl font-bold tracking-tight text-[oklch(0.72_0.18_145)] tabular-nums">
+                        {analytics?.healthScore}%
+                    </span>
+                </div>
+
+                {/* Metric 3 */}
+                <div className="flex-1 flex flex-col items-start p-6">
+                    <span className="font-sans text-[12px] font-normal text-[oklch(0.60_0_0)] tracking-tight mb-2">Mastery Median Aggregate</span>
+                    <span className="font-mono text-2xl font-semibold text-white tracking-tight tabular-nums">
+                        {analytics?.classAvg}%
+                    </span>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-                <div className="xl:col-span-8 space-y-10">
-                    <InsightCard title="Domain Competency Matrix" description={`Targeting Standards for ${classProfile?.gradeLevel}`}>
-                        <div className="h-[450px]">
-                            {chartType === 'radar' ? <RadarPerformanceChart data={analytics?.domainData || []} /> : <DomainPerformanceChart data={analytics?.domainData || []} />}
+            {/* Main Visualizations and Rails */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                
+                {/* Visual Grid Column - main chart & group clusters */}
+                <div className="xl:col-span-8 space-y-6">
+                    
+                    {/* Domain Competency matrix card sheet */}
+                    <div className="bg-[oklch(0.14_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-none p-8 select-none flex flex-col">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                            <div className="space-y-1">
+                                <h3 className="text-base font-semibold text-white tracking-tight">Domain Competency Matrix</h3>
+                                <p className="text-xs text-[oklch(0.60_0_0)] font-sans">
+                                    Segment performance against targeted grade standards for level <span className="font-mono font-medium">{classProfile?.gradeLevel}</span>
+                                </p>
+                            </div>
+                            
+                            {/* Flat segmented toggle */}
+                            <div className="flex bg-[oklch(0.10_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-[4px] p-0.5">
+                                <button
+                                    onClick={() => setChartType('radar')}
+                                    className={`px-3 py-1 text-[11px] font-sans rounded-[3px] transition-all focus:outline-none ${chartType === 'radar' ? 'bg-[oklch(0.72_0.18_145)] text-zinc-950 font-semibold' : 'text-[oklch(0.60_0_0)] hover:text-white'}`}
+                                >
+                                    Radar
+                                </button>
+                                <button
+                                    onClick={() => setChartType('bar')}
+                                    className={`px-3 py-1 text-[11px] font-sans rounded-[3px] transition-all focus:outline-none ${chartType === 'bar' ? 'bg-[oklch(0.72_0.18_145)] text-zinc-950 font-semibold' : 'text-[oklch(0.60_0_0)] hover:text-white'}`}
+                                >
+                                    Grid
+                                </button>
+                            </div>
                         </div>
-                    </InsightCard>
+                        
+                        <div className="flex-1 w-full min-h-[350px]">
+                            {chartType === 'radar' ? (
+                                <LocalRadarPerformanceChart data={analytics?.domainData || []} />
+                            ) : (
+                                <LocalDomainBarChart data={analytics?.domainData || []} />
+                            )}
+                        </div>
+                    </div>
 
-                    <Card className="p-12 bg-white border border-slate-100 shadow-2xl rounded-[4rem]">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12 border-b border-slate-50 pb-8">
-                            <div className="flex items-center gap-6">
-                                <div className="p-4 bg-indigo-600 text-white rounded-3xl shadow-xl"><Icon name="brain" className="w-8 h-8" /></div>
-                                <div>
-                                    <h2 className="text-3xl font-black text-slate-800 tracking-tight">Instructional Pods</h2>
-                                    <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em] mt-1">AI Grouping engine (Restricted to roster)</p>
-                                </div>
+                    {/* Instructional Pods - AI Grouping engine */}
+                    <div className="bg-[oklch(0.14_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-none p-8 select-none">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 pb-6 border-b border-[oklch(0.60_0_0_/_0.10)] mb-8">
+                            <div className="space-y-1">
+                                <h3 className="text-base font-semibold text-white tracking-tight">Instructional Pods</h3>
+                                <p className="text-xs text-[oklch(0.60_0_0)] font-sans">
+                                    Micro-cohort clustering generated from student curriculum diagnostic overlap
+                                </p>
                             </div>
                             <button 
                                 onClick={handleGenerateGroups}
                                 disabled={isGrouping}
-                                className="px-10 py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-2xl hover:bg-indigo-700 transition-all border-b-4 border-indigo-900"
+                                className="h-9 px-4 bg-[oklch(0.72_0.18_145)] text-zinc-950 rounded-[4px] text-xs font-semibold hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-2 font-sans"
                             >
-                                {isGrouping ? <Icon name="refresh" className="w-4 h-4 animate-spin" /> : <Icon name="plus" className="w-4 h-4" />}
-                                Cluster These {students.length} Students
+                                {isGrouping ? (
+                                    <Icon name="refresh" className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                    <Icon name="plus" className="w-3.5 h-3.5 text-zinc-950" strokeWidth={2.5} />
+                                )}
+                                Compute Clusters
                             </button>
                         </div>
+                        
                         {smartGroups.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {smartGroups.map((group: any, idx: number) => (
-                                    <div key={idx} className="p-8 bg-slate-50 rounded-[3rem] border border-slate-100 hover:bg-white hover:border-indigo-100 transition-all">
-                                        <h4 className="font-black text-indigo-600 uppercase tracking-widest text-sm mb-4">{group.groupName}</h4>
-                                        <div className="space-y-3 mb-8">
-                                            {group.studentIds.map((sid: string) => {
-                                                const s = students.find(item => item.id === sid);
-                                                return s ? (
-                                                    <div key={sid} className="flex items-center gap-3">
-                                                        <div className="w-6 h-6 rounded-full overflow-hidden bg-slate-100"><img src={s.photoUrl} className="w-full h-full object-cover" /></div>
-                                                        <span className="text-xs font-bold text-slate-700">{s.name}</span>
-                                                    </div>
-                                                ) : null;
-                                            })}
+                                    <div 
+                                        key={idx} 
+                                        className="p-5 bg-[oklch(0.18_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-none flex flex-col justify-between"
+                                    >
+                                        <div>
+                                            <h4 className="font-mono text-[10px] font-semibold text-[oklch(0.72_0.18_145)] uppercase tracking-wide mb-3">
+                                                {group.groupName}
+                                            </h4>
+                                            <div className="space-y-2 mb-6">
+                                                {group.studentIds.map((sid: string) => {
+                                                    const s = students.find(item => item.id === sid);
+                                                    return s ? (
+                                                        <div key={sid} className="flex items-center gap-2.5">
+                                                            <div className="w-5 h-5 bg-zinc-950 border border-[oklch(0.60_0_0_/_0.15)] overflow-hidden rounded-none shrink-0">
+                                                                <img src={s.photoUrl} className="w-full h-full object-cover filter brightness-90" alt="" referrerPolicy="no-referrer" />
+                                                            </div>
+                                                            <span className="text-[11px] font-sans text-zinc-200">{s.name}</span>
+                                                        </div>
+                                                    ) : null;
+                                                })}
+                                            </div>
                                         </div>
-                                        <p className="text-xs font-bold text-slate-500 italic">"{group.focus}"</p>
+                                        <div className="border-l border-[oklch(0.72_0.18_145)] pl-2.5 mt-auto">
+                                            <p className="text-[11px] font-sans text-zinc-400 leading-normal italic">
+                                                "{group.focus}"
+                                            </p>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="py-24 text-center border-4 border-dashed border-slate-100 rounded-[3.5rem] bg-slate-50/50">
-                                <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-xs">Run clustering engine to map skill gaps.</p>
+                            <div className="py-16 text-center border-dashed border border-[oklch(0.60_0_0_/_0.15)] bg-zinc-950/20 rounded-none select-none">
+                                <p className="text-[11px] font-mono uppercase tracking-wide text-[oklch(0.60_0_0)]">
+                                    Assemble clustering engine to map curricular focus groups.
+                                </p>
                             </div>
                         )}
-                    </Card>
+                    </div>
+
                 </div>
-                <div className="xl:col-span-4 space-y-10">
-                    <Card className="p-10 bg-white border border-slate-100 shadow-2xl rounded-[3.5rem]">
-                        <h3 className="text-xl font-black text-slate-800 mb-10 tracking-tight">Support Level Distribution</h3>
-                        <div className="h-72"><SupportTierChart data={analytics?.tiers as any} /></div>
-                    </Card>
+
+                {/* Right Rail Control Station: Support Distributions and At-Risk Tables */}
+                <div className="xl:col-span-4 space-y-6">
+                    
+                    {/* Support level non-pie distribution container */}
+                    <div className="bg-[oklch(0.14_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-none p-6 select-none flex flex-col">
+                        <div className="mb-6 space-y-1">
+                            <h3 className="text-base font-semibold text-white tracking-tight">Support Metrics</h3>
+                            <p className="text-xs text-[oklch(0.60_0_0)] font-sans">Cohort instructional intervention distribution</p>
+                        </div>
+                        
+                        <div className="space-y-5">
+                            {analytics?.tiers.map((tier, idx) => {
+                                const percentage = students.length > 0 ? Math.round((tier.value / students.length) * 100) : 0;
+                                const isHelp = tier.name === 'Needs Help';
+                                const isTrack = tier.name === 'On Track';
+                                
+                                const barColor = isHelp 
+                                    ? 'bg-[oklch(0.65_0.20_25)]' 
+                                    : isTrack 
+                                        ? 'bg-[oklch(0.72_0.18_145)]' 
+                                        : 'bg-[oklch(0.60_0_0_/_0.4)]';
+                                
+                                return (
+                                    <div key={idx} className="space-y-2 select-none font-sans">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="font-normal text-zinc-200">{tier.name}</span>
+                                            <span className="font-mono text-zinc-400 font-semibold tabular-nums">
+                                                {tier.value} ({percentage}%)
+                                            </span>
+                                        </div>
+                                        {/* Precision 0px flat segment bar representation with flat track background */}
+                                        <div className="h-2 w-full bg-zinc-950/50 rounded-none overflow-hidden">
+                                            <div 
+                                                className={`h-full ${barColor} transition-all duration-500`}
+                                                style={{ width: `${percentage}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* AT RISK STUDENTS PANEL: fully compliant table layout, active sorting triggers, 2px status dots */}
+                    <div className="bg-[oklch(0.14_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-none p-6 select-none flex flex-col">
+                        <div className="mb-5 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-base font-semibold text-white tracking-tight font-sans">At Risk Units</h3>
+                                <p className="text-xs text-[oklch(0.60_0_0)] font-sans">Critical learning velocity anomalies</p>
+                            </div>
+                            <button 
+                                onClick={() => setIsAtRiskModalOpen(true)}
+                                className="text-xs font-semibold text-[oklch(0.72_0.18_145)] hover:underline focus:outline-none font-sans"
+                            >
+                                Details
+                            </button>
+                        </div>
+                        
+                        {sortedAtRiskStudents.length > 0 ? (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left font-sans text-xs border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-[oklch(0.60_0_0_/_0.15)] pb-1.5 text-[oklch(0.60_0_0)] uppercase tracking-normal">
+                                            <th className="py-2 font-normal pb-3">
+                                                <button 
+                                                    onClick={() => toggleAtRiskSort('name')}
+                                                    className="flex items-center gap-1 hover:text-white transition-colors focus:outline-none"
+                                                >
+                                                    Unit ID
+                                                    <Icon 
+                                                        name={atRiskSortBy === 'name' && atRiskSortOrder === 'desc' ? "arrowDown" : "arrowUp"} 
+                                                        className="w-3 h-3 text-[oklch(0.72_0.18_145)]" 
+                                                    />
+                                                </button>
+                                            </th>
+                                            <th className="py-2 text-right font-normal pb-3 pr-4">
+                                                <button 
+                                                    onClick={() => toggleAtRiskSort('velocity')}
+                                                    className="flex items-center gap-1 ml-auto hover:text-white transition-colors focus:outline-none pb-2 md:pb-0"
+                                                >
+                                                    Velocity
+                                                    <Icon 
+                                                        name={atRiskSortBy === 'velocity' && atRiskSortOrder === 'desc' ? "arrowDown" : "arrowUp"} 
+                                                        className="w-3 h-3 text-[oklch(0.72_0.18_145)]" 
+                                                    />
+                                                </button>
+                                            </th>
+                                            <th className="py-2 text-center font-normal pb-3 w-10">Tier</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-[oklch(0.60_0_0_/_0.06)] font-sans">
+                                        {sortedAtRiskStudents.map(student => (
+                                            <tr 
+                                                key={student.id} 
+                                                className="hover:bg-[oklch(0.18_0.01_250)] transition-colors group cursor-pointer"
+                                                onClick={() => setIsAtRiskModalOpen(true)}
+                                            >
+                                                <td className="py-2.5 font-sans">
+                                                    <div className="font-semibold text-white group-hover:text-[oklch(0.72_0.18_145)] transition-colors">{student.name}</div>
+                                                    <div className="font-mono text-[10px] text-[oklch(0.60_0_0)] uppercase tracking-normal">Level {student.level}</div>
+                                                </td>
+                                                <td className="py-2.5 text-right font-mono tabular-nums text-white pr-4">
+                                                    <span className={student.growthVelocity < 0 ? 'text-[oklch(0.65_0.20_25)]' : 'text-zinc-300'}>
+                                                        {student.growthVelocity > 0 ? '+' : ''}{student.growthVelocity}%
+                                                    </span>
+                                                </td>
+                                                <td className="py-2.5 text-center">
+                                                    <div className="inline-flex items-center justify-center">
+                                                        {/* Status representation using 2px colored dot, not a badge */}
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-[oklch(0.65_0.20_25)]" title="Priority diagnostic alarm"></span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <div className="text-center py-6 text-xs text-[oklch(0.60_0_0)] font-sans">
+                                No critical growth anomalies recorded.
+                            </div>
+                        )}
+                    </div>
                 </div>
+
             </div>
 
-            <Modal isOpen={isUpgradePromptOpen} onClose={() => setIsUpgradePromptOpen(false)} title="Join the Educational Frontier" size="md">
-                <div className="space-y-6 text-center py-4">
-                    <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-[2rem] flex items-center justify-center mx-auto mb-4 shadow-xl shadow-indigo-100">
-                        <Icon name="benchmark" className="w-10 h-10" />
+            {/* Standard Modal elements configured to premium limits */}
+            <Modal isOpen={isUpgradePromptOpen} onClose={() => setIsUpgradePromptOpen(false)} title="Join the Educational Frontier" size="sm">
+                <div className="space-y-6 text-center py-4 select-none">
+                    <div className="w-16 h-16 bg-zinc-950 border border-[oklch(0.60_0_0_/_0.15)] text-[oklch(0.72_0.18_145)] rounded-none flex items-center justify-center mx-auto mb-4">
+                        <Icon name="benchmark" className="w-8 h-8 text-[oklch(0.72_0.18_145)]" />
                     </div>
-                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Upgrade to Full Access</h3>
-                    <p className="text-slate-500 font-medium leading-relaxed">
-                        {user ? "Unlock unlimited AI reports, advanced clustering, and deep insights for your classroom." : "Save your own class data, manage unlimited students, and export unlimited AI reports. Create an account to start your institutional transition."}
+                    <h3 className="text-lg font-semibold text-white tracking-tight">Upgrade Workspace Access</h3>
+                    <p className="text-zinc-400 font-sans text-xs leading-relaxed">
+                        Unlock strategic intelligence briefings, cohort forecasting, and automated grouping controls with a Premium Institutional License.
                     </p>
-                    {user ? (
-                        <button 
-                            onClick={async () => {
-                                await upgradeToPremium();
-                                setIsUpgradePromptOpen(false);
-                            }}
-                            className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-indigo-700 shadow-2xl transition-all active:scale-95"
-                        >
-                            Upgrade to Premium
-                        </button>
-                    ) : (
-                        <button 
-                            onClick={logout}
-                            className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-indigo-600 shadow-2xl transition-all active:scale-95"
-                        >
-                            Create My Account
-                        </button>
-                    )}
+                    <button 
+                        onClick={async () => {
+                            await upgradeToPremium();
+                            setIsUpgradePromptOpen(false);
+                            showToast("Institutional workspace upgraded successfully.", "success");
+                        }}
+                        className="w-full py-2.5 bg-[oklch(0.72_0.18_145)] text-zinc-950 rounded-[4px] font-sans font-semibold text-xs hover:brightness-110 shadow-lg active:scale-[0.98] transition-all"
+                    >
+                        Activate Premium Tier
+                    </button>
                 </div>
             </Modal>
 

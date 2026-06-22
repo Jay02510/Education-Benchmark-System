@@ -1,69 +1,142 @@
-import React from 'react';
-import { Card } from '../components/common/Card';
+import React, { useState } from 'react';
 import { Icon } from '../components/common/Icon';
+import { useToast } from '../context/ToastContext';
 
-const SettingsSection: React.FC<{title: string, children: React.ReactNode}> = ({ title, children }) => (
-    <Card className="p-8 mb-6 bg-white border border-slate-100 shadow-sm">
-        <h2 className="text-xl font-black text-slate-800 mb-6 border-b border-slate-50 pb-4 tracking-tight">{title}</h2>
-        <div className="space-y-2">
-            {children}
-        </div>
-    </Card>
-);
-
-const FormRow: React.FC<{label: string, children: React.ReactNode}> = ({ label, children }) => (
-    <div className="flex items-center justify-between py-4 border-b border-slate-50 last:border-0">
-        <label className="text-slate-600 font-bold text-sm">{label}</label>
-        {children}
-    </div>
-);
+const Toggle: React.FC<{ active: boolean, onChange: (v: boolean) => void }> = ({ active, onChange }) => {
+    return (
+        <button 
+            type="button" 
+            onClick={() => onChange(!active)}
+            className={`w-9 h-5 rounded-full flex items-center p-0.5 cursor-pointer select-none transition-colors duration-150 ${
+                active ? 'bg-[oklch(0.72_0.18_145)]' : 'bg-zinc-800/30'
+            }`}
+        >
+            <div className={`bg-zinc-950 w-4 h-4 rounded-full shadow-sm transform transition-transform duration-150 ${
+                active ? 'translate-x-4' : 'translate-x-0'
+            }`} />
+        </button>
+    );
+};
 
 export const SettingsTab: React.FC = () => {
+    const { showToast } = useToast();
+    const [reminders, setReminders] = useState(true);
+    const [sync, setSync] = useState(false);
+    const [sensitivity, setSensitivity] = useState('Standard (-5% deviation)');
+    const [username, setUsername] = useState('Jane Doe');
+    const [email, setEmail] = useState('jane.doe@school.edu');
+
+    const handleSave = () => {
+        showToast("System changes written to persistent state");
+    };
+
+    const handleReset = () => {
+        const confirm = window.confirm("Are you sure you want to purge the current classroom sandbox? This action is irreversible.");
+        if (confirm) {
+            localStorage.clear();
+            showToast("Database cluster scrubbed. Please reload.", "warning");
+        }
+    };
+
     return (
-        <div className="p-8 md:p-12 h-full overflow-y-auto bg-[#F8FAFC]">
-            <div className="max-w-4xl mx-auto">
-                <div className="flex items-center gap-5 mb-10">
-                    <div className="p-4 bg-indigo-600 text-white rounded-[1.5rem] shadow-xl shadow-indigo-100">
-                        <Icon name="settings" className="w-8 h-8" />
+        <div className="p-6 md:p-12 h-full overflow-y-auto bg-[oklch(0.14_0.01_250)] font-sans">
+            <div className="max-w-3xl mx-auto space-y-12">
+                
+                {/* Modern minimal flat header */}
+                <div className="flex items-center gap-4 border-b border-zinc-900 pb-8">
+                    <div className="w-10 h-10 bg-zinc-900 border border-zinc-800 text-[oklch(0.72_0.18_145)] flex items-center justify-center rounded-[4px]">
+                        <Icon name="settings" className="w-5 h-5" />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight">System Settings</h1>
-                        <p className="text-slate-400 font-medium mt-1">Configure your personal workspace and preferences</p>
+                        <h1 className="text-xl font-medium tracking-tight text-white uppercase font-sans">System Diagnostics & Params</h1>
+                        <p className="text-zinc-550 text-[10px] font-mono uppercase tracking-wider block mt-1">active workspace configuration</p>
                     </div>
                 </div>
-                
-                <SettingsSection title="Profile Information">
-                    <FormRow label="Full Name">
-                        <input type="text" defaultValue="Jane Doe" className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl w-64 font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
-                    </FormRow>
-                     <FormRow label="Email Address">
-                        <input type="email" defaultValue="jane.doe@school.edu" className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl w-64 font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" />
-                    </FormRow>
-                </SettingsSection>
 
-                <SettingsSection title="Automated Alerts">
-                    <FormRow label="Enable Assessment Reminders">
-                         <input type="checkbox" defaultChecked className="h-6 w-6 rounded-lg border-slate-200 text-indigo-600 focus:ring-indigo-500"/>
-                    </FormRow>
-                     <FormRow label="Parent Notification Sync">
-                         <input type="checkbox" className="h-6 w-6 rounded-lg border-slate-200 text-indigo-600 focus:ring-indigo-500"/>
-                    </FormRow>
-                </SettingsSection>
-                
-                 <SettingsSection title="Platform Calibration">
-                    <FormRow label="RTI Sensitivity">
-                        <select className="px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl w-64 font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
-                            <option>Standard (-5% deviation)</option>
-                            <option>High Sensitivity (-3% deviation)</option>
-                            <option>Performance Only (-8% deviation)</option>
+                {/* Profile Information Section */}
+                <div>
+                    <h2 className="text-[13px] font-sans text-zinc-500 font-normal lowercase mb-2">profile information</h2>
+                    
+                    <div className="flex items-center justify-between py-4 border-b border-[0.5px] border-zinc-900">
+                        <label className="text-zinc-400 text-xs">Full Name</label>
+                        <input 
+                            type="text" 
+                            value={username} 
+                            onChange={e => setUsername(e.target.value)}
+                            className="bg-zinc-950 border border-zinc-90 w-64 px-3 py-1.5 rounded-[4px] text-xs text-zinc-200 outline-none focus:border-zinc-700" 
+                        />
+                    </div>
+                    
+                    <div className="flex items-center justify-between py-4 border-b border-[0.5px] border-zinc-900">
+                        <label className="text-zinc-400 text-xs">Email Address</label>
+                        <input 
+                            type="email" 
+                            value={email} 
+                            onChange={e => setEmail(e.target.value)}
+                            className="bg-zinc-950 border border-zinc-90 w-64 px-3 py-1.5 rounded-[4px] text-xs text-zinc-200 outline-none focus:border-zinc-700" 
+                        />
+                    </div>
+                </div>
+
+                {/* Automated Alerts Section */}
+                <div>
+                    <h2 className="text-[13px] font-sans text-zinc-500 font-normal lowercase mb-2">automated alerts</h2>
+                    
+                    <div className="flex items-center justify-between py-4 border-b border-[0.5px] border-zinc-900">
+                        <label className="text-zinc-400 text-xs">Enable Assessment Reminders</label>
+                        <Toggle active={reminders} onChange={setReminders} />
+                    </div>
+                    
+                    <div className="flex items-center justify-between py-4 border-b border-[0.5px] border-zinc-900">
+                        <label className="text-zinc-400 text-xs">Parent Notification Sync</label>
+                        <Toggle active={sync} onChange={setSync} />
+                    </div>
+                </div>
+
+                {/* Platform Calibration Section */}
+                <div>
+                    <h2 className="text-[13px] font-sans text-zinc-500 font-normal lowercase mb-2">platform calibration</h2>
+                    
+                    <div className="flex items-center justify-between py-4 border-b border-[0.5px] border-zinc-900">
+                        <label className="text-zinc-400 text-xs">RTI Sensitivity Deviation</label>
+                        <select 
+                            value={sensitivity} 
+                            onChange={e => setSensitivity(e.target.value)}
+                            className="bg-zinc-950 border border-zinc-90 w-64 px-3 py-1.5 rounded-[4px] text-xs text-zinc-300 outline-none cursor-pointer focus:border-zinc-700 font-sans"
+                        >
+                            <option className="bg-zinc-950 text-zinc-300">Standard (-5% deviation)</option>
+                            <option className="bg-zinc-950 text-zinc-300">High Sensitivity (-3% deviation)</option>
+                            <option className="bg-zinc-950 text-zinc-300">Performance Only (-8% deviation)</option>
                         </select>
-                    </FormRow>
-                </SettingsSection>
+                    </div>
+                </div>
 
-                <div className="flex justify-center pt-8 pb-20">
-                    <button className="px-12 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl hover:bg-indigo-600 transition-all active:scale-95">
-                        Save System Changes
+                {/* Standard Actions Control */}
+                <div className="pt-6">
+                    <button 
+                        onClick={handleSave}
+                        className="px-5 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-semibold rounded-[4px] text-xs transition-colors cursor-pointer"
+                    >
+                        Save Configuration
                     </button>
+                </div>
+
+                {/* Destructive Actions Section (danger color, visually separated with extra spacing at bottom) */}
+                <div className="pt-20 border-t border-zinc-900/40">
+                    <h2 className="text-[13px] font-sans text-red-500/80 font-normal lowercase mb-2">danger zone</h2>
+                    
+                    <div className="flex items-center justify-between py-4 border-b border-[0.5px] border-zinc-900">
+                        <div>
+                            <span className="text-xs text-red-500 font-medium block">Scrub sandbox database</span>
+                            <span className="text-[10px] text-zinc-600 block mt-0.5">Purge local client state and clean up workspace registers</span>
+                        </div>
+                        <button 
+                            onClick={handleReset}
+                            className="px-4 py-1.5 border border-red-950/60 hover:border-red-650/40 bg-red-950/20 text-red-400 rounded-[4px] text-[10px] font-mono tracking-wider uppercase transition-colors cursor-pointer"
+                        >
+                            Purge State
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

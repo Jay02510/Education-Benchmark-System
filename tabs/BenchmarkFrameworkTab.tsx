@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { Domain, TestPeriod, SubdomainMetadata, Benchmark } from '../types';
@@ -14,21 +13,21 @@ interface SubdomainRowProps {
 
 const SubdomainRow: React.FC<SubdomainRowProps> = ({ sub, domain, actualScore }) => {
     return (
-        <div className="flex items-center justify-between py-3 px-6 bg-white/50 border border-slate-100 rounded-xl mb-2 last:mb-0 group/sub">
-            <div className="flex items-center gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 group-hover/sub:scale-150 transition-transform"></div>
+        <div className="flex items-center justify-between py-2.5 px-4 bg-zinc-900/40 border border-zinc-900 rounded-[2px] mb-2 last:mb-0 group/sub">
+            <div className="flex items-center gap-2.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-[oklch(0.72_0.18_145)] group-hover/sub:scale-125 transition-transform"></div>
                 <div>
-                    <p className="text-xs font-bold text-slate-700">{sub.name}</p>
-                    <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wider">Max Points: {sub.maxScore}</p>
+                    <p className="text-xs font-semibold text-zinc-300">{sub.name}</p>
+                    <p className="text-[9px] text-zinc-550 font-mono uppercase tracking-wider block mt-0.5">Max Points: {sub.maxScore}</p>
                 </div>
             </div>
             <div className="text-right">
                 {actualScore !== null ? (
-                    <span className={`text-[10px] font-black ${actualScore >= 80 ? 'text-emerald-500' : 'text-indigo-400'}`}>
+                    <span className={`text-[10px] font-mono ${actualScore >= 80 ? 'text-[oklch(0.72_0.18_145)]' : 'text-zinc-400'}`}>
                         {actualScore}% Avg
                     </span>
                 ) : (
-                    <span className="text-[9px] font-bold text-slate-300 uppercase italic">No Data</span>
+                    <span className="text-[9px] font-mono text-zinc-650 uppercase italic">No Data</span>
                 )}
             </div>
         </div>
@@ -47,75 +46,81 @@ const BenchmarkRow: React.FC<any> = ({ id, domain, target, actual, descriptor, c
 
     const isMet = actual >= target;
     const isClose = (actual - target) > -5 && (actual - target) < 0;
-    const statusColor = !hasData ? 'text-slate-400 bg-slate-50 border-slate-100' : (isMet ? 'text-emerald-700 bg-emerald-50 border-emerald-100' : (isClose ? 'text-amber-700 bg-amber-50 border-amber-100' : 'text-rose-700 bg-rose-50 border-rose-100'));
+    
+    const statusStyle = !hasData 
+        ? 'text-zinc-500 bg-zinc-900 border-zinc-850' 
+        : (isMet 
+            ? 'text-[oklch(0.72_0.18_145)] bg-[oklch(0.72_0.18_145)]/10 border-[oklch(0.72_0.18_145)]/20' 
+            : (isClose 
+                ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' 
+                : 'text-rose-455 bg-rose-500/10 border-rose-500/20'));
 
     return (
-        <div className="mb-6">
+        <div className="mb-4">
             <div 
                 onClick={() => !isEditing && setIsExpanded(!isExpanded)}
-                className={`group grid grid-cols-1 md:grid-cols-12 gap-6 items-center py-8 px-10 bg-white border border-slate-100 rounded-[3rem] shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer ${isExpanded ? 'ring-2 ring-indigo-500/20 border-indigo-200 -translate-y-1' : ''}`}
+                className={`group grid grid-cols-1 md:grid-cols-12 gap-6 items-center py-6 px-8 bg-zinc-950 border border-zinc-900 rounded-[4px] hover:border-zinc-800 transition-all cursor-pointer ${isExpanded ? 'border-zinc-800' : ''}`}
             >
-                <div className="md:col-span-3">
-                    <p className="font-black text-slate-900 text-2xl tracking-tighter uppercase italic leading-none mb-3">{domain}</p>
+                <div className="md:col-span-3 select-none">
+                    <p className="font-medium text-zinc-100 text-sm tracking-tight uppercase leading-none mb-3">{domain}</p>
                     <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-1 rounded-lg text-[9px] font-black bg-indigo-600 text-white uppercase tracking-widest shadow-sm">CEFR {cefr || 'A1'}</span>
-                            <span className="px-2.5 py-1 rounded-lg text-[9px] font-black bg-slate-900 text-white uppercase tracking-widest shadow-sm">{yle || 'Starters'}</span>
+                        <div className="flex items-center gap-1.5 font-mono">
+                            <span className="px-2 py-0.5 rounded-[2px] text-[9px] bg-zinc-90 w-fit text-zinc-300 border border-zinc-850 uppercase tracking-wider">CEFR {cefr || 'A1'}</span>
+                            <span className="px-2 py-0.5 rounded-[2px] text-[9px] bg-zinc-900 text-zinc-400 border border-zinc-850 uppercase tracking-wider">{yle || 'Starters'}</span>
                         </div>
                     </div>
                 </div>
                 <div className="md:col-span-6">
                     {isEditing ? (
-                        <div className="space-y-4 bg-slate-50 p-6 rounded-2xl border border-slate-100" onClick={e => e.stopPropagation()}>
+                        <div className="space-y-3 bg-zinc-950/40 p-4 rounded-[4px] border border-zinc-900" onClick={e => e.stopPropagation()}>
                             <div>
-                                <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 block">Learning Goals</label>
-                                <textarea value={editDescriptor} onChange={e => setEditDescriptor(e.target.value)} className="w-full text-sm p-4 border-2 border-slate-200 rounded-xl focus:border-indigo-600 focus:outline-none font-bold text-slate-700" rows={3} />
+                                <label className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 mb-1.5 block">Learning Descriptors</label>
+                                <textarea value={editDescriptor} onChange={e => setEditDescriptor(e.target.value)} className="w-full text-xs p-3 border border-zinc-900 bg-zinc-95 text-zinc-200 rounded-[4px] focus:border-zinc-750 outline-none leading-relaxed font-sans" rows={2} />
                             </div>
                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-slate-400">Target %</label>
-                                    <input type="number" value={editTarget} onChange={e => setEditTarget(Number(e.target.value))} className="w-24 border-2 border-slate-200 p-2.5 rounded-xl font-black text-indigo-600 text-center focus:border-indigo-600 outline-none" />
+                                <div className="flex items-center gap-3">
+                                    <label className="text-[9px] font-mono uppercase tracking-wider text-zinc-500">Target %</label>
+                                    <input type="number" value={editTarget} onChange={e => setEditTarget(Number(e.target.value))} className="w-16 border border-zinc-90 bg-zinc-95 text-zinc-200 py-1 px-2.5 rounded-[4px] font-mono text-center text-xs outline-none focus:border-zinc-700" />
                                 </div>
-                                <button onClick={() => onSave(id, { target_percent: editTarget, descriptor_short: editDescriptor })} className="bg-indigo-600 text-white px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">Update Goals</button>
+                                <button onClick={() => onSave(id, { target_percent: editTarget, descriptor_short: editDescriptor })} className="bg-zinc-100 hover:bg-zinc-200 text-zinc-950 px-4 py-1.5 rounded-[4px] text-xs font-semibold cursor-pointer">Update Goals</button>
                             </div>
                         </div>
                     ) : (
-                        <div className="group-hover:translate-x-1 transition-transform">
-                            <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-2 block">Goal:</span>
-                            <p className="text-md text-slate-700 font-bold leading-relaxed mb-4">"{descriptor || 'Loading learning goals...'}"</p>
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-full border border-slate-100">
-                                    <Icon name="check" className="w-3.5 h-3.5 text-indigo-500" strokeWidth={3} />
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Mastery: {target}%</span>
+                        <div className="group-hover:translate-x-0.5 transition-transform">
+                            <span className="text-[9px] font-mono text-zinc-550 uppercase tracking-wider mb-1.5 block select-none">Goal:</span>
+                            <p className="text-xs text-zinc-350 leading-relaxed font-normal mb-3">"{descriptor || 'Loading learning goal descriptors...'}"</p>
+                            <div className="flex items-center gap-3 select-none">
+                                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900 rounded-[2px] border border-zinc-850">
+                                    <Icon name="check" className="w-3.5 h-3.5 text-[oklch(0.72_0.18_145)]" />
+                                    <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider">Mastery: {target}%</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50/50 rounded-full border border-indigo-100">
-                                    <Icon name="benchmark" className="w-3.5 h-3.5 text-indigo-400" />
-                                    <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">{subdomainsList.length} Skills Mapped</span>
+                                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[oklch(0.72_0.18_145)]/5 rounded-[2px] border border-[oklch(0.72_0.18_145)]/10">
+                                    <Icon name="benchmark" className="w-3.5 h-3.5 text-[oklch(0.72_0.18_145)]/70" />
+                                    <span className="text-[9px] font-mono text-[oklch(0.72_0.18_145)] uppercase tracking-wider">{subdomainsList.length} Skills Mapped</span>
                                 </div>
-                                <Icon name={isExpanded ? "arrowUp" : "arrowDown"} className={`w-3 h-3 text-slate-300 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                                <Icon name={isExpanded ? "arrowUp" : "arrowDown"} className="w-3 h-3 text-zinc-600 ml-1 shrink-0" />
                             </div>
                         </div>
                     )}
                 </div>
-                <div className="md:col-span-3 flex flex-col items-end gap-2">
-                    <div className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] border-2 shadow-sm ${statusColor} transition-colors`}>
+                <div className="md:col-span-3 flex flex-col items-end gap-1.5 select-none font-mono">
+                    <div className={`px-4 py-1.5 rounded-[2px] text-[9px] uppercase tracking-wider border shrink-0 font-mono ${statusStyle} transition-colors`}>
                         {!hasData ? 'Evidence Required' : (isMet ? 'Blueprint Met' : (isClose ? 'Developing' : 'Critical Gap'))}
                     </div>
-                    {hasData && <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Current Median: {actual}%</p>}
+                    {hasData && <p className="text-[9px] text-zinc-[600] uppercase tracking-wider">Current Median: {actual}%</p>}
                 </div>
             </div>
 
             {/* Expandable Subdomain Blueprint */}
             {isExpanded && !isEditing && (
-                <div className="mt-2 mx-10 p-8 bg-slate-50/50 rounded-b-[3rem] border-x border-b border-slate-100 animate-in slide-in-from-top-4 duration-500 shadow-inner">
-                    <div className="mb-6 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Icon name="brain" className="w-4 h-4 text-indigo-400" />
-                            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Mastery Component Logic</h4>
+                <div className="mt-1 mx-4 p-5 bg-zinc-950/40 rounded-[4px] border border-zinc-900 animate-in slide-in-from-top-1 duration-200">
+                    <div className="mb-4 flex items-center justify-between select-none">
+                        <div className="flex items-center gap-2">
+                            <Icon name="brain" className="w-3.5 h-3.5 text-zinc-500" />
+                            <h4 className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Mastery Component Logic</h4>
                         </div>
-                        <div className="h-px bg-slate-200 flex-1 mx-8 opacity-50"></div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                         {subdomainsList.length > 0 ? subdomainsList.map((sub: SubdomainMetadata) => (
                             <SubdomainRow 
                                 key={sub.name} 
@@ -124,7 +129,7 @@ const BenchmarkRow: React.FC<any> = ({ id, domain, target, actual, descriptor, c
                                 actualScore={subdomainAverages[`${domain}:${sub.name}`] || null} 
                             />
                         )) : (
-                            <p className="col-span-full text-center text-[10px] font-black text-slate-300 uppercase py-4">No granular components defined for this domain.</p>
+                            <p className="col-span-full text-center text-[9px] font-mono text-zinc-650 uppercase tracking-wider py-2">No granular components defined for this domain.</p>
                         )}
                     </div>
                 </div>
@@ -180,38 +185,54 @@ export const BenchmarkFrameworkTab: React.FC = () => {
     const activeLevelBenchmarks = benchmarks.filter(b => b.level_name === levelToUse && b.period === selectedPeriod);
     
     return (
-        <div className="p-6 md:p-12 space-y-12 max-w-[1600px] mx-auto pb-48 scrollbar-hide">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
-                <div className="animate-in slide-in-from-left duration-700">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-200">
-                            <Icon name="benchmark" className="w-6 h-6" />
+        <div className="p-6 md:p-12 space-y-8 max-w-[1600px] mx-auto pb-48 font-sans text-zinc-150">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-zinc-900 pb-6 mb-2">
+                <div className="animate-in slide-in-from-left duration-300">
+                    <div className="flex items-center gap-3 mb-2 select-none">
+                        <div className="w-10 h-10 bg-zinc-900 border border-zinc-850 text-[oklch(0.72_0.18_145)] flex items-center justify-center rounded-[4px]">
+                            <Icon name="benchmark" className="w-5 h-5" />
                         </div>
-                        <span className="text-sm font-black text-indigo-600 uppercase tracking-[0.4em]">Instructional OS</span>
+                        <div>
+                            <span className="text-[10px] font-mono text-[oklch(0.72_0.18_145)] uppercase tracking-wider block leading-none">Standards calibration</span>
+                            <p className="text-[10px] text-zinc-550 font-mono uppercase tracking-wider block mt-1">Active Calibration: Level {levelToUse}</p>
+                        </div>
                     </div>
-                    <h1 className="text-7xl font-black text-slate-900 tracking-tighter mb-4 uppercase italic leading-[0.85]">Standards <br/>Matrix</h1>
-                    <p className="text-slate-400 font-bold text-2xl italic tracking-tight">Active Calibration: <span className="text-indigo-600 underline underline-offset-8 decoration-4">Level {levelToUse}</span></p>
                 </div>
 
-                <div className="flex flex-col items-end gap-6">
-                    <div className="flex bg-white p-2.5 rounded-[2.5rem] shadow-2xl border border-slate-100 ring-[12px] ring-slate-50/50">
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full lg:w-auto ml-auto">
+                    <div className="flex bg-zinc-90 p-0.5 rounded-[4px] border border-zinc-90 w-full sm:w-auto selection-none">
                         {Object.values(TestPeriod).map(p => (
-                            <button key={p} onClick={() => setSelectedPeriod(p)} className={`px-12 py-5 rounded-[2rem] text-[11px] font-black uppercase tracking-widest transition-all duration-500 ${selectedPeriod === p ? 'bg-slate-900 text-white shadow-2xl translate-y-[-2px]' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-50'}`}>{p}</button>
+                            <button 
+                                key={p} 
+                                onClick={() => setSelectedPeriod(p)} 
+                                className={`px-4 py-1.5 rounded-[2.5px] text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer w-full sm:w-auto ${
+                                    selectedPeriod === p ? 'bg-zinc-950 text-zinc-100' : 'text-zinc-500 hover:text-zinc-350'
+                                }`}
+                            >
+                                {p}
+                            </button>
                         ))}
                     </div>
-                    <button onClick={() => setIsEditing(!isEditing)} className={`px-12 py-5 rounded-[2rem] text-[11px] font-black transition-all uppercase tracking-widest border-b-[6px] shadow-xl active:scale-95 flex items-center gap-3 ${isEditing ? 'bg-emerald-600 text-white border-emerald-900' : 'bg-indigo-600 text-white border-indigo-900'}`}>
-                        <Icon name={isEditing ? "check" : "settings"} className="w-4 h-4" />
-                        {isEditing ? 'Save Logic Blueprint' : 'Calibrate Targets'}
+                    <button 
+                        onClick={() => setIsEditing(!isEditing)} 
+                        className={`px-4 py-1.5 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors flex items-center gap-2 border w-full sm:w-auto shrink-0 ${
+                            isEditing 
+                                ? 'bg-zinc-950 text-[oklch(0.72_0.18_145)] border-[oklch(0.72_0.18_145)]/20' 
+                                : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-950 border-transparent'
+                        }`}
+                    >
+                        <Icon name={isEditing ? "check" : "settings"} className="w-3.5 h-3.5" />
+                        <span>{isEditing ? 'Save Blueprint' : 'Calibrate Targets'}</span>
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-12">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
                 <div className="xl:col-span-8 space-y-2">
                     {domains.length === 0 ? (
-                        <div className="text-center py-32 bg-white rounded-[4rem] border-4 border-dashed border-slate-100 shadow-inner">
-                            <Icon name="benchmark" className="w-24 h-24 text-slate-100 mx-auto mb-8" />
-                            <p className="text-slate-400 font-black uppercase tracking-[0.3em] text-sm">System blueprint not initialized.</p>
+                        <div className="text-center py-20 bg-zinc-950 rounded-[4px] border border-zinc-900 border-dashed select-none">
+                            <Icon name="benchmark" className="w-10 h-10 text-zinc-700 mx-auto mb-3 animate-pulse" />
+                            <p className="text-xs font-mono text-zinc-550 uppercase tracking-wider">System blueprint not initialized.</p>
                         </div>
                     ) : domains.map(d => {
                         const b = activeLevelBenchmarks.find(i => i.domain === d as Domain);
@@ -235,43 +256,43 @@ export const BenchmarkFrameworkTab: React.FC = () => {
                     })}
                 </div>
                 
-                <div className="xl:col-span-4 space-y-10">
-                    <Card className="p-10 bg-slate-950 text-white rounded-[3.5rem] shadow-2xl relative overflow-hidden group">
-                         <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full translate-x-20 -translate-y-20 transition-all group-hover:bg-indigo-500/20"></div>
+                <div className="xl:col-span-4 space-y-6">
+                    <Card className="p-6 bg-zinc-950 text-white rounded-[4px] border border-zinc-900 shadow-2xl relative overflow-hidden group">
+                         <div className="absolute top-0 right-0 w-64 h-64 bg-[oklch(0.72_0.18_145)]/5 blur-[100px] rounded-full translate-x-20 -translate-y-20 transition-all"></div>
                          <div className="relative z-10">
-                            <div className="flex items-center gap-5 mb-12">
-                                <div className="p-4 bg-white/5 rounded-2xl text-indigo-400 border border-white/10 shadow-inner"><Icon name="globe" className="w-8 h-8" /></div>
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="p-3 bg-zinc-900 rounded-[4px] text-[oklch(0.72_0.18_145)] border border-white/5 shadow-inner"><Icon name="globe" className="w-6 h-6" /></div>
                                 <div>
-                                    <h3 className="text-2xl font-black tracking-tight leading-none mb-1">Global Mapping</h3>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Cross-Platform Verification</p>
+                                    <h3 className="text-sm font-medium tracking-tight uppercase leading-none mb-1">Global Mapping</h3>
+                                    <p className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider font-semibold">Cross-Platform Verification</p>
                                 </div>
                             </div>
 
-                            <div className="space-y-8">
-                                <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/5 backdrop-blur-sm hover:bg-white/10 transition-colors">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Active Standard</span>
-                                        <span className="px-2 py-1 bg-indigo-500 text-[9px] font-black rounded-lg">VERIFIED</span>
+                            <div className="space-y-4">
+                                <div className="p-5 bg-zinc-90 w-full rounded-[4px] border border-zinc-900 hover:bg-zinc-900/60 transition-colors">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider">Active Standard</span>
+                                        <span className="px-2 py-0.5 bg-[oklch(0.72_0.18_145)] text-zinc-950 text-[9px] font-mono rounded-[2px]">VERIFIED</span>
                                     </div>
-                                    <h4 className="text-xl font-black mb-3">CEFR Alignment: {activeLevelBenchmarks[0]?.cefr_alignment || 'Pre-A1'}</h4>
-                                    <p className="text-xs text-slate-400 leading-relaxed font-bold italic">"Curriculum objectives for this level are fully mapped to Common European Framework descriptors for Young Learners."</p>
+                                    <h4 className="text-xs font-semibold uppercase tracking-tight mb-2">CEFR Alignment: {activeLevelBenchmarks[0]?.cefr_alignment || 'Pre-A1'}</h4>
+                                    <p className="text-[11px] text-zinc-405 leading-relaxed font-sans italic">"Curriculum objectives for this level are fully mapped to Common European Framework descriptors for Young Learners."</p>
                                 </div>
 
-                                <div className="p-8 bg-white/5 rounded-[2.5rem] border border-white/5 backdrop-blur-sm hover:bg-white/10 transition-colors">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cambridge Equivalence</span>
+                                <div className="p-5 bg-zinc-90 w-full rounded-[4px] border border-zinc-900 hover:bg-zinc-900/60 transition-colors">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider">Cambridge Equivalence</span>
                                     </div>
-                                    <h4 className="text-xl font-black mb-3">YLE Level: {activeLevelBenchmarks[0]?.yle_equivalent || 'Starters'}</h4>
-                                    <p className="text-xs text-slate-400 leading-relaxed font-bold italic">"Reporting narrative dynamically adjusts to reflect Cambridge Assessment English proficiency bands."</p>
+                                    <h4 className="text-xs font-semibold uppercase tracking-tight mb-2">YLE Level: {activeLevelBenchmarks[0]?.yle_equivalent || 'Starters'}</h4>
+                                    <p className="text-[11px] text-zinc-450 leading-relaxed font-sans italic">"Reporting narrative dynamically adjusts to reflect Cambridge Assessment English proficiency bands."</p>
                                 </div>
                             </div>
                             
-                            <div className="mt-12 p-8 bg-indigo-600/10 rounded-[2.5rem] border border-indigo-600/20 shadow-inner">
-                                <div className="flex items-center gap-3 mb-4 text-indigo-400">
-                                    <Icon name="brain" className="w-5 h-5" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Logic Engine Insight</span>
+                            <div className="mt-6 p-5 bg-[oklch(0.72_0.18_145)]/5 rounded-[4px] border border-[oklch(0.72_0.18_145)]/10">
+                                <div className="flex items-center gap-2 mb-3 text-[oklch(0.72_0.18_145)]">
+                                    <Icon name="brain" className="w-4 h-4" />
+                                    <span className="text-[9px] font-mono uppercase tracking-wider">Logic Engine Insight</span>
                                 </div>
-                                <p className="text-sm font-bold leading-relaxed text-slate-400 italic">"The Matrix uses a 5-point weighting for 'Speaking: Pronunciation' but only 1 point for 'Interaction' to reflect early-learner developmental priorities."</p>
+                                <p className="text-[11px] leading-relaxed text-zinc-450 italic">"The Matrix uses a 5-point weighting for 'Speaking: Pronunciation' but only 1 point for 'Interaction' to reflect early-learner developmental priorities."</p>
                             </div>
                          </div>
                     </Card>

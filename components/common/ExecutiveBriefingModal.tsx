@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Modal } from './Modal';
 import { Icon } from './Icon';
@@ -17,66 +16,68 @@ interface ExecutiveBriefingModalProps {
 export const ExecutiveBriefingModal: React.FC<ExecutiveBriefingModalProps> = ({ isOpen, onClose, data, className }) => {
     if (!data) return null;
 
+    const handlePrint = () => {
+        window.print();
+    };
+
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Principal Briefing" size="lg">
-            <div className="space-y-8">
-                <div className="flex items-center justify-between pb-6 border-b border-slate-100">
+            <div className="space-y-6 font-sans">
+                <div className="flex items-center justify-between pb-4 border-b border-zinc-90 w-full bg-zinc-950">
                     <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">School Context</p>
-                        <h3 className="text-xl font-black text-slate-900">{className}</h3>
+                        <span className="text-[9px] font-mono text-zinc-550 uppercase tracking-wider mb-1 block">Context Segment</span>
+                        <h3 className="text-sm font-medium text-zinc-200 uppercase tracking-tight">{className}</h3>
                     </div>
-                    <div className="px-4 py-2 bg-indigo-50 rounded-xl text-indigo-600 text-[10px] font-black uppercase tracking-widest border border-indigo-100">
-                        Confidential Brief
+                    <div className="px-3 py-1 bg-zinc-900 text-[oklch(0.72_0.18_145)] text-[9px] font-mono uppercase tracking-wider rounded-[4px] border border-zinc-850">
+                        Classified
                     </div>
                 </div>
 
-                <section>
-                    <div className="flex items-center gap-3 mb-4">
-                        <Icon name="analytics" className="w-5 h-5 text-indigo-600" />
-                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">Summary</h4>
-                    </div>
-                    <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
-                        <p className="text-sm text-slate-600 leading-relaxed font-bold italic">"{data.executiveSummary}"</p>
-                    </div>
-                </section>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <section className="p-5 bg-zinc-90 border border-zinc-900 rounded-[4px]">
+                        <div className="flex items-center gap-2 mb-3 select-none">
+                            <Icon name="analytics" className="w-4 h-4 text-[oklch(0.72_0.18_145)]" />
+                            <h4 className="text-[10px] font-mono text-zinc-300 uppercase tracking-wider">Executive Summary</h4>
+                        </div>
+                        <p className="text-xs text-zinc-400 leading-relaxed font-sans italic">"{data.executiveSummary}"</p>
+                    </section>
 
-                <section>
-                    <div className="flex items-center gap-3 mb-4">
-                        <Icon name="alert" className="w-5 h-5 text-rose-500" />
-                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">Risk Assessment</h4>
-                    </div>
-                    <div className="p-6 bg-rose-50/50 rounded-[2rem] border border-rose-100">
-                        <p className="text-sm text-rose-800 leading-relaxed font-bold italic">"{data.riskAssessment}"</p>
-                    </div>
-                </section>
+                    <section className="p-5 bg-zinc-90 border border-zinc-900 rounded-[4px]">
+                        <div className="flex items-center gap-2 mb-3 select-none">
+                            <Icon name="alert" className="w-4 h-4 text-rose-455" />
+                            <h4 className="text-[10px] font-mono text-zinc-350 uppercase tracking-wider">Risk Evaluation</h4>
+                        </div>
+                        <p className="text-xs text-rose-300/80 leading-relaxed font-sans italic">"{data.riskAssessment}"</p>
+                    </section>
+                </div>
 
-                <section>
-                    <div className="flex items-center gap-3 mb-4">
-                        <Icon name="check" className="w-5 h-5 text-emerald-500" />
-                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest">Recommended Actions</h4>
+                <section className="p-5 bg-zinc-90 border border-zinc-900 rounded-[4px]">
+                    <div className="flex items-center gap-2 mb-4 select-none">
+                        <Icon name="check" className="w-4 h-4 text-[oklch(0.72_0.18_145)]" />
+                        <h4 className="text-[10px] font-mono text-zinc-300 uppercase tracking-wider font-semibold">Leadership Milestones</h4>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                         {data.leadershipActions.map((action, i) => (
-                            <div key={i} className="flex gap-4 p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
-                                <div className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[10px] font-black shrink-0 border border-emerald-100">{i + 1}</div>
-                                <p className="text-xs font-bold text-slate-700">{action}</p>
+                            <div key={i} className="flex gap-3 p-3 bg-zinc-950 border border-zinc-900 rounded-[2px]">
+                                <div className="w-5 h-5 rounded-full bg-[oklch(0.72_0.18_145)]/10 text-[oklch(0.72_0.18_145)] flex items-center justify-center text-[10px] font-mono shrink-0 border border-[oklch(0.72_0.18_145)]/20">{i + 1}</div>
+                                <p className="text-xs text-zinc-350 font-sans leading-relaxed">{action}</p>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                <div className="pt-6 border-t border-slate-100 flex justify-end gap-3">
+                <div className="pt-4 border-t border-zinc-900 flex justify-end gap-3">
                     <button 
                         onClick={onClose}
-                        className="px-8 py-3 bg-white text-slate-400 border-2 border-slate-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all"
+                        className="px-4 py-2 border border-zinc-900 hover:border-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-[4px] text-xs transition-colors cursor-pointer"
                     >
-                        Close
+                        Close Briefing
                     </button>
                     <button 
-                        onClick={() => window.print()}
-                        className="px-8 py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all border-b-4 border-black"
+                        onClick={handlePrint}
+                        className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-950 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors"
                     >
-                        Export as PDF
+                        Print PDF
                     </button>
                 </div>
             </div>

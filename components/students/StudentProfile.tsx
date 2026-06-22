@@ -1,7 +1,5 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Student, Assessment, StudentLogEntry } from '../../types';
-import { Card } from '../common/Card';
 import { Icon } from '../common/Icon';
 import { LongitudinalGrowthChart, RadarPerformanceChart } from '../charts/Charts';
 import { DOMAINS } from '../../constants';
@@ -12,46 +10,6 @@ import { GeminiService } from '../../services/geminiService';
 import { AddAssessmentModal } from './AddAssessmentModal';
 import { AddStudentModal } from './AddStudentModal';
 import { StudentReportModal } from './StudentReportModal';
-import { Tooltip } from '../common/Tooltip';
-import { InsightCard } from '../common/InsightCard';
-
-const ProfileStatWidget: React.FC<{ title: string; value: string | number; subtext: string; icon: string; gradient: string; tooltip: string; }> = ({ title, value, subtext, icon, gradient, tooltip }) => (
-    <div className={`relative overflow-hidden p-8 rounded-[2.5rem] bg-gradient-to-br ${gradient} shadow-2xl transition-all hover:-translate-y-2 group active:scale-95`}>
-        <div className="relative z-10 text-white">
-            <div className="flex justify-between items-start mb-6">
-                <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-xl shadow-inner border border-white/10 group-hover:bg-white/30 transition-all">
-                    <Icon name={icon} className="w-6 h-6" />
-                </div>
-            </div>
-            <h3 className="text-4xl font-black mb-1 tracking-tighter drop-shadow-md">{value}</h3>
-            <p className="font-bold text-sm mb-4 opacity-90">{subtext}</p>
-            <Tooltip content={tooltip}>
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">{title}</p>
-            </Tooltip>
-        </div>
-        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-1000"></div>
-    </div>
-);
-
-const LogEntryView: React.FC<{ entry: StudentLogEntry }> = ({ entry }) => (
-    <div className="flex gap-4 p-6 bg-white rounded-[2rem] border border-slate-100 mb-4 shadow-sm hover:shadow-md transition-all">
-        <div className={`shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${
-            entry.category === 'Intervention' ? 'bg-rose-50 text-rose-600 border border-rose-100' :
-            entry.category === 'Goal Met' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
-        }`}>
-            <Icon name={entry.category === 'Goal Met' ? 'check' : entry.category === 'Intervention' ? 'alert' : 'chat'} className="w-7 h-7" />
-        </div>
-        <div className="flex-1">
-            <div className="flex justify-between items-start mb-2">
-                <div>
-                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">{entry.category}</span>
-                    <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">{new Date(entry.date).toLocaleDateString()}</p>
-                </div>
-            </div>
-            <p className="text-md text-slate-700 leading-relaxed font-bold italic">"{entry.content}"</p>
-        </div>
-    </div>
-);
 
 export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }> = ({ student, onBack }) => {
     const { updateAssessmentForStudent, deleteAssessmentForStudent, addLogEntry } = useStudents();
@@ -122,190 +80,312 @@ export const StudentProfile: React.FC<{ student: Student; onBack: () => void; }>
     }, [resources, sortedAssessments, student.level]);
 
     return (
-        <div className="flex flex-col h-full bg-transparent overflow-hidden">
-            <div className="bg-white/85 backdrop-blur-xl px-8 py-8 md:px-12 shrink-0 border-b border-slate-200/60 shadow-[0_4px_30px_rgba(0,0,0,0.015)] z-10">
-                <button onClick={onBack} className="flex items-center space-x-3 text-slate-500 hover:text-indigo-600 mb-8 transition font-black text-[10px] uppercase tracking-[0.2em] group bg-white hover:bg-slate-50 px-4 py-2 rounded-xl border border-slate-200/80 w-fit shadow-sm">
-                    <Icon name="chevronLeft" className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                    <span>Back to Roster</span>
-                </button>
-
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-                    <div className="flex items-center gap-8">
+        <div className="flex flex-col h-full bg-transparent overflow-hidden font-sans">
+            {/* Minimalist Top Bar */}
+            <div className="px-6 py-6 md:px-12 shrink-0 border-b border-zinc-800/80 bg-zinc-950/20">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div className="flex items-center gap-6">
                         <div className="relative group">
                             {student.hasAnomaly && (
-                                <div className="absolute -top-3 -left-3 w-10 h-10 bg-rose-500 rounded-full border-4 border-white shadow-2xl z-30 flex items-center justify-center animate-bounce">
-                                    <Icon name="alert" className="w-5 h-5 text-white" strokeWidth={3} />
+                                <div className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-red-600 rounded-full border border-zinc-950 z-30 flex items-center justify-center">
+                                    <Icon name="alert" className="w-3 h-3 text-white" strokeWidth={3} />
                                 </div>
                             )}
-                            <div className="w-24 h-24 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white transition-all group-hover:scale-105 duration-300 z-10 bg-slate-100">
-                                <img src={student.photoUrl} className="w-full h-full object-cover" alt="" />
+                            <div className="w-16 h-16 rounded-sm border border-zinc-800 overflow-hidden bg-zinc-900">
+                                <img src={student.photoUrl} className="w-full h-full object-cover filter brightness-90" alt="" referrerPolicy="no-referrer" />
                             </div>
-                            <button onClick={() => setIsEditProfileModalOpen(true)} className="absolute -bottom-2 -right-2 p-2 bg-white border border-slate-200 rounded-2xl shadow-xl text-slate-400 hover:text-indigo-600 transition-all z-20"><Icon name="settings" className="w-4 h-4" /></button>
                         </div>
+
                         <div>
-                            <div className="flex items-center gap-4">
-                                <h1 className="text-5xl font-black text-slate-900 tracking-tighter">{student.name}</h1>
-                                {student.growthVelocity >= 10 && <div className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">Fast Track</div>}
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-2xl font-normal text-zinc-100 tracking-tight">{student.name}</h1>
+                                {student.growthVelocity >= 10 && (
+                                    <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] uppercase font-mono">
+                                        fast track
+                                    </span>
+                                )}
                             </div>
-                            <div className="flex items-center gap-3 mt-3">
-                                <span className="text-[11px] font-black text-indigo-600 bg-indigo-50/50 px-3 py-1 rounded-xl border border-indigo-200 tracking-widest">Level {student.level}</span>
-                                <span className={`text-[10px] font-black px-3 py-1 rounded-xl shadow-sm border ${student.growthVelocity >= 10 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : student.growthVelocity < 0 ? 'bg-rose-50 text-rose-600 border-rose-100' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                                    {student.growthVelocity > 0 ? '↑' : '↓'} {Math.abs(student.growthVelocity)} Velocity
+                            <div className="flex items-center gap-4 mt-2">
+                                <span className="text-[11px] font-mono text-[var(--clean-accent)] bg-[var(--clean-accent)]/10 px-2 py-0.5 border border-[var(--clean-accent)]/20">
+                                    Level {student.level}
+                                </span>
+                                <span className="text-[11px] font-mono text-zinc-500">
+                                    velocity <span className="text-zinc-300">{student.growthVelocity > 0 ? '+' : ''}{student.growthVelocity}%</span>
                                 </span>
                             </div>
                         </div>
                     </div>
-                    <div className="flex gap-4">
-                        <button onClick={() => setIsReportModalOpen(true)} className="px-10 py-4 bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-200 rounded-2xl font-black shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center gap-3 text-xs uppercase tracking-widest border-b-4">
-                            <Icon name="benchmark" className="w-5 h-5" /> Generate Report
+
+                    <div className="flex items-center gap-3 w-full md:w-auto">
+                        <button 
+                            onClick={onBack} 
+                            className="px-3.5 py-1.5 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors text-xs rounded-none cursor-pointer flex items-center gap-1"
+                        >
+                            <Icon name="chevronLeft" className="w-4 h-4" />
+                            <span>Return to roster</span>
                         </button>
-                        <button onClick={() => { setAssessmentToEdit(null); setIsAssessmentModalOpen(true); }} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black shadow-xl hover:bg-indigo-600 active:scale-95 transition-all flex items-center gap-3 text-xs uppercase tracking-widest border-b-4 border-slate-950">
-                            <Icon name="plus" className="w-5 h-5" /> Log Score
+                        <button 
+                            onClick={() => setIsEditProfileModalOpen(true)} 
+                            className="px-3.5 py-1.5 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors text-xs rounded-none cursor-pointer"
+                        >
+                            Characteristics
+                        </button>
+                        <button 
+                            onClick={() => setIsReportModalOpen(true)} 
+                            className="px-3.5 py-1.5 border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors text-xs rounded-none cursor-pointer"
+                        >
+                            Report export
+                        </button>
+                        <button 
+                            onClick={() => { setAssessmentToEdit(null); setIsAssessmentModalOpen(true); }} 
+                            className="px-4 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-medium text-xs rounded-none transition-colors cursor-pointer"
+                        >
+                            Log benchmark
                         </button>
                     </div>
                 </div>
 
-                <div className="flex gap-10 mt-10">
+                {/* Plain borders-only Tab Selection */}
+                <div className="flex gap-8 mt-8 border-b border-zinc-900">
                     {(['Overview', 'Assessments', 'Log', 'Resources'] as const).map(tab => (
-                        <button key={tab} onClick={() => setActiveSection(tab)} className={`pb-6 text-xs font-black uppercase tracking-[0.2em] transition-all relative ${activeSection === tab ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
-                            {tab}{activeSection === tab && <div className="absolute bottom-0 left-0 w-full h-1.5 bg-indigo-600 rounded-full animate-in slide-in-from-bottom-2"></div>}
+                        <button 
+                            key={tab} 
+                            onClick={() => setActiveSection(tab)} 
+                            className={`pb-3 text-xs tracking-tight transition-colors relative cursor-pointer ${
+                                activeSection === tab 
+                                    ? 'text-[var(--clean-accent)] font-medium' 
+                                    : 'text-zinc-500 hover:text-zinc-300'
+                            }`}
+                        >
+                            {tab}
+                            {activeSection === tab && (
+                                <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-[var(--clean-accent)]" />
+                            )}
                         </button>
                     ))}
                 </div>
             </div>
 
-            <main className="flex-1 p-8 md:p-12 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
+            {/* Main Content Pane (No card wrappers. Deep elements separated by section lines) */}
+            <main className="flex-1 p-6 md:p-12 overflow-y-auto scrollbar-none space-y-12 bg-transparent">
+                
                 {activeSection === 'Overview' && (
-                    <div className="space-y-10 animate-in fade-in duration-700">
-                        {/* 🔮 AI TRAJECTORY CARD */}
-                        <Card className="p-8 bg-slate-900 text-white rounded-[3.5rem] shadow-2xl relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 blur-[100px] rounded-full translate-x-20 -translate-y-20"></div>
-                            <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
-                                <div className="flex items-center gap-6">
-                                    <div className="w-16 h-16 bg-white/10 rounded-[1.8rem] flex items-center justify-center text-indigo-400 shadow-inner border border-white/5 group-hover:scale-110 transition-transform duration-500">
-                                        <Icon name="brain" className="w-8 h-8" />
+                    <div className="space-y-12">
+                        
+                        {/* Trajectory Synthesizer Row */}
+                        <div className="pb-8" style={{ borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}>
+                            <h4 className="text-[13px] text-zinc-500 font-sans tracking-tight mb-3 font-normal lowercase">
+                                trajectory synthesis module
+                            </h4>
+                            <div className="bg-zinc-950/40 border border-zinc-900 p-5 rounded-none">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <Icon name="brain" className="w-4 h-4 text-[var(--clean-accent)]" />
+                                    <span className="text-xs font-mono text-[var(--clean-accent)] tracking-wider uppercase font-semibold">Gemini predictive insight</span>
+                                </div>
+                                {prediction ? (
+                                    <p className="text-zinc-300 text-sm leading-relaxed italic">
+                                        "{prediction}"
+                                    </p>
+                                ) : (
+                                    <div className="flex items-center gap-2 py-1 text-zinc-500">
+                                        <Icon name="refresh" className="w-3.5 h-3.5 animate-spin" />
+                                        <span className="text-xs font-mono">Synthesizing trajectory models...</span>
                                     </div>
-                                    <div>
-                                        <h3 className="text-2xl font-black tracking-tight mb-1">Learning Progress Prediction</h3>
-                                        <p className="text-xs font-bold text-indigo-300 uppercase tracking-widest">Growth Rate Analysis</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Flat KPIs Row */}
+                        <div className="pb-8" style={{ borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}>
+                            <h4 className="text-[13px] text-zinc-500 font-sans tracking-tight mb-4 font-normal lowercase">
+                                key growth dimensions
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {[
+                                    { t: 'weighted mastery index', v: `${currentProficiency}%`, s: 'standards threshold' },
+                                    { t: 'growth momentum', v: `${student.growthVelocity}%`, s: student.growthVelocity >= 10 ? 'elevated velocity' : 'stable pace' },
+                                    { t: 'compiled observations', v: student.actionLog?.length || 0, s: 'clinical logs registered' },
+                                    { t: 'cefr alignment', v: 'A1 level', s: 'starters global map' }
+                                ].map((stat, i) => (
+                                    <div key={i} className="py-2 pr-4 border-r border-zinc-900/60 last:border-r-0">
+                                        <span className="text-[10px] text-zinc-500 block uppercase font-mono tracking-wider mb-2">{stat.t}</span>
+                                        <span className="text-2xl font-mono text-zinc-100 block font-medium tracking-tight mb-1">{stat.v}</span>
+                                        <span className="text-[11px] text-zinc-500 block font-normal">{stat.s}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Graphics Row */}
+                        <div>
+                            <h4 className="text-[13px] text-zinc-500 font-sans tracking-tight mb-4 font-normal lowercase">
+                                visual analytical models
+                            </h4>
+                            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                                <div className="p-4 border border-zinc-900 bg-zinc-950/20">
+                                    <span className="text-xs text-zinc-400 font-medium block mb-4">Analytical student history over test cycles</span>
+                                    <div className="min-h-[300px]">
+                                        <LongitudinalGrowthChart data={projectionData} lines={[{ key: 'score', color: '#6366f1' }]} type="area" />
                                     </div>
                                 </div>
-                                <div className="flex-1 max-w-xl">
-                                    <div className="p-6 bg-white/5 rounded-[2rem] border border-white/5 backdrop-blur-sm shadow-xl">
-                                        {prediction ? (
-                                            <p className="text-lg font-bold leading-relaxed italic text-slate-200">"{prediction}"</p>
-                                        ) : (
-                                            <div className="flex items-center gap-3 py-2 text-slate-400">
-                                                <Icon name="refresh" className="w-5 h-5 animate-spin" />
-                                                <span className="text-xs font-black uppercase tracking-widest">Calculating Trajectory...</span>
-                                            </div>
-                                        )}
+
+                                <div className="p-4 border border-zinc-900 bg-zinc-950/20">
+                                    <span className="text-xs text-zinc-400 font-medium block mb-4">Functional competence mapping against milestones</span>
+                                    <div className="min-h-[300px]">
+                                        <RadarPerformanceChart data={DOMAINS.map(d => ({ domain: d, score: student.assessments[student.assessments.length-1]?.scores[d] || 0, target: 80 }))} />
                                     </div>
                                 </div>
                             </div>
-                        </Card>
-
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                            <InsightCard title="Performance Trends" description="Student growth over time">
-                                <div className="min-h-[350px]">
-                                    <LongitudinalGrowthChart data={projectionData} lines={[{ key: 'score', color: '#4f46e5' }]} type="area" />
-                                </div>
-                            </InsightCard>
-
-                            <InsightCard title="Domain Competency" description="Skill Mapping vs Standards">
-                                <div className="min-h-[350px]">
-                                    <RadarPerformanceChart data={DOMAINS.map(d => ({ domain: d, score: student.assessments[student.assessments.length-1]?.scores[d] || 0, target: 80 }))} />
-                                </div>
-                            </InsightCard>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                            <ProfileStatWidget title="Weighted Mastery" value={`${currentProficiency}%`} subtext="Standards Met" icon="analytics" gradient="from-blue-600 to-indigo-700" tooltip="Mastery across all domains." />
-                            <ProfileStatWidget title="Growth Speed" value={`${student.growthVelocity}%`} subtext={student.growthVelocity >= 10 ? "Fast Track" : "Steady"} icon="trendUp" gradient={student.growthVelocity >= 10 ? "from-emerald-500 to-teal-600" : student.growthVelocity < 0 ? "from-rose-500 to-pink-600" : "from-indigo-400 to-blue-500"} tooltip="Improvement speed." />
-                            <ProfileStatWidget title="Identity Records" value={student.actionLog?.length || 0} subtext="Logged Notes" icon="chat" gradient="from-slate-800 to-slate-950" tooltip="Teacher observations." />
-                            <ProfileStatWidget title="Alignment" value="A1 Starters" subtext="CEFR Mapping" icon="benchmark" gradient="from-purple-600 to-indigo-600" tooltip="Framework alignment." />
-                        </div>
                     </div>
                 )}
 
                 {activeSection === 'Assessments' && (
-                    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4">
-                        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-xl">
-                            <h2 className="text-2xl font-black text-slate-900 mb-8 tracking-tight">Cycle History</h2>
-                            {student.assessments.length > 0 ? (
-                                <div className="space-y-4">
-                                    {student.assessments.map(a => (
-                                        <div key={a.id} className="flex items-center justify-between p-6 bg-slate-50 rounded-2xl border border-slate-100 hover:border-indigo-100 transition-colors group">
-                                            <div className="flex items-center gap-6">
-                                                <div className="p-3 bg-white rounded-xl shadow-sm"><Icon name="benchmark" className="w-5 h-5 text-indigo-500" /></div>
-                                                <div>
-                                                    <p className="font-black text-slate-800 uppercase tracking-widest text-[10px]">{a.type} Protocol</p>
-                                                    <p className="text-sm font-bold text-slate-400">{new Date(a.date).toLocaleDateString()}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-10">
-                                                <div className="text-right">
-                                                    <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Aggregate</p>
-                                                    <p className="text-xl font-black text-slate-800">{Math.round((Object.values(a.scores) as number[]).reduce((s: number, v: number) => s + v, 0) / DOMAINS.length)}%</p>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <button onClick={() => { setAssessmentToEdit(a); setIsAssessmentModalOpen(true); }} className="p-2 text-slate-300 hover:text-indigo-600 hover:bg-white rounded-lg transition-all shadow-sm"><Icon name="settings" className="w-4 h-4" /></button>
-                                                    <button onClick={() => deleteAssessmentForStudent(student.id, a.id)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-white rounded-lg transition-all shadow-sm"><Icon name="close" className="w-4 h-4" /></button>
-                                                </div>
+                    <div className="space-y-6">
+                        <h4 className="text-[13px] text-zinc-500 font-sans tracking-tight mb-2 font-normal lowercase">
+                            assessment history logs
+                        </h4>
+
+                        {student.assessments.length > 0 ? (
+                            <div className="space-y-0">
+                                {student.assessments.map(a => (
+                                    <div 
+                                        key={a.id} 
+                                        className="flex items-center justify-between py-4" 
+                                        style={{ borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}
+                                    >
+                                        <div className="flex items-center gap-6">
+                                            <Icon name="benchmark" className="w-4 h-4 text-zinc-500" />
+                                            <div>
+                                                <p className="font-normal text-sm text-zinc-100">{a.type} cycle index</p>
+                                                <p className="text-xs font-mono text-zinc-500 mt-1">{new Date(a.date).toLocaleDateString()}</p>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
+                                        <div className="flex items-center gap-8">
+                                            <div className="text-right">
+                                                <span className="text-[10px] text-zinc-500 block font-mono">aggregate score</span>
+                                                <span className="text-base font-mono text-[var(--clean-accent)] font-medium tabular-nums">
+                                                    {Math.round((Object.values(a.scores) as number[]).reduce((s: number, v: number) => s + v, 0) / DOMAINS.length)}%
+                                                </span>
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => { setAssessmentToEdit(a); setIsAssessmentModalOpen(true); }} 
+                                                    className="p-1.5 text-zinc-500 hover:text-zinc-200 transition-colors cursor-pointer"
+                                                >
+                                                    <Icon name="settings" className="w-4 h-4" />
+                                                </button>
+                                                <button 
+                                                    onClick={() => deleteAssessmentForStudent(student.id, a.id)} 
+                                                    className="p-1.5 text-zinc-500 hover:text-red-400 transition-colors cursor-pointer"
+                                                >
+                                                    <Icon name="close" className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="py-12 text-center border border-dashed border-zinc-850">
+                                <p className="text-zinc-500 text-xs">No assessments registered on this student file.</p>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeSection === 'Log' && (
+                    <div className="space-y-8 max-w-4xl">
+                        <h4 className="text-[13px] text-zinc-500 font-sans tracking-tight mb-2 font-normal lowercase">
+                            observation ledger entries
+                        </h4>
+
+                        <div className="space-y-4">
+                            <div className="flex flex-wrap gap-2">
+                                {(['Observation', 'Intervention', 'Goal Met', 'Parent Communication'] as const).map(cat => (
+                                    <button 
+                                        key={cat} 
+                                        onClick={() => setLogCategory(cat)} 
+                                        className={`px-3 py-1 text-xs border rounded-none transition-colors cursor-pointer ${
+                                            logCategory === cat 
+                                                ? 'bg-zinc-100 border-zinc-100 text-zinc-950 font-normal' 
+                                                : 'bg-zinc-950 border-zinc-900 text-zinc-400 hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        {cat}
+                                    </button>
+                                ))}
+                            </div>
+                            <textarea 
+                                value={logText} 
+                                onChange={(e) => setLogText(e.target.value)} 
+                                placeholder="Log standard student action report context..." 
+                                className="w-full px-4 py-3 bg-zinc-950 border border-zinc-900 hover:border-zinc-800 focus:border-[var(--clean-accent)] outline-none rounded-none text-zinc-100 placeholder-zinc-700 text-sm min-h-[100px]" 
+                            />
+                            <div className="flex justify-end">
+                                <button 
+                                    onClick={handleAddLog} 
+                                    disabled={!logText.trim()} 
+                                    className="px-4 py-1.5 bg-zinc-100 hover:bg-zinc-200 disabled:opacity-40 text-zinc-950 font-semibold text-xs rounded-none transition-colors cursor-pointer"
+                                >
+                                    commit observation
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="space-y-0 pt-6">
+                            {student.actionLog?.length > 0 ? (
+                                [...student.actionLog].reverse().map(log => (
+                                    <div 
+                                        key={log.id} 
+                                        className="py-5" 
+                                        style={{ borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}
+                                    >
+                                        <div className="flex justify-between items-start gap-4 mb-2">
+                                            <span className="text-[11px] font-mono uppercase text-[var(--clean-accent)] tracking-wider">
+                                                {log.category}
+                                            </span>
+                                            <span className="text-[11px] font-mono text-zinc-500">
+                                                {new Date(log.date).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-zinc-350 leading-relaxed italic">
+                                            "{log.content}"
+                                        </p>
+                                    </div>
+                                ))
                             ) : (
-                                <div className="py-20 text-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
-                                    <p className="text-slate-400 font-bold">No assessments recorded for this profile.</p>
-                                </div>
+                                <p className="text-zinc-500 text-xs italic">No observation entries have been registered.</p>
                             )}
                         </div>
                     </div>
                 )}
 
-                {activeSection === 'Log' && (
-                    <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in duration-500">
-                        <div className="bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-100">
-                            <h2 className="text-2xl font-black text-slate-900 mb-8 tracking-tight">Identity & Observation Log</h2>
-                            <div className="flex gap-4 mb-10">
-                                <div className="flex-1 space-y-4">
-                                    <div className="flex gap-4">
-                                        {(['Observation', 'Intervention', 'Goal Met', 'Parent Communication'] as const).map(cat => (
-                                            <button key={cat} onClick={() => setLogCategory(cat)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${logCategory === cat ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg' : 'bg-slate-50 text-slate-400 border-slate-100 hover:bg-white'}`}>{cat}</button>
-                                        ))}
-                                    </div>
-                                    <textarea value={logText} onChange={(e) => setLogText(e.target.value)} placeholder="Type diagnostic observation..." className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-600 outline-none transition-all font-bold text-slate-800 min-h-[120px]" />
-                                    <div className="flex justify-end">
-                                        <button onClick={handleAddLog} disabled={!logText.trim()} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-600 transition-all disabled:opacity-50">Save Observation</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-4 scrollbar-thin">
-                                {student.actionLog?.length > 0 ? (
-                                    [...student.actionLog].reverse().map(log => <LogEntryView key={log.id} entry={log} />)
-                                ) : (
-                                    <p className="text-center py-10 text-slate-400 font-bold italic">No observations recorded yet.</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
                 {activeSection === 'Resources' && (
-                    <div className="max-w-6xl mx-auto space-y-10 animate-in fade-in duration-500">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="space-y-6">
+                        <h4 className="text-[13px] text-zinc-500 font-sans tracking-tight mb-2 font-normal lowercase">
+                            curriculum recommendation directives
+                        </h4>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {recommendedResources.map(res => (
-                                <Card key={res.id} variant="paper" className="p-8 group hover:border-indigo-200 transition-all cursor-pointer">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl group-hover:bg-indigo-600 group-hover:text-white transition-all"><Icon name="library" className="w-6 h-6" /></div>
-                                        <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest bg-indigo-50 px-2.5 py-1 rounded-lg">Level {res.level}</span>
+                                <div 
+                                    key={res.id} 
+                                    className="p-5 border border-zinc-900 bg-zinc-950/20 hover:border-zinc-800 transition-colors"
+                                >
+                                    <div className="flex justify-between items-start mb-4">
+                                        <Icon name="library" className="w-4 h-4 text-zinc-500" />
+                                        <span className="text-[10px] font-mono text-zinc-500">
+                                            Level {res.level}
+                                        </span>
                                     </div>
-                                    <h3 className="text-xl font-black text-slate-800 mb-3 leading-tight">{res.title}</h3>
-                                    <p className="text-sm text-slate-500 font-medium leading-relaxed mb-8">{res.description}</p>
-                                    <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all">Launch Resource</button>
-                                </Card>
+                                    <h3 className="text-sm font-medium text-zinc-100 mb-2">{res.title}</h3>
+                                    <p className="text-xs text-zinc-500 leading-relaxed mb-6">{res.description}</p>
+                                    <button className="w-full py-2 bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 font-medium text-xs transition-colors cursor-pointer">
+                                        Launch training assets
+                                    </button>
+                                </div>
                             ))}
                         </div>
                     </div>

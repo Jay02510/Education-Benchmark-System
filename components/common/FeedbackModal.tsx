@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Modal } from './Modal';
 import { Icon } from './Icon';
@@ -23,10 +22,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
         e.preventDefault();
         setIsSubmitting(true);
         
-        // Simulation of the notification to jsn.benjamin@gmail.com
-        // In a production environment, this would call a Firebase Cloud Function or EmailJS
-        // Audit: Removed raw debug log
-
         setTimeout(() => {
             setIsSubmitting(false);
             showToast("Intelligence contribution received. Thank you.");
@@ -36,11 +31,11 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Platform Intelligence Feedback" size="md">
-            <form onSubmit={handleSubmit} className="space-y-8">
-                <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Sentiment Calibration</p>
-                    <div className="grid grid-cols-4 gap-3">
+        <Modal isOpen={isOpen} onClose={onClose} title="Configure feedback parameters" size="md">
+            <form onSubmit={handleSubmit} className="space-y-6 font-sans">
+                <div className="bg-zinc-90 w-full p-5 rounded-[4px] border border-zinc-900">
+                    <p className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider mb-3 select-none">Sentiment calibration</p>
+                    <div className="grid grid-cols-4 gap-2.5">
                         {[
                             { id: 'satisfied', icon: 'check', label: 'Great' },
                             { id: 'confused', icon: 'info', label: 'Help' },
@@ -51,51 +46,55 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
                                 key={s.id}
                                 type="button"
                                 onClick={() => setSentiment(s.id as Sentiment)}
-                                className={`flex flex-col items-center gap-2 p-4 rounded-2xl transition-all border-2 ${sentiment === s.id ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg scale-105' : 'bg-white border-slate-100 text-slate-400 hover:border-indigo-200'}`}
+                                className={`flex flex-col items-center gap-2 p-3 rounded-[4px] transition-all border cursor-pointer select-none ${
+                                    sentiment === s.id 
+                                        ? 'bg-[oklch(0.72_0.18_145)]/10 border-[oklch(0.72_0.18_145)] text-[oklch(0.72_0.18_145)]' 
+                                        : 'bg-zinc-950 border-zinc-900 text-zinc-400 hover:border-zinc-800'
+                                }`}
                             >
-                                <Icon name={s.icon} className="w-5 h-5" />
-                                <span className="text-[9px] font-black uppercase tracking-widest">{s.label}</span>
+                                <Icon name={s.icon} className="w-4 h-4 shrink-0" />
+                                <span className="text-[9px] font-mono uppercase tracking-wider">{s.label}</span>
                             </button>
                         ))}
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    <div className="flex justify-between items-center px-1">
-                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">Detailed Inquire / Request</label>
-                        <span className="text-[9px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-100 uppercase">Context: {activeTab}</span>
+                <div className="space-y-3">
+                    <div className="flex justify-between items-center select-none">
+                        <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Detailed inquiry / context note</label>
+                        <span className="text-[9px] font-mono text-[oklch(0.72_0.18_145)] bg-[oklch(0.72_0.18_145)]/10 px-2 py-0.5 rounded-[2px] border border-[oklch(0.72_0.18_145)]/20 uppercase">Context: {activeTab}</span>
                     </div>
                     <textarea
                         required
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder="How can we improve the Benchmark experience?"
-                        className="w-full h-40 p-6 bg-slate-50 border-2 border-slate-100 rounded-[2rem] focus:bg-white focus:border-indigo-600 outline-none transition-all font-bold text-slate-700 text-sm leading-relaxed"
+                        className="w-full h-32 p-4 bg-zinc-90 border border-zinc-900 focus:border-zinc-700 rounded-[4px] outline-none transition-colors text-xs text-zinc-200 leading-relaxed font-sans placeholder-zinc-600"
                     />
                 </div>
 
-                <div className="flex items-center gap-4 pt-4 border-t border-slate-50">
+                <div className="flex items-center gap-3 pt-4 border-t border-zinc-900">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-8 py-4 bg-white text-slate-400 border-2 border-slate-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                        className="px-4 py-2 border border-zinc-900 hover:border-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-[4px] text-xs transition-colors cursor-pointer"
                     >
                         Discard
                     </button>
                     <button
                         type="submit"
                         disabled={isSubmitting || !message.trim()}
-                        className="flex-1 px-8 py-5 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl hover:bg-indigo-600 transition-all active:scale-95 disabled:opacity-50 border-b-8 border-slate-950 flex items-center justify-center gap-3"
+                        className="flex-1 px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-950 rounded-[4px] text-xs font-semibold cursor-pointer transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                         {isSubmitting ? (
                             <>
-                                <Icon name="refresh" className="w-4 h-4 animate-spin" />
-                                Transmitting...
+                                <Icon name="refresh" className="w-3.5 h-3.5 animate-spin" />
+                                <span>Transmitting...</span>
                             </>
                         ) : (
                             <>
-                                <Icon name="chat" className="w-4 h-4" />
-                                Submit Feedback
+                                <Icon name="chat" className="w-3.5 h-3.5" />
+                                <span>Submit Feedback</span>
                             </>
                         )}
                     </button>

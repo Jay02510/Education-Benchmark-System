@@ -1,7 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", sans-serif;
+  --font-mono: "IBM Plex Mono", "JetBrains Mono", monospace;
   
   --color-brand-primary: #6366f1;
   --color-brand-50: #f5f7ff;
@@ -37,6 +39,27 @@
     0%, 100% { opacity: 0.8; transform: scale(1); }
     50% { opacity: 0.4; transform: scale(1.05); }
   }
+}
+
+/* Highly performant linear shimmer sweep */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-bg {
+  background: linear-gradient(
+    90deg,
+    rgba(24, 24, 27, 0.6) 25%,
+    rgba(63, 63, 70, 0.85) 50%,
+    rgba(24, 24, 27, 0.6) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
 }
 
 /* Global focus-visible styling for unified keyboard accessibility */

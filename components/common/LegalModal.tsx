@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Modal } from './Modal';
 import { Icon } from './Icon';
@@ -46,33 +45,54 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, initial
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={content[activeTab].title[language]} size="lg">
-            <div className="flex flex-col gap-6">
-                <div className="flex justify-between items-center bg-slate-50 p-2 rounded-2xl border border-slate-100 overflow-x-auto">
-                    <div className="flex gap-1 shrink-0">
+            <div className="flex flex-col gap-5 font-sans">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-zinc-90 w-full p-1.5 rounded-[4px] border border-zinc-900 gap-3">
+                    <div className="flex gap-1 overflow-x-auto shrink-0 w-full sm:w-auto pb-1 sm:pb-0">
                         {(['privacy', 'terms', 'billing', 'dpa'] as const).map(tab => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-4 py-2 text-[10px] font-black uppercase rounded-xl transition-all ${activeTab === tab ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`px-3 py-1.5 text-[9px] font-mono uppercase tracking-wider rounded-[2px] cursor-pointer transition-colors ${
+                                    activeTab === tab ? 'bg-zinc-950 text-zinc-100' : 'text-zinc-500 hover:text-zinc-350'
+                                }`}
                             >
                                 {tab === 'dpa' ? 'DPA' : tab}
                             </button>
                         ))}
                     </div>
-                    <div className="flex bg-indigo-100 p-1 rounded-xl ml-4 shrink-0">
-                        <button onClick={() => setLanguage('EN')} className={`px-3 py-1 text-[9px] font-black rounded-lg transition-all ${language === 'EN' ? 'bg-indigo-600 text-white shadow-md' : 'text-indigo-400'}`}>EN</button>
-                        <button onClick={() => setLanguage('KO')} className={`px-3 py-1 text-[9px] font-black rounded-lg transition-all ${language === 'KO' ? 'bg-indigo-600 text-white shadow-md' : 'text-indigo-400'}`}>KO</button>
+                    <div className="flex bg-zinc-950 border border-zinc-900 p-0.5 rounded-[4px] ml-auto sm:ml-4 shrink-0 select-none">
+                        <button 
+                            onClick={() => setLanguage('EN')} 
+                            className={`px-3 py-1 text-[9px] font-mono tracking-wider rounded-[2.5px] cursor-pointer transition-colors ${
+                                language === 'EN' ? 'bg-zinc-900 text-zinc-100' : 'text-zinc-500'
+                            }`}
+                        >
+                            EN
+                        </button>
+                        <button 
+                            onClick={() => setLanguage('KO')} 
+                            className={`px-3 py-1 text-[9px] font-mono tracking-wider rounded-[2.5px] cursor-pointer transition-colors ${
+                                language === 'KO' ? 'bg-zinc-900 text-zinc-100' : 'text-zinc-500'
+                            }`}
+                        >
+                            KO
+                        </button>
                     </div>
                 </div>
 
-                <div className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-inner max-h-[400px] overflow-y-auto">
-                    <p className="text-sm text-slate-600 leading-relaxed font-medium whitespace-pre-wrap">
+                <div className="bg-zinc-90 w-full border border-zinc-900 p-5 rounded-[4px] max-h-[300px] overflow-y-auto">
+                    <p className="text-xs text-zinc-400 leading-relaxed whitespace-pre-wrap font-sans">
                         {content[activeTab].body[language]}
                     </p>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-slate-50">
-                    <button onClick={onClose} className="px-10 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-indigo-600 transition-all">Close</button>
+                <div className="flex justify-end gap-3 pt-4 border-t border-zinc-900">
+                    <button 
+                        onClick={onClose} 
+                        className="px-4 py-2 border border-zinc-900 hover:border-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-[4px] text-xs transition-colors cursor-pointer"
+                    >
+                        Close
+                    </button>
                 </div>
             </div>
         </Modal>

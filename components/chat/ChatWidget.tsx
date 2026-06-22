@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useChat } from '../../context/ChatContext';
 import { Icon } from '../common/Icon';
@@ -10,7 +9,7 @@ const formatText = (text: string) => {
     const parts = text.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, index) => {
         if (part.startsWith('**') && part.endsWith('**')) {
-            return <strong key={index} className="text-indigo-900 font-extrabold">{part.slice(2, -2)}</strong>;
+            return <strong key={index} className="text-[oklch(0.72_0.18_145)] font-mono font-medium">{part.slice(2, -2)}</strong>;
         }
         return part;
     });
@@ -23,8 +22,8 @@ export const ChatWidget: React.FC = () => {
     const [inputValue, setInputValue] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    // Draggable State
-    const [position, setPosition] = useState({ x: window.innerWidth - 120, y: window.innerHeight - 120 });
+    // Draggable Position State (aligned for modern flat UI)
+    const [position, setPosition] = useState({ x: window.innerWidth - 180, y: window.innerHeight - 80 });
     const [isDragging, setIsDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [hasMoved, setHasMoved] = useState(false);
@@ -38,7 +37,7 @@ export const ChatWidget: React.FC = () => {
         if (isOpen) scrollToBottom();
     }, [messages, isTyping, isOpen]);
 
-    // Drag Logic
+    // Track dragging bounds cleanly
     const handleMouseDown = (e: React.MouseEvent) => {
         setIsDragging(true);
         setHasMoved(false);
@@ -54,14 +53,13 @@ export const ChatWidget: React.FC = () => {
         const newX = e.clientX - dragStart.x;
         const newY = e.clientY - dragStart.y;
 
-        // Threshold to distinguish click from drag
+        // Limit threshold of displacement
         if (Math.abs(newX - position.x) > 5 || Math.abs(newY - position.y) > 5) {
             setHasMoved(true);
         }
 
-        // Keep within bounds
-        const boundedX = Math.max(20, Math.min(window.innerWidth - 100, newX));
-        const boundedY = Math.max(20, Math.min(window.innerHeight - 100, newY));
+        const boundedX = Math.max(20, Math.min(window.innerWidth - 180, newX));
+        const boundedY = Math.max(20, Math.min(window.innerHeight - 80, newY));
 
         setPosition({ x: boundedX, y: boundedY });
     }, [isDragging, dragStart, position]);
@@ -85,7 +83,6 @@ export const ChatWidget: React.FC = () => {
     }, [isDragging, handleMouseMove]);
 
     const handleButtonClick = (e: React.MouseEvent) => {
-        // If we moved the button, don't trigger the chat toggle
         if (hasMoved) {
             e.preventDefault();
             return;
@@ -108,127 +105,139 @@ export const ChatWidget: React.FC = () => {
 
     if (!user) return null;
 
-    // Calculate window orientation (open left or right depending on button position)
     const openLeft = position.x > window.innerWidth / 2;
     const openUp = position.y > window.innerHeight / 2;
 
     return (
         <div 
-            className="fixed z-[110000] pointer-events-none"
+            className="fixed z-[110000] pointer-events-none font-sans"
             style={{ left: position.x, top: position.y }}
         >
-            {/* Chat Window */}
+            {/* Chat Frame - Redesigned to be flat-dark minimal */}
             <div 
+                id="chat-copilot-window"
                 className={`
-                    pointer-events-auto absolute bg-white/95 backdrop-blur-2xl w-[92vw] md:w-[450px] rounded-[3rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] border border-white/60 overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col
-                    ${isOpen ? 'opacity-100 scale-100 h-[600px] max-h-[80vh]' : 'opacity-0 scale-75 h-0 overflow-hidden pointer-events-none'}
+                    pointer-events-auto absolute bg-zinc-950/98 w-[340px] border border-zinc-900 overflow-hidden transition-all duration-300 flex flex-col rounded-[6px] shadow-2xl
+                    ${isOpen ? 'opacity-100 scale-100 h-[480px] max-h-[70vh]' : 'opacity-0 scale-95 h-0 overflow-hidden pointer-events-none'}
                     ${openLeft ? 'right-0' : 'left-0'}
-                    ${openUp ? 'bottom-28' : 'top-28'}
+                    ${openUp ? 'bottom-14' : 'top-14'}
                 `}
             >
-                <div className="bg-slate-900 px-8 py-6 flex justify-between items-center shrink-0">
-                    <div className="flex items-center gap-4">
-                        <div className="relative">
-                            <div className="p-3 bg-indigo-600 rounded-[1.2rem] shadow-lg shadow-indigo-500/20">
-                                <Icon name="robot" className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-slate-900 bg-emerald-400 shadow-sm"></div>
+                {/* Header Segment */}
+                <div className="bg-zinc-950 px-5 py-4 flex justify-between items-center shrink-0 border-b border-zinc-900">
+                    <div className="flex items-center gap-3">
+                        <div className="w-6 h-6 bg-[oklch(0.72_0.18_145)]/10 border border-[oklch(0.72_0.18_145)]/20 rounded-[4px] flex items-center justify-center">
+                            <Icon name="robot" className="w-3.5 h-3.5 text-[oklch(0.72_0.18_145)]" />
                         </div>
                         <div>
-                            <h3 className="text-white font-black text-md tracking-tight leading-none mb-1">Benchmark AI</h3>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">System Online</span>
+                            <h3 className="text-zinc-100 font-medium text-xs leading-none">Diagnostic Copilot</h3>
+                            <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 block mt-1">active node online</span>
                         </div>
                     </div>
-                    <div className="flex gap-2">
-                        <button onClick={clearHistory} className="text-slate-500 hover:text-white p-2 rounded-xl hover:bg-white/10 transition">
-                            <Icon name="refresh" className="w-5 h-5" />
+                    <div className="flex gap-1.5">
+                        <button onClick={clearHistory} className="text-zinc-500 hover:text-zinc-300 p-1 rounded-[4px] hover:bg-zinc-900 transition-colors cursor-pointer" title="Refresh session">
+                            <Icon name="refresh" className="w-3.5 h-3.5" />
                         </button>
-                        <button onClick={toggleChat} className="text-slate-500 hover:text-white p-2 rounded-xl hover:bg-white/10 transition">
-                            <Icon name="close" className="w-5 h-5" />
+                        <button onClick={toggleChat} className="text-zinc-500 hover:text-zinc-300 p-1 rounded-[4px] hover:bg-zinc-900 transition-colors cursor-pointer" title="Close">
+                            <Icon name="close" className="w-3.5 h-3.5" />
                         </button>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-thin scrollbar-thumb-slate-200">
+                {/* Main Message History Area */}
+                <div className="flex-1 overflow-y-auto p-5 space-y-5 scrollbar-none bg-zinc-950/40">
                     {messages.length === 0 && (
-                        <div className="h-full flex flex-col items-center justify-center text-center opacity-40 py-20 px-10">
-                            <Icon name="brain" className="w-16 h-16 text-indigo-200 mb-6" />
-                            <h4 className="text-xl font-black text-slate-900 mb-2">Academic Intelligence</h4>
-                            <p className="text-sm font-bold text-slate-400">Ask about growth velocity, skill gaps, or intervention strategies.</p>
+                        <div className="h-full flex flex-col items-center justify-center text-center py-12 px-4">
+                            <Icon name="brain" className="w-8 h-8 text-zinc-650 mb-3" />
+                            <h4 className="text-xs font-mono text-zinc-400 uppercase tracking-widest mb-1.5">benchmark analysis</h4>
+                            <p className="text-[11px] text-zinc-500 leading-normal max-w-[200px]">Query tracking database, student metrics, or specific skill gaps.</p>
                         </div>
                     )}
                     
                     {messages.map((msg) => (
-                        <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             {msg.role === 'model' && (
-                                <div className="w-10 h-10 rounded-[1rem] bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 mr-4 mt-1 shadow-sm">
-                                    <Icon name="robot" className="w-5 h-5 text-indigo-600" />
+                                <div className="w-6 h-6 rounded-[4px] bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0 mt-0.5">
+                                    <Icon name="robot" className="w-3 h-3 text-[oklch(0.72_0.18_145)]" />
                                 </div>
                             )}
-                            <div className={`max-w-[85%] p-5 rounded-[2.2rem] text-sm leading-relaxed shadow-sm font-medium ${msg.role === 'user' ? 'bg-slate-900 text-white rounded-br-none' : 'bg-white text-slate-700 border border-slate-100 rounded-bl-none'} ${msg.isError ? 'bg-rose-50 border-rose-100 text-rose-800 font-bold' : ''}`}>
+                            <div className={`max-w-[80%] px-3.5 py-2.5 rounded-[4px] text-xs leading-relaxed ${
+                                msg.role === 'user' 
+                                    ? 'bg-zinc-900 border border-zinc-850 text-zinc-200' 
+                                    : 'bg-zinc-950 border border-zinc-900 text-zinc-300'
+                            } ${msg.isError ? 'border-red-950 text-red-400 font-mono text-[10px]' : ''}`}>
                                 {msg.role === 'user' ? msg.text : formatText(msg.text)}
                             </div>
                         </div>
                     ))}
                     
                     {isTyping && (
-                        <div className="flex justify-start">
-                             <div className="w-10 h-10 rounded-[1rem] bg-indigo-50 flex items-center justify-center shrink-0 mr-4 shadow-sm animate-pulse">
-                                <Icon name="robot" className="w-5 h-5 text-indigo-600" />
+                        <div className="flex gap-3 justify-start">
+                             <div className="w-6 h-6 rounded-[4px] bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0">
+                                <Icon name="robot" className="w-3 h-3 text-[oklch(0.72_0.18_145)] animate-pulse" />
                             </div>
-                            <div className="bg-white border border-slate-100 p-5 rounded-[1.8rem] flex gap-1.5 items-center shadow-sm">
-                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></div>
-                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                            <div className="bg-zinc-950 border border-zinc-900 px-3.5 py-2.5 rounded-[4px] flex gap-1 items-center">
+                                <span className="text-[10px] font-mono text-zinc-500 animate-pulse">Analyzing logs...</span>
                             </div>
                         </div>
                     )}
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-6 bg-white border-t border-slate-50">
+                {/* Suggestions & Input Control Footer */}
+                <div className="p-3 bg-zinc-950 border-t border-zinc-900 space-y-3">
                     {!isTyping && (
-                        <div className="flex gap-2 overflow-x-auto scrollbar-none mb-6 pb-2">
+                        <div className="flex gap-1.5 overflow-x-auto scrollbar-none py-1">
                             {getSuggestions().map((s, i) => (
-                                <button key={i} onClick={() => sendMessage(s)} className="whitespace-nowrap px-5 py-2.5 bg-slate-50 border border-slate-100 text-[10px] font-black text-slate-500 rounded-full hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all shadow-sm uppercase tracking-widest active:scale-95">
+                                <button 
+                                    key={i} 
+                                    onClick={() => sendMessage(s)} 
+                                    className="whitespace-nowrap px-2.5 py-1 bg-zinc-900 border border-zinc-850 hover:border-zinc-700 text-[10px] text-zinc-400 hover:text-zinc-250 transition-colors cursor-pointer rounded-[4px]"
+                                >
                                     {s}
                                 </button>
                             ))}
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="flex items-center gap-4">
+                    <form onSubmit={handleSubmit} className="flex items-center gap-2">
                         <input 
-                            type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)}
-                            placeholder="Inquire..."
-                            className="flex-1 bg-slate-50 border-2 border-slate-50 text-slate-800 text-sm rounded-2xl px-6 py-5 outline-none focus:bg-white focus:border-indigo-600 transition-all font-bold shadow-inner"
+                            type="text" 
+                            value={inputValue} 
+                            onChange={(e) => setInputValue(e.target.value)}
+                            placeholder="Ask copilot..."
+                            className="flex-1 bg-zinc-950 border border-zinc-900 text-xs rounded-[4px] px-3 py-2 outline-none text-zinc-150 focus:border-zinc-700 transition-colors placeholder-zinc-700 font-sans"
                             disabled={isTyping}
                         />
                         <button 
-                            type="submit" disabled={!inputValue.trim() || isTyping}
-                            className="p-5 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 disabled:bg-slate-200 transition-all shadow-xl active:scale-90 border-b-4 border-indigo-900"
+                            type="submit" 
+                            disabled={!inputValue.trim() || isTyping}
+                            className="p-2 bg-zinc-100 hover:bg-zinc-200 disabled:opacity-30 text-zinc-950 rounded-[4px] transition-colors cursor-pointer shrink-0"
                         >
-                            <Icon name="arrowUp" className="w-6 h-6" />
+                            <Icon name="arrowUp" className="w-3.5 h-3.5" />
                         </button>
                     </form>
                 </div>
             </div>
 
-            {/* Draggable Trigger Button */}
+            {/* Flat Trigger Button (strictly aligned structure, no massive purple round circle) */}
             <button 
                 ref={buttonRef}
                 onMouseDown={handleMouseDown}
                 onClick={handleButtonClick}
                 className={`
-                    pointer-events-auto transition-all duration-300 flex items-center justify-center relative shadow-2xl active:scale-90 select-none
-                    ${isOpen ? 'w-14 h-14 rounded-full bg-slate-800 text-slate-300' : 'w-24 h-24 rounded-[2.8rem] bg-indigo-600 text-white hover:bg-indigo-700 border-b-8 border-indigo-900'}
-                    ${isDragging ? 'cursor-grabbing scale-105 rotate-3' : 'cursor-grab'}
+                    pointer-events-auto transition-colors duration-300 flex items-center justify-center border select-none rounded-[4px] cursor-pointer
+                    ${isOpen 
+                        ? 'w-10 h-10 bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-250' 
+                        : 'px-3 h-10 bg-zinc-950 border-zinc-900 text-zinc-300 hover:text-zinc-100 hover:border-zinc-850 shadow-lg'
+                    }
+                    ${isDragging ? 'cursor-grabbing scale-102' : 'cursor-grab'}
                 `}
             >
-                {isOpen ? <Icon name="close" className="w-6 h-6" /> : (
-                    <div className="flex flex-col items-center">
-                        <Icon name="chat" className="w-8 h-8 mb-1" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Co-pilot</span>
+                {isOpen ? <Icon name="close" className="w-4 h-4" /> : (
+                    <div className="flex items-center gap-2">
+                        <Icon name="chat" className="w-4 h-4 text-[oklch(0.72_0.18_145)]" />
+                        <span className="text-[10px] font-mono tracking-wider font-medium uppercase">copilot</span>
                     </div>
                 )}
             </button>

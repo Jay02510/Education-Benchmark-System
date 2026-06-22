@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { StudentsTab } from './tabs/StudentsTab.tsx';
 import { InsightsTab } from './tabs/InsightsTab.tsx';
@@ -25,6 +24,7 @@ import { LegalModal } from './components/common/LegalModal.tsx';
 
 type TabName = typeof TABS[keyof typeof TABS];
 
+// --- DESKTOP NAV ITEM (RE-STYLED COMPONENT) ---
 const NavItem: React.FC<{
     label: TabName;
     iconName: string;
@@ -37,28 +37,32 @@ const NavItem: React.FC<{
             onClick={onClick}
             title={isCollapsed ? label : ''}
             aria-current={isActive ? "page" : undefined}
-            className={`group flex items-center w-full py-3 px-3 mx-auto rounded-xl transition-all duration-300 focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
+            className={`group flex items-center w-full py-3 h-10 transition-all duration-300 focus-visible:outline-none focus:outline-none ${
                 isActive
-                    ? 'bg-slate-900 text-white shadow-sm font-black'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-bold'
-            } ${isCollapsed ? 'justify-center w-12 h-12 px-0' : ''}`}
+                    ? 'clean-surface-raised border-l-[2px] border-[oklch(0.72_0.18_145)] text-white font-medium'
+                    : 'text-zinc-400 border-l-[2px] border-transparent hover:bg-zinc-900/50 hover:text-white font-normal'
+            } ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}
         >
-            <div className={`flex items-center justify-center shrink-0 w-8 h-8`}>
-                <Icon name={iconName} className={`w-5 h-5 ${isActive ? 'text-indigo-400' : 'text-slate-600 group-hover:text-slate-800'}`} strokeWidth={isActive ? 3 : 2} />
+            <div className="flex items-center justify-center shrink-0 w-5 h-5">
+                <Icon 
+                    name={iconName} 
+                    className={`w-4 h-4 transition-colors ${isActive ? 'text-[oklch(0.72_0.18_145)]' : 'text-zinc-500 group-hover:text-zinc-300'}`} 
+                    strokeWidth={isActive ? 2.5 : 2} 
+                />
             </div>
-            <span className={`text-xs uppercase tracking-widest ml-3 transition-all duration-300 origin-left ${isCollapsed ? 'w-0 opacity-0 scale-x-0 hidden' : 'w-auto opacity-100 scale-x-100'}`}>
+            <span className={`text-[14px] font-normal tracking-tight ml-3 transition-all duration-300 origin-left truncate ${isCollapsed ? 'w-0 opacity-0 scale-x-0 hidden' : 'w-auto opacity-100 scale-x-100'}`}>
                 {label}
             </span>
         </button>
     </li>
 );
 
+// --- MAIN LAYOUT SHELL ---
 const MainAppLayout: React.FC = () => {
     const { user, logout, isLoading } = useAuth();
     const { language } = useLanguage();
     const { activeTab, setActiveTab, isBulkEntryOpen, setBulkEntryOpen } = useNavigation();
     const { classProfile } = useStudents();
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
@@ -66,7 +70,6 @@ const MainAppLayout: React.FC = () => {
 
     const handleTabChange = (tab: TabName) => {
         setActiveTab(tab);
-        setIsMobileMenuOpen(false); 
     };
 
     const renderTab = () => {
@@ -79,13 +82,66 @@ const MainAppLayout: React.FC = () => {
         }
     };
     
+    // REDESIGNED LOADING STATE WITH SKELETON SHIMMER ACROSS CONTENT
     if (isLoading) {
         return (
-            <div className="h-screen w-full flex flex-col items-center justify-center bg-[#0B0F19]">
-                <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl animate-bounce mb-6">
-                    <Icon name="benchmark" className="w-8 h-8 text-white" strokeWidth={3} />
+            <div className="h-screen w-full flex flex-col clean-bg p-8 font-sans overflow-hidden">
+                <style dangerouslySetInnerHTML={{ __html: `
+                    @keyframes skeletonShimmer {
+                        0% { background-position: -200% 0; }
+                        100% { background-position: 200% 0; }
+                    }
+                    .skeleton-shimmer {
+                        background: linear-gradient(90deg, #12141c 25%, #1e222d 50%, #12141c 75%);
+                        background-size: 200% 100%;
+                        animation: skeletonShimmer 1.5s infinite linear;
+                    }
+                    :root {
+                        --clean-bg: oklch(0.10 0.01 250);
+                    }
+                    .clean-bg { background-color: var(--clean-bg); }
+                `}} />
+                
+                {/* Header skeleton */}
+                <div className="flex items-center justify-between pb-6 border-b border-zinc-800/60 mb-8 select-none">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-[4px] bg-zinc-900"></div>
+                        <div className="h-4 w-32 bg-zinc-900 rounded-[4px]"></div>
+                    </div>
+                    <div className="h-8 w-24 bg-zinc-900 rounded-[4px]"></div>
                 </div>
-                <p className="text-indigo-400 font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">Loading School Data...</p>
+
+                {/* Grid layout content skeleton */}
+                <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-8 pointer-events-none select-none">
+                    {/* Left Sidebar skeleton */}
+                    <div className="hidden lg:block md:col-span-3 space-y-6">
+                        <div className="h-9 w-full skeleton-shimmer rounded-[4px] opacity-80"></div>
+                        <div className="h-9 w-5/6 skeleton-shimmer rounded-[4px] opacity-80"></div>
+                        <div className="h-9 w-4/5 skeleton-shimmer rounded-[4px] opacity-80"></div>
+                        <div className="h-9 w-3/4 skeleton-shimmer rounded-[4px] opacity-80"></div>
+                    </div>
+
+                    {/* Main Content skeleton */}
+                    <div className="col-span-1 lg:col-span-9 space-y-8">
+                        <div className="space-y-3">
+                            <div className="h-7 w-1/3 skeleton-shimmer rounded-[4px]"></div>
+                            <div className="h-4 w-2/3 skeleton-shimmer rounded-[4px] opacity-60"></div>
+                        </div>
+
+                        {/* Card Grid skeleton representation */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="h-28 skeleton-shimmer rounded-[4px] opacity-40"></div>
+                            <div className="h-28 skeleton-shimmer rounded-[4px] opacity-40"></div>
+                            <div className="h-28 skeleton-shimmer rounded-[4px] opacity-40"></div>
+                        </div>
+
+                        <div className="p-6 bg-zinc-900/10 border border-zinc-900 rounded-[4px] space-y-4">
+                            <div className="h-4 w-1/4 skeleton-shimmer rounded-[4px]"></div>
+                            <div className="h-2.5 w-full skeleton-shimmer rounded-[4px] opacity-50"></div>
+                            <div className="h-2.5 w-5/6 skeleton-shimmer rounded-[4px] opacity-50"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -93,20 +149,59 @@ const MainAppLayout: React.FC = () => {
     if (!user) return <LoginScreen />;
 
     return (
-        <div className="flex flex-col h-screen bg-[#F8FAFC] font-sans overflow-hidden text-slate-800 print:h-auto print:overflow-visible">
-            {/* 💡 PERSISTENT DEMO BAR */}
+        <div className="flex flex-col h-screen clean-bg font-sans overflow-hidden text-zinc-100 print:h-auto print:overflow-visible">
+            
+            {/* INJECT DESIGN SYSTEM VARIABLES AND DENSE STYLING DECLARATIONS */}
+            <style dangerouslySetInnerHTML={{ __html: `
+                @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600;700&display=swap');
+                
+                :root {
+                    --clean-bg: oklch(0.10 0.01 250);
+                    --clean-surface: oklch(0.14 0.01 250);
+                    --clean-surface-raised: oklch(0.18 0.01 250);
+                    --clean-ink: oklch(0.97 0 0);
+                    --clean-ink-muted: oklch(0.60 0 0);
+                    --clean-accent: oklch(0.72 0.18 145);
+                    --clean-accent-dim: oklch(0.20 0.06 145);
+                    --clean-danger: oklch(0.65 0.20 25);
+                    --clean-success: oklch(0.70 0.15 145);
+                }
+
+                .clean-bg { background-color: var(--clean-bg); }
+                .clean-surface { background-color: var(--clean-surface); }
+                .clean-surface-raised { background-color: var(--clean-surface-raised); }
+                
+                .clean-text-ink { color: var(--clean-ink); }
+                .clean-text-muted { color: var(--clean-ink-muted); }
+                .clean-text-accent { color: var(--clean-accent); }
+                .clean-text-danger { color: var(--clean-danger); }
+                
+                .clean-border-muted { border-color: oklch(0.97 0 0 / 0.08); }
+                .clean-border-accent { border-color: var(--clean-accent); }
+                
+                .clean-font-sans { font-family: 'Inter', system-ui, sans-serif !important; }
+                .clean-font-mono { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace !important; }
+                
+                @media (max-width: 480px) {
+                    .mobile-label {
+                        display: none !important;
+                    }
+                }
+            `}} />
+
+            {/* 💡 PERSISTENT INDUSTRIAL DEMO BAR */}
             {user?.isDemo && (
-                <div className="bg-amber-50/90 border-b border-amber-200 text-amber-900 px-4 py-2 text-center text-[10px] font-bold uppercase tracking-widest relative z-[1000] flex items-center justify-center gap-6 shadow-sm">
-                    <div className="flex items-center gap-2">
-                        <Icon name="brain" className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                        <span className="font-black">{language === 'EN' ? 'Interactive Demo Mode Active' : '인터랙티브 데모 모드 활성'}</span>
-                    </div>
-                    <span className="hidden md:inline text-amber-300">|</span>
-                    <span className="hidden md:inline font-semibold normal-case tracking-normal text-amber-800 text-[11px]">
-                        {language === 'EN' ? 'Changes are not saved. Create an account to manage your own students.' : '변경사항은 저장되지 않습니다. 학생 관리를 시작하려면 계정을 만드세요.'}
+                <div className="bg-[oklch(0.20_0.06_145)] border-b border-[oklch(0.72_0.18_145)/0.2] text-[oklch(0.72_0.18_145)] px-4 py-2 text-center text-xs relative z-[1000] flex items-center justify-center gap-4 flex-wrap select-none font-sans">
+                    <span className="font-semibold text-center select-none">
+                        {language === 'EN' 
+                          ? 'Demo active. Changes are temporary. Create a permanent account to save students.' 
+                          : '인터랙티브 데모 활성화 상태입니다. 입력 정보는 임시 유지되며 계정 생성 시 데이터가 저장됩니다.'}
                     </span>
-                    <button onClick={logout} className="px-4 py-1 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-sm active:scale-95 text-[10px] font-bold tracking-normal uppercase focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500">
-                        {language === 'EN' ? 'Create Account' : '계정 생성'}
+                    <button 
+                        onClick={logout} 
+                        className="px-3 py-1 bg-[oklch(0.72_0.18_145)] text-zinc-950 rounded-[4px] hover:brightness-110 transition active:scale-95 text-xs font-semibold focus-visible:outline-none focus:outline-none"
+                    >
+                        {language === 'EN' ? 'Create account' : '계정 등록'}
                     </button>
                 </div>
             )}
@@ -116,112 +211,152 @@ const MainAppLayout: React.FC = () => {
                 <CommandCenter />
                 <ChatWidget />
 
-                {isMobileMenuOpen && (
-                    <div 
-                        aria-hidden="true"
-                        role="presentation"
-                        className="fixed inset-0 bg-slate-900/60 z-[100] lg:hidden backdrop-blur-sm transition-opacity print:hidden" 
-                        onClick={() => setIsMobileMenuOpen(false)} 
-                    />
-                )}
-
+                {/* REDESIGNED MAIN SIDEBAR PANEL (0PX RADIUS, SYSTEM DIVIDERS, COLLAPSIBLE COHESIVE SYSTEM) */}
                 <aside 
                     aria-label="Main navigation"
                     className={`
-                    fixed inset-y-0 left-0 z-40 bg-white/75 backdrop-blur-2xl flex flex-col shadow-[4px_0_30px_rgba(0,0,0,0.015)] border-r border-slate-200/50 transition-all duration-500 ease-out
-                    ${isSidebarCollapsed ? 'w-24 px-4' : 'w-72 p-6'}
-                    lg:static print:hidden
-                    ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'}
+                    hidden lg:flex flex-col clean-surface border-r border-[oklch(0.60_0_0_/_0.15)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.32,1)]
+                    ${isSidebarCollapsed ? 'w-16 py-6 items-center' : 'w-[240px] py-6'}
+                    print:hidden rounded-none select-none
                 `}>
-                    <div className={`flex items-center gap-3 mb-12 mt-4 transition-all duration-300 ${isSidebarCollapsed ? 'justify-center px-0' : 'px-4'}`}>
-                        <div className="w-10 h-10 shrink-0 rounded-2xl bg-slate-950 flex items-center justify-center shadow-xl shadow-indigo-500/10">
-                            <Icon name="benchmark" className="w-6 h-6 text-indigo-400" strokeWidth={3} />
+                    
+                    {/* Brand wordmark logo */}
+                    <div className={`flex items-center gap-2.5 mb-8 mt-2 transition-all duration-300 ${isSidebarCollapsed ? 'justify-center px-0' : 'px-5'}`}>
+                        <div className="w-8 h-8 shrink-0 rounded-[4px] bg-[oklch(0.72_0.18_145)] flex items-center justify-center text-zinc-950 font-bold">
+                            <Icon name="benchmark" className="w-5 h-5 text-zinc-950" strokeWidth={3} />
                         </div>
                         <div className={`transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
-                            <h1 className="text-xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Benchmark</h1>
+                            <h1 className="text-base font-semibold text-white tracking-tight leading-none uppercase">Benchmark AI</h1>
                         </div>
                     </div>
                     
-                    <nav className="flex-1 overflow-y-auto scrollbar-none space-y-12">
-                        <div>
-                            {!isSidebarCollapsed && <p className="px-4 text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4">Command</p>}
-                            <ul role="list" className="space-y-1">
-                                <NavItem label={TABS.STUDENTS} iconName="students" isActive={activeTab === TABS.STUDENTS} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.STUDENTS)} />
-                                <NavItem label={TABS.INSIGHTS} iconName="analytics" isActive={activeTab === TABS.INSIGHTS} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.INSIGHTS)} />
-                                <NavItem label={TABS.LIBRARY} iconName="library" isActive={activeTab === TABS.LIBRARY} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.LIBRARY)} />
-                                <NavItem label={TABS.SYSTEM} iconName="settings" isActive={activeTab === TABS.SYSTEM} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.SYSTEM)} />
-                            </ul>
-                        </div>
+                    {/* Static simple navigation lists */}
+                    <nav className="flex-1 space-y-1">
+                        <ul role="list" className="space-y-1">
+                            <NavItem label={TABS.STUDENTS} iconName="students" isActive={activeTab === TABS.STUDENTS} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.STUDENTS)} />
+                            <NavItem label={TABS.INSIGHTS} iconName="analytics" isActive={activeTab === TABS.INSIGHTS} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.INSIGHTS)} />
+                            <NavItem label={TABS.LIBRARY} iconName="library" isActive={activeTab === TABS.LIBRARY} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.LIBRARY)} />
+                            <NavItem label={TABS.SYSTEM} iconName="settings" isActive={activeTab === TABS.SYSTEM} isCollapsed={isSidebarCollapsed} onClick={() => handleTabChange(TABS.SYSTEM)} />
+                        </ul>
                     </nav>
 
-                    <div className={`pt-6 border-t border-slate-100 ${isSidebarCollapsed ? 'flex flex-col items-center gap-6' : 'px-2'}`}>
+                    {/* Support items split by low opacity dividers */}
+                    <div className={`pt-4 border-t border-[oklch(0.60_0_0_/_0.15)] space-y-1 ${isSidebarCollapsed ? 'flex flex-col items-center' : ''}`}>
                         <button 
                             onClick={() => setIsFeedbackOpen(true)}
-                            className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl text-slate-600 focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 hover:text-indigo-600 hover:bg-slate-100/50 transition-all mb-4 ${isSidebarCollapsed ? 'justify-center px-0 w-12' : ''}`}
+                            className={`flex items-center w-full py-2.5 transition-colors text-zinc-400 hover:text-white hover:bg-zinc-900/50 ${isSidebarCollapsed ? 'justify-center w-10 h-10 rounded-[4px]' : 'px-5 rounded-none'}`}
                             title="Feedback"
                         >
-                            <Icon name="chat" className="w-5 h-5 flex-shrink-0" />
-                            {!isSidebarCollapsed && <span className="text-[10px] font-black uppercase tracking-widest">Feedback</span>}
+                            <Icon name="chat" className="w-4 h-4 shrink-0" />
+                            {!isSidebarCollapsed && <span className="text-[14px] font-normal ml-3">Feedback</span>}
                         </button>
 
                         <button 
                             onClick={() => setIsGuideOpen(true)}
-                            className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl text-slate-600 focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 hover:text-indigo-600 hover:bg-slate-100/50 transition-all mb-4 ${isSidebarCollapsed ? 'justify-center px-0 w-12' : ''}`}
+                            className={`flex items-center w-full py-2.5 transition-colors text-zinc-400 hover:text-white hover:bg-zinc-900/50 ${isSidebarCollapsed ? 'justify-center w-10 h-10 rounded-[4px]' : 'px-5 rounded-none'}`}
                             title="Platform Guide"
                         >
-                            <Icon name="help" className="w-5 h-5 flex-shrink-0" />
-                            {!isSidebarCollapsed && <span className="text-[10px] font-black uppercase tracking-widest">Platform Guide</span>}
+                            <Icon name="help" className="w-4 h-4 shrink-0" />
+                            {!isSidebarCollapsed && <span className="text-[14px] font-normal ml-3">Platform Guide</span>}
                         </button>
 
+                        {/* Zero background collapsible sidebar chevron trigger */}
                         <button 
                             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                            className={`hidden lg:flex items-center justify-center rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100/50 transition-colors focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 mb-6 ${isSidebarCollapsed ? 'w-12 h-12' : 'w-full py-3 gap-2'}`}
+                            className={`hidden lg:flex items-center justify-center w-8 h-8 rounded-[4px] text-zinc-500 hover:text-white transition-colors focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.72_0.18_145)] mt-3 ${isSidebarCollapsed ? '' : 'mx-5'}`}
+                            title={isSidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                         >
-                            <Icon name={isSidebarCollapsed ? "arrowRight" : "chevronLeft"} className="w-5 h-5" />
+                            <Icon name={isSidebarCollapsed ? "arrowRight" : "chevronLeft"} className="w-4 h-4" />
                         </button>
 
-                        <div className={`flex items-center gap-4 p-2 rounded-[1.5rem] transition-colors cursor-pointer group ${isSidebarCollapsed ? 'justify-center p-0' : 'hover:bg-slate-100/50'}`}>
-                            <div className="w-10 h-10 shrink-0 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-sm shadow-inner border border-indigo-100">
-                                {user?.name.charAt(0)}
+                        {/* Initials in accent-dim circle user avatar */}
+                        <div className={`flex items-center gap-3 pt-3 mt-2 border-t border-[oklch(0.60_0_0_/_0.15)] transition-colors cursor-pointer group ${isSidebarCollapsed ? 'justify-center' : 'px-5'}`}>
+                            <div className="w-8 h-8 shrink-0 rounded-full bg-[oklch(0.20_0.06_145)] flex items-center justify-center text-[oklch(0.72_0.18_145)] font-semibold text-xs border border-[oklch(0.72_0.18_145)/0.2]">
+                                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                             </div>
-                            <div className={`flex-1 overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
-                                <p className="text-xs font-black text-slate-800 truncate uppercase tracking-widest">{user?.name}</p>
-                                <p className="text-[9px] font-bold text-slate-600 uppercase">{user?.role}</p>
+                            <div className={`flex-1 overflow-hidden transition-all duration-300 text-left ${isSidebarCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
+                                <p className="text-sm font-medium text-zinc-200 truncate">{user?.name}</p>
+                                <p className="text-xs text-zinc-500 capitalize">{user?.role}</p>
                             </div>
-                             {!isSidebarCollapsed && (
-                                 <button onClick={logout} className="text-slate-400 hover:text-rose-500 transition p-2 rounded-lg focus-visible:outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500">
-                                     <Icon name="logout" className="w-5 h-5" />
+                            {!isSidebarCollapsed && (
+                                 <button onClick={logout} className="text-zinc-500 hover:text-red-400 transition p-1 rounded-[4px] hover:bg-zinc-900 focus-visible:outline-none focus:outline-none" title="Log out">
+                                     <Icon name="logout" className="w-4 h-4" />
                                  </button>
-                             )}
+                            )}
                         </div>
                     </div>
                 </aside>
 
+                {/* --- MAIN PAGE WORKSPACE (ALT REMOVING SIDE DRAWER ON MOBILE TO PORT BOTTOM NAV) --- */}
                 <main 
                     aria-label={`${activeTab} Content`}
                     className="flex-1 relative flex flex-col w-full overflow-hidden print:overflow-visible print:h-auto print:w-full bg-transparent"
                 >
-                     <div className="lg:hidden bg-white/80 backdrop-blur-md border-b border-slate-100 p-4 flex items-center justify-between z-20 print:hidden">
-                         <button onClick={() => setIsMobileMenuOpen(true)} className="text-slate-900 p-2 -ml-2 rounded-xl bg-slate-50 transition flex items-center gap-2">
-                             <Icon name="menu" className="w-6 h-6" /> 
-                         </button>
-                         <span className="font-black text-slate-900 text-xs uppercase tracking-[0.2em]">{activeTab}</span>
-                         <div className="w-10 h-10"></div>
+                     {/* Elegant minimal top banner on mobile */}
+                     <div className="lg:hidden bg-[oklch(0.14_0.01_250)] border-b border-[oklch(0.60_0_0_/_0.15)] p-4 flex items-center justify-between z-20 print:hidden select-none">
+                         <div className="flex items-center gap-2">
+                             <div className="w-6 h-6 rounded-[4px] bg-[oklch(0.72_0.18_145)] flex items-center justify-center text-zinc-950 font-bold text-xs">
+                                 B
+                             </div>
+                             <span className="font-semibold text-white tracking-tight uppercase text-xs">BENCHMARK AI</span>
+                         </div>
+                         <span className="font-mono text-[11px] clean-text-accent font-medium lowercase">
+                             {activeTab} active
+                         </span>
                      </div>
 
-                     <div className="flex-1 overflow-y-auto relative z-10 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent print:overflow-visible print:h-auto">
+                     {/* Main dynamic Tab wrapper (providing sufficient bottom padding on mobile screens) */}
+                     <div className="flex-1 overflow-y-auto relative z-10 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent print:overflow-visible print:h-auto pb-20 lg:pb-0">
                         {renderTab()}
                      </div>
+                     
                      <BulkAssessmentModal isOpen={isBulkEntryOpen} onClose={() => setBulkEntryOpen(false)} />
                      <PlatformGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
                      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
                      <LegalModal isOpen={isLegalOpen} onClose={() => setIsLegalOpen(false)} />
                 </main>
             </div>
+
+            {/* --- MOBILE BOTTOM NAVIGATION TAB BAR (REPLACES HAMBURGER DRAWER DRAWINGS) --- */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[oklch(0.14_0.01_250)] border-t border-[oklch(0.60_0_0_/_0.15)] flex justify-between items-stretch h-16 px-2 print:hidden select-none">
+                {[
+                    { tab: TABS.STUDENTS, icon: "students", label: language === 'EN' ? "Students" : "학생 관리" },
+                    { tab: TABS.INSIGHTS, icon: "analytics", label: language === 'EN' ? "Insights" : "통계 분석" },
+                    { tab: TABS.LIBRARY, icon: "library", label: language === 'EN' ? "Library" : "교재 은행" },
+                    { tab: TABS.SYSTEM, icon: "settings", label: language === 'EN' ? "System" : "시스템" }
+                ].map(({ tab, icon, label }) => {
+                    const isActive = activeTab === tab;
+                    return (
+                        <button
+                            key={tab}
+                            onClick={() => handleTabChange(tab)}
+                            className="flex-1 flex flex-col items-center justify-center gap-1.5 relative focus:outline-none"
+                        >
+                            <Icon 
+                                name={icon} 
+                                className={`w-[18px] h-[18px] transition-colors ${isActive ? 'text-[oklch(0.72_0.18_145)]' : 'text-zinc-500'}`} 
+                                strokeWidth={isActive ? 2.5 : 2}
+                            />
+                            {/* Hidden below 480px, visible above */}
+                            <span 
+                                className={`text-[11px] font-medium transition-colors mobile-label ${isActive ? 'text-white font-medium' : 'text-zinc-500'}`}
+                            >
+                                {label}
+                            </span>
+                            {/* Underline accent state decoration */}
+                            {isActive && (
+                                <div className="absolute bottom-0 left-4 right-4 h-[2px] bg-[oklch(0.72_0.18_145)] rounded-t-full"></div>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+
         </div>
     );
 };
 
+// --- AUTH AND CONTEXT PROPAGATORS ---
 const App: React.FC = () => {
     return (
         <LanguageProvider>

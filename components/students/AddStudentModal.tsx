@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../common/Modal';
 import { useStudents } from '../../context/StudentContext';
@@ -92,7 +91,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
             canvas.width = size;
             canvas.height = size;
             
-            ctx.fillStyle = 'white';
+            ctx.fillStyle = '#09090b';
             ctx.fillRect(0, 0, size, size);
 
             const displaySize = cropper.offsetWidth;
@@ -143,7 +142,6 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
                 photoUrl: finalPhotoUrl,
                 overallGrowth: 0,
                 growthVelocity: 0,
-                // Fix: Initialize with required velocityBand
                 velocityBand: VelocityBand.Stable,
                 hasAnomaly: false,
                 assessments: [],
@@ -156,17 +154,17 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={studentToEdit ? "Edit Profile" : "Add Student"} size={showCropper ? 'lg' : 'md'}>
-            <div className="space-y-6">
+            <div className="space-y-6 font-sans">
                 {showCropper ? (
                     <div className="animate-in fade-in duration-300">
-                        <div className="mb-6 text-center">
-                            <h3 className="font-black text-slate-800 text-lg">Portrait Alignment</h3>
-                            <p className="text-xs text-slate-500 font-medium">Position the face inside the white circle</p>
+                        <div className="mb-4 text-center">
+                            <h3 className="text-zinc-200 font-medium text-xs font-mono uppercase tracking-wider">Portrait Alignment</h3>
+                            <p className="text-[10px] text-zinc-500 block mt-1">Position the avatar cleanly inside the ring</p>
                         </div>
                         
                         <div 
                             ref={cropperRef}
-                            className="relative w-72 h-72 mx-auto rounded-[3rem] overflow-hidden bg-slate-900 cursor-move border-4 border-white shadow-2xl group"
+                            className="relative w-64 h-64 mx-auto rounded-[4px] overflow-hidden bg-zinc-900 cursor-move border border-zinc-805 shadow-2xl group"
                             onMouseDown={handleMouseDown}
                             onMouseMove={handleMouseMove}
                             onMouseUp={handleMouseUp}
@@ -175,24 +173,22 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
                             <img 
                                 src={originalImage!} 
                                 alt="" 
-                                className="absolute pointer-events-none transition-transform duration-75 select-none"
+                                className="absolute pointer-events-none select-none max-w-none"
                                 style={{
                                     transform: `translate(calc(-50% + ${offset.x}px), calc(-50% + ${offset.y}px)) scale(${zoom})`,
                                     top: '50%',
                                     left: '50%',
-                                    maxWidth: 'none',
                                     maxHeight: '100%'
                                 }}
                             />
-                            {/* Visual Safe Zone Circle */}
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="w-[90%] h-[90%] rounded-full border-2 border-white/40 ring-[200px] ring-black/40"></div>
+                                <div className="w-[85%] h-[85%] rounded-full border border-[oklch(0.72_0.18_145)]/40 ring-[200px] ring-black/40"></div>
                             </div>
                         </div>
 
-                        <div className="mt-8 px-10">
-                            <div className="flex items-center gap-4">
-                                <Icon name="search" className="w-4 h-4 text-slate-400" />
+                        <div className="mt-6 px-6">
+                            <div className="flex items-center gap-3">
+                                <Icon name="search" className="w-3.5 h-3.5 text-zinc-550" />
                                 <input 
                                     type="range" 
                                     min="1" 
@@ -200,66 +196,71 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
                                     step="0.01" 
                                     value={zoom} 
                                     onChange={(e) => setZoom(parseFloat(e.target.value))}
-                                    className="flex-1 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                    className="flex-1 h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-[oklch(0.72_0.18_145)]"
                                 />
-                                <Icon name="plus" className="w-4 h-4 text-slate-400" />
+                                <Icon name="plus" className="w-3.5 h-3.5 text-zinc-500" />
                             </div>
                         </div>
 
-                        <div className="flex justify-center gap-3 mt-8">
+                        <div className="flex justify-center gap-3 mt-6 pt-4 border-t border-zinc-900">
                             <button 
                                 onClick={() => setShowCropper(false)} 
-                                className="px-8 py-2.5 bg-white text-slate-400 border-2 border-slate-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                                className="px-4 py-2 border border-zinc-900 hover:border-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-[4px] text-xs transition-colors cursor-pointer"
                             >
                                 Cancel
                             </button>
-                            <button onClick={applyCrop} className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition active:scale-95">Set Profile Photo</button>
+                            <button 
+                                onClick={applyCrop} 
+                                className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-950 font-semibold rounded-[4px] text-xs transition-colors cursor-pointer"
+                            >
+                                Set Portrait
+                            </button>
                         </div>
                         <canvas ref={canvasRef} className="hidden" />
                     </div>
                 ) : (
                     <>
-                        <div className="flex flex-col items-center">
+                        <div className="flex flex-col items-center gap-4">
                             <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
-                                <div className={`w-32 h-32 rounded-[2.8rem] bg-slate-50 border-4 border-white shadow-xl overflow-hidden flex items-center justify-center transition-all ${isUploading ? 'opacity-50' : 'group-hover:ring-4 group-hover:ring-indigo-100'}`}>
+                                <div className={`w-24 h-24 rounded-[4px] bg-zinc-900 border border-zinc-800 overflow-hidden flex items-center justify-center transition-all ${isUploading ? 'opacity-50' : 'hover:border-zinc-700'}`}>
                                     {photoUrl ? (
-                                        <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" />
+                                        <img src={photoUrl} alt="Preview" className="w-full h-full object-cover filter brightness-95" />
                                     ) : (
-                                        <Icon name="students" className="w-12 h-12 text-slate-300" />
+                                        <Icon name="students" className="w-8 h-8 text-zinc-500" />
                                     )}
-                                    <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <Icon name="plus" className="w-8 h-8 text-white" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-[4px]">
+                                        <Icon name="plus" className="w-6 h-6 text-zinc-100" />
                                     </div>
                                 </div>
                                 <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept="image/*" />
                             </div>
 
-                            <div className="flex gap-2 mt-4">
-                                <button onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-600 hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5">
-                                    <Icon name="admin" className="w-3 h-3 text-indigo-500" />
-                                    Upload
+                            <div className="flex gap-2">
+                                <button onClick={() => fileInputRef.current?.click()} className="px-3 py-1.5 bg-zinc-90 w-full border border-zinc-900 hover:border-zinc-800 text-zinc-350 hover:text-zinc-200 text-[10px] font-mono uppercase tracking-wider rounded-[4px] transition-colors flex items-center gap-1.5 cursor-pointer">
+                                    <Icon name="admin" className="w-3 h-3 text-[oklch(0.72_0.18_145)]" />
+                                    <span>Upload</span>
                                 </button>
-                                <button onClick={generateRandomAvatar} className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider text-slate-600 hover:bg-slate-50 transition shadow-sm flex items-center gap-1.5">
-                                    <Icon name="brain" className="w-3 h-3 text-purple-500" />
-                                    AI Avatar
+                                <button onClick={generateRandomAvatar} className="px-3 py-1.5 bg-zinc-90 w-full border border-zinc-900 hover:border-zinc-800 text-zinc-350 hover:text-zinc-200 text-[10px] font-mono uppercase tracking-wider rounded-[4px] transition-colors flex items-center gap-1.5 cursor-pointer">
+                                    <Icon name="brain" className="w-3 h-3 text-[oklch(0.72_0.18_145)]" />
+                                    <span>AI Avatar</span>
                                 </button>
                             </div>
                         </div>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5 ml-1">Full Name</label>
+                                <label className="block text-[9px] font-mono uppercase text-zinc-500 tracking-wider mb-1.5 ml-0.5 select-none animate-fade-in">Full Name</label>
                                 <input 
                                     type="text" 
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="e.g. Alice Chen"
-                                    className="w-full px-5 py-4 border border-slate-200 bg-slate-50 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-800"
+                                    className="w-full px-3.5 py-2.5 border border-zinc-900 bg-zinc-950 text-zinc-150 rounded-[4px] focus:border-zinc-700 outline-none text-xs"
                                 />
                             </div>
                             <div>
-                                <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5 ml-1">Benchmark Level</label>
-                                <select value={level} onChange={(e) => setLevel(e.target.value)} className="w-full px-5 py-4 border border-slate-200 bg-slate-50 rounded-2xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none font-bold text-slate-800">
+                                <label className="block text-[9px] font-mono uppercase text-zinc-500 tracking-wider mb-1.5 select-none ml-0.5">Benchmark Level</label>
+                                <select value={level} onChange={(e) => setLevel(e.target.value)} className="w-full px-3 py-2.5 border border-zinc-900 bg-zinc-950 text-zinc-150 rounded-[4px] focus:border-zinc-700 outline-none text-xs cursor-pointer select-none">
                                     <option value="5">Level 5 (Pre-A1)</option>
                                     <option value="6-1">Level 6-1 (Starters)</option>
                                     <option value="6-2">Level 6-2 (Movers)</option>
@@ -269,15 +270,19 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClos
                             </div>
                         </div>
                         
-                        <div className="pt-4 flex justify-end space-x-3 border-t border-slate-100">
+                        <div className="pt-4 flex justify-end gap-3 border-t border-zinc-900">
                             <button 
                                 onClick={onClose}
-                                className="px-8 py-3 bg-white text-slate-400 border-2 border-slate-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                                className="px-4 py-2 border border-zinc-900 hover:border-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-[4px] text-xs transition-colors cursor-pointer"
                             >
                                 Cancel
                             </button>
-                            <button onClick={handleSubmit} disabled={!name.trim()} className="px-10 py-3 bg-slate-900 text-white rounded-2xl font-black shadow-xl shadow-indigo-900/10 hover:bg-indigo-600 transition-all disabled:opacity-50 active:scale-95 flex items-center space-x-2">
-                                <Icon name={studentToEdit ? "check" : "plus"} className="w-4 h-4" />
+                            <button 
+                                onClick={handleSubmit} 
+                                disabled={!name.trim()} 
+                                className="px-5 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-950 rounded-[4px] text-xs font-semibold transition-colors disabled:opacity-30 cursor-pointer flex items-center gap-1.5"
+                            >
+                                <Icon name={studentToEdit ? "check" : "plus"} className="w-3.5 h-3.5" />
                                 <span>{studentToEdit ? "Update Student" : "Add to Roster"}</span>
                             </button>
                         </div>

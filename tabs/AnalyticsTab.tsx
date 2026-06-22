@@ -13,23 +13,23 @@ const KPICard: React.FC<{
     icon: string; 
     theme: 'blue' | 'purple' | 'orange' | 'rose' 
 }> = ({ title, value, icon, theme }) => {
-    const themes = {
-        blue: 'from-blue-600 to-indigo-700 shadow-blue-200/50',
-        purple: 'from-indigo-600 to-violet-800 shadow-indigo-200/50',
-        orange: 'from-amber-500 to-orange-600 shadow-orange-200/50',
-        rose: 'from-rose-500 to-red-700 shadow-rose-200/50',
+    const colors = {
+        blue: 'text-[oklch(0.72_0.18_145)]',
+        purple: 'text-zinc-100',
+        orange: 'text-amber-500',
+        rose: 'text-rose-455',
     };
 
     return (
-        <div className={`relative overflow-hidden p-8 rounded-[2.5rem] bg-gradient-to-br ${themes[theme]} text-white shadow-2xl transition-all duration-500 group`}>
+        <div className="relative overflow-hidden p-6 rounded-[4px] bg-zinc-950 border border-zinc-900 text-white shadow-lg transition-all duration-300">
             <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-6">
-                    <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md border border-white/10">
-                        <Icon name={icon} className="w-5 h-5" />
+                <div className="flex items-center gap-2 mb-4 select-none">
+                    <div className="p-1.5 bg-zinc-900 border border-zinc-850 rounded-[4px]">
+                        <Icon name={icon} className="w-4 h-4 text-zinc-400" />
                     </div>
-                    <span className="text-[11px] font-black uppercase tracking-[0.25em] text-white/90">{title}</span>
+                    <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-500">{title}</span>
                 </div>
-                <h3 className="text-5xl font-black tracking-tighter drop-shadow-md">{value}</h3>
+                <h3 className={`text-3xl font-medium tracking-tight ${colors[theme]}`}>{value}</h3>
             </div>
         </div>
     );
@@ -51,62 +51,61 @@ export const AnalyticsTab: React.FC = () => {
 
     const analytics = useMemo(() => {
         if (students.length === 0) return null;
-        const levelToUse = classProfile?.gradeLevel || '5';
-        const period = TestPeriod.Baseline;
 
-        const domainData = domains.map(domain => {
-            const bench = benchmarks.find(b => b.domain === domain && b.period === period && b.level_name === levelToUse);
-            let total = 0, count = 0;
-            students.forEach(s => {
-                const latest = s.assessments[s.assessments.length - 1];
-                if (latest?.scores[domain as Domain] !== undefined && latest?.scores[domain as Domain] > 0) {
-                    total += latest.scores[domain as Domain];
-                    count++;
-                }
-            });
-            return { 
-                domain: domain as Domain, 
-                score: count > 0 ? Math.round(total / count) : 0, 
-                target: bench?.target_percent || 70 
-            };
-        });
-
+        // Group into CEFR distribution slices
         const distribution = [
-            { name: 'Outstanding (90%+)', count: 0, color: '#4f46e5', students: [] as string[] },
-            { name: 'Excellent (80-89%)', count: 0, color: '#10b981', students: [] as string[] },
-            { name: 'Proficient (60-79%)', count: 0, color: '#6366f1', students: [] as string[] },
-            { name: 'Developing (<60%)', count: 0, color: '#f43f5e', students: [] as string[] }
-        ];
-
-        const tiers = [
-            { name: 'On Track', value: 0, color: '#10b981', students: [] as string[] },
-            { name: 'Needs Monitoring', value: 0, color: '#f59e0b', students: [] as string[] },
-            { name: 'Needs Help', value: 0, color: '#f43f5e', students: [] as string[] }
+            { name: 'Level 5 (Pre-A1)', count: 0 },
+            { name: 'Level 6 (Starters)', count: 0 },
+            { name: 'Level 7 (Movers/Flyers)', count: 0 }
         ];
 
         let totalProficiency = 0;
         let studentsWithScores = 0;
 
-        students.forEach(s => {
-            const avg = getStudentProficiency(s, frameworkSubdomains);
-            const latest = s.assessments[s.assessments.length - 1];
-            if (latest) {
-                totalProficiency += avg;
+        students.forEach(student => {
+            const prof = getStudentProficiency(student, frameworkSubdomains);
+            if (prof > 0) {
+                totalProficiency += prof;
                 studentsWithScores++;
-                if (avg >= 90) distribution[0].count++;
-                else if (avg >= 80) distribution[1].count++;
-                else if (avg >= 60) distribution[2].count++;
-                else distribution[3].count++;
+            }
 
-                if (s.interventionStatus?.tier === 3) tiers[2].value++;
-                else if (s.interventionStatus?.tier === 2) tiers[1].value++;
-                else tiers[0].value++;
+            if (student.level === '5') {
+                distribution[0].count++;
+            } else if (student.level.startsWith('6')) {
+                distribution[1].count++;
+            } else if (student.level.startsWith('7')) {
+                distribution[2].count++;
             }
         });
 
-        return { 
-            domainData, 
-            distribution, 
+        // Compute average score per domain
+        const domainData = domains.map(d => {
+            let sum = 0;
+            let count = 0;
+            students.forEach(s => {
+                const latest = s.assessments[s.assessments.length - 1];
+                if (latest && latest.scores[d] !== undefined) {
+                    sum += latest.scores[d] ?? 0;
+                    count++;
+                }
+            });
+            return {
+                subject: d,
+                Score: count > 0 ? Math.round(sum / count) : 0,
+                fullMark: 100
+            };
+        });
+
+        // Compute support tier groups
+        const tiers = [
+            { name: 'Tier 1 (Core)', value: students.filter(s => !s.interventionStatus).length },
+            { name: 'Tier 2 (Group)', value: students.filter(s => s.interventionStatus === 'Level 2').length },
+            { name: 'Tier 3 (Intense)', value: students.filter(s => s.interventionStatus === 'Level 3').length }
+        ];
+
+        return {
+            distribution,
+            domainData,
             tiers, 
             classAvg: studentsWithScores > 0 ? Math.round(totalProficiency / studentsWithScores) : 0, 
             avgVelocity: Math.round(students.reduce((a, b) => a + b.growthVelocity, 0) / students.length),
@@ -116,39 +115,44 @@ export const AnalyticsTab: React.FC = () => {
     }, [students, domains, benchmarks, classProfile, frameworkSubdomains]);
 
     return (
-        <div className="p-6 md:p-10 space-y-10 max-w-[1600px] mx-auto pb-20">
-            <div>
-                <h1 className="text-4xl font-black text-slate-900 tracking-tighter">School Analytics</h1>
-                <p className="text-slate-400 font-bold mt-1">Overview of student performance and growth.</p>
+        <div className="p-6 md:p-12 space-y-8 max-w-[1600px] mx-auto pb-20 font-sans">
+            <div className="flex items-center gap-4 border-b border-zinc-900 pb-6 select-none">
+                <div className="w-10 h-10 bg-zinc-900 border border-zinc-850 text-[oklch(0.72_0.18_145)] flex items-center justify-center rounded-[4px]">
+                    <Icon name="analytics" className="w-5 h-5" />
+                </div>
+                <div>
+                    <h1 className="text-xl font-medium tracking-tight text-white uppercase">School Diagnostics</h1>
+                    <p className="text-zinc-550 text-[10px] font-mono uppercase tracking-wider block mt-1">overview of student achievement trends</p>
+                </div>
             </div>
 
             {!hasData ? (
-                 <div className="flex flex-col items-center justify-center py-32 bg-white rounded-[3rem] border border-slate-100 shadow-xl">
-                    <Icon name="analytics" className="w-20 h-20 text-indigo-500 mb-8" />
-                    <h2 className="text-3xl font-black text-slate-900 mb-2">No Data Yet</h2>
-                    <p className="text-slate-400 font-medium mb-10">Record student assessments to see performance trends.</p>
+                 <div className="flex flex-col items-center justify-center py-24 bg-zinc-950 rounded-[4px] border border-zinc-900 shadow-xl">
+                    <Icon name="analytics" className="w-12 h-12 text-zinc-650 mb-4 select-none" />
+                    <h2 className="text-xs font-mono text-zinc-300 uppercase tracking-wider mb-2">No Active Assessment Data</h2>
+                    <p className="text-xs text-zinc-500 max-w-sm text-center leading-relaxed">Please log complete assessment profiles to view aggregated performance curves and distribution metrics.</p>
                 </div>
             ) : (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <KPICard title="Average Growth" subtitle="" value={`+${analytics?.avgVelocity || 0}%`} icon="trendUp" theme="blue" />
-                        <KPICard title="Students Needing Help" subtitle="" value={analytics?.atRiskCount || 0} icon="alert" theme="rose" />
+                        <KPICard title="Students Flagged" subtitle="" value={analytics?.atRiskCount || 0} icon="alert" theme="rose" />
                         <KPICard title="Class Average" subtitle="" value={`${analytics?.classAvg}%`} icon="analytics" theme="purple" />
-                        <KPICard title="Total Observations" subtitle="" value={analytics?.totalActions || 0} icon="chat" theme="orange" />
+                        <KPICard title="Total Diagnostics" subtitle="" value={analytics?.totalActions || 0} icon="chat" theme="orange" />
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                        <Card className="p-8 shadow-xl bg-white lg:col-span-1">
-                            <h3 className="font-black text-slate-800 mb-8">Proficiency Spread</h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <Card className="p-6 bg-zinc-950 border border-zinc-905 rounded-[4px] lg:col-span-1">
+                            <h3 className="text-xs font-mono text-zinc-400 uppercase tracking-wider mb-6 select-none">Proficiency Spread</h3>
                             <div className="h-64"><ProficiencyDistributionChart data={analytics?.distribution || []} /></div>
                         </Card>
 
-                        <Card className="p-8 shadow-xl bg-white lg:col-span-2">
-                            <div className="flex justify-between items-center mb-8">
-                                <h3 className="font-black text-slate-800">Subject Performance</h3>
-                                <div className="flex bg-slate-100 p-1 rounded-xl">
-                                    <button onClick={() => setChartType('radar')} className={`px-4 py-1.5 text-[10px] font-black uppercase rounded-lg ${chartType === 'radar' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Radar</button>
-                                    <button onClick={() => setChartType('bar')} className={`px-4 py-1.5 text-[10px] font-black uppercase rounded-lg ${chartType === 'bar' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400'}`}>Bar</button>
+                        <Card className="p-6 bg-zinc-950 border border-zinc-905 rounded-[4px] lg:col-span-2">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xs font-mono text-zinc-400 uppercase tracking-wider select-none">Subject Performance</h3>
+                                <div className="flex bg-zinc-900 border border-zinc-850 p-0.5 rounded-[4px]">
+                                    <button onClick={() => setChartType('radar')} className={`px-3 py-1 text-[9px] font-mono uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${chartType === 'radar' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-350'}`}>Radar</button>
+                                    <button onClick={() => setChartType('bar')} className={`px-3 py-1 text-[9px] font-mono uppercase tracking-wider rounded-[2px] transition-colors cursor-pointer ${chartType === 'bar' ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-350'}`}>Bar</button>
                                 </div>
                             </div>
                             <div className="h-80">

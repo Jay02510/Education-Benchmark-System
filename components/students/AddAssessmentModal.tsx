@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../common/Modal';
 import { Assessment, Domain, TestPeriod } from '../../types';
@@ -121,55 +120,55 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({ isOpen, 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={assessmentToEdit ? "Update Protocol" : "New Cycle Sync"} size="lg">
             {isScanning ? (
-                <div className="relative rounded-[2rem] overflow-hidden bg-black aspect-video mb-6">
+                <div className="relative rounded-[4px] overflow-hidden bg-black aspect-video mb-6 border border-zinc-800">
                     <video ref={videoRef} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 border-2 border-indigo-500/50 flex items-center justify-center pointer-events-none">
-                        <div className="w-64 h-64 border-2 border-white rounded-2xl animate-pulse flex items-center justify-center">
-                            <span className="text-[10px] font-black text-white uppercase tracking-widest bg-black/50 px-2 py-1">Align Rubric</span>
+                    <div className="absolute inset-0 border border-[oklch(0.72_0.18_145)]/40 flex items-center justify-center pointer-events-none">
+                        <div className="w-48 h-48 border border-white rounded-[4px] animate-pulse flex items-center justify-center">
+                            <span className="text-[10px] font-mono font-medium text-white uppercase tracking-wider bg-black/80 px-2.5 py-1">Align Rubric</span>
                         </div>
                     </div>
-                    <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-4 px-6">
-                        <button onClick={stopScanning} className="px-6 py-3 bg-white/10 backdrop-blur-md text-white rounded-xl text-[10px] font-black uppercase">Cancel</button>
-                        <button onClick={captureAndProcess} className="px-8 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase shadow-2xl">Capture & Analyze</button>
+                    <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-3 px-6">
+                        <button onClick={stopScanning} className="px-5 py-2 bg-zinc-900 border border-zinc-800 hover:bg-zinc-805 text-white rounded-[4px] text-[10px] font-mono uppercase tracking-wider">Cancel</button>
+                        <button onClick={captureAndProcess} className="px-6 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-950 rounded-[4px] text-[10px] font-mono uppercase tracking-wider">Capture & Analyze</button>
                     </div>
                     <canvas ref={canvasRef} className="hidden" />
                 </div>
             ) : (
                 <div className="flex gap-4 mb-6">
-                    <button onClick={handleVisionScan} className="flex-1 p-6 bg-slate-900 text-white rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-indigo-600 transition-all shadow-xl group">
-                        <div className="p-3 bg-white/10 rounded-xl group-hover:scale-110 transition-transform"><Icon name="analytics" className="w-6 h-6" /></div>
-                        <span className="text-[10px] font-black uppercase tracking-widest">AI Vision Scoring</span>
+                    <button onClick={handleVisionScan} className="flex-1 p-5 bg-zinc-900 border border-zinc-800 text-zinc-100 rounded-[4px] flex flex-col items-center justify-center gap-2 hover:bg-zinc-850 hover:border-zinc-700 transition-all group">
+                        <div className="p-2.5 bg-zinc-950 border border-zinc-800 rounded-[4px] group-hover:scale-105 transition-transform"><Icon name="analytics" className="w-5 h-5 text-[oklch(0.72_0.18_145)]" /></div>
+                        <span className="text-[10px] font-mono uppercase tracking-wider">AI Vision Scoring</span>
                     </button>
                     <div className="flex-1 grid grid-cols-1 gap-2">
-                        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                             <label className="block text-[8px] font-black uppercase text-slate-400 tracking-widest mb-1">Period</label>
-                             <select value={testPeriod} onChange={e => setTestPeriod(e.target.value as any)} className="bg-transparent font-bold text-xs outline-none w-full">{Object.values(TestPeriod).map(q => <option key={q} value={q}>{q}</option>)}</select>
+                        <div className="bg-zinc-950 p-3 rounded-[4px] border border-zinc-900">
+                             <label className="block text-[9px] font-medium uppercase text-zinc-500 tracking-wider mb-1 select-none font-mono">Period</label>
+                             <select value={testPeriod} onChange={e => setTestPeriod(e.target.value as any)} className="bg-transparent text-zinc-200 font-medium text-xs outline-none w-full border-none cursor-pointer focus:ring-0">{Object.values(TestPeriod).map(q => <option key={q} value={q} className="bg-zinc-955 text-zinc-200">{q}</option>)}</select>
                         </div>
-                        <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                             <label className="block text-[8px] font-black uppercase text-slate-400 tracking-widest mb-1">Sync Date</label>
-                             <input type="date" value={date} onChange={e => setDate(e.target.value)} className="bg-transparent font-bold text-xs outline-none w-full" />
+                        <div className="bg-zinc-950 p-3 rounded-[4px] border border-zinc-900">
+                             <label className="block text-[9px] font-medium uppercase text-zinc-500 tracking-wider mb-1 select-none font-mono">Sync Date</label>
+                             <input type="date" value={date} onChange={e => setDate(e.target.value)} className="bg-transparent text-zinc-200 font-medium text-xs outline-none w-full border-none focus:ring-0" />
                         </div>
                     </div>
                 </div>
             )}
 
-            <div className="bg-white rounded-[2rem] border border-slate-100 mb-6 h-[400px] overflow-y-auto shadow-inner p-2 space-y-2">
+            <div className="bg-zinc-950 rounded-[4px] border border-zinc-900 mb-6 h-[320px] overflow-y-auto scrollbar-none p-4 space-y-3">
                 {domains.map(domain => {
                     const pct = getDomainPercentage(domain);
                     const domainSubs = subdomains[domain] || [];
                     return (
-                        <div key={domain} className="bg-slate-50/50 rounded-2xl border border-slate-100 overflow-hidden">
-                            <div className="px-4 py-3 flex justify-between items-center bg-white border-b border-slate-50">
-                                <span className="text-xs font-black text-slate-800 uppercase tracking-widest">{domain}</span>
-                                <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${pct ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-slate-100 text-slate-300'}`}>{pct ? `${pct}%` : '---'}</span>
+                        <div key={domain} className="bg-zinc-900/40 rounded-[4px] border border-zinc-90 w-full overflow-hidden">
+                            <div className="px-4 py-3 flex justify-between items-center bg-zinc-900/60 border-b border-zinc-950">
+                                <span className="text-xs font-medium text-zinc-200 uppercase tracking-wider select-none font-sans">{domain}</span>
+                                <span className={`text-[10px] font-mono px-2.5 py-0.5 rounded-[4px] ${pct ? 'bg-[oklch(0.72_0.18_145)]/10 text-[oklch(0.72_0.18_145)] border border-[oklch(0.72_0.18_145)]/20' : 'bg-zinc-950 text-zinc-650'}`}>{pct ? `${pct}%` : '---'}</span>
                             </div>
-                            <div className="p-4 space-y-3">
+                            <div className="p-4 space-y-3.5">
                                 {domainSubs.map(sub => (
                                     <div key={sub.name} className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-slate-500">{sub.name}</span>
-                                        <div className="flex items-center bg-white border border-slate-100 rounded-xl px-3 py-1.5 w-32 focus-within:ring-2 focus-within:ring-indigo-500">
-                                            <input type="number" min="0" max={sub.maxScore} value={subScores[makeKey(domain, sub.name)] ?? ''} onChange={e => handleSubScoreChange(domain, sub.name, e.target.value, sub.maxScore)} className="w-full text-right font-black text-xs outline-none" placeholder="-" />
-                                            <span className="text-[10px] text-slate-300 ml-1">/{sub.maxScore}</span>
+                                        <span className="text-xs text-zinc-400 font-normal">{sub.name}</span>
+                                        <div className="flex items-center bg-zinc-950 border border-zinc-900 rounded-[4px] px-3 py-1 w-28 focus-within:border-zinc-750 transition-colors">
+                                            <input type="number" min="0" max={sub.maxScore} value={subScores[makeKey(domain, sub.name)] ?? ''} onChange={e => handleSubScoreChange(domain, sub.name, e.target.value, sub.maxScore)} className="w-full text-right text-zinc-150 font-normal text-xs outline-none bg-transparent" placeholder="-" />
+                                            <span className="text-[10px] text-zinc-600 ml-1">/{sub.maxScore}</span>
                                         </div>
                                     </div>
                                 ))}
@@ -179,14 +178,20 @@ export const AddAssessmentModal: React.FC<AddAssessmentModalProps> = ({ isOpen, 
                 })}
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-50">
+            <div className="flex justify-end gap-3 pt-4 border-t border-zinc-900">
                 <button 
                     onClick={onClose} 
-                    className="px-8 py-3 bg-white text-slate-400 border-2 border-slate-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                    className="px-4 py-2 border border-zinc-900 hover:border-zinc-800 text-zinc-400 hover:text-zinc-200 rounded-[4px] text-xs transition-colors cursor-pointer"
                 >
                     Cancel
                 </button>
-                <button onClick={handleSubmit} className="px-10 py-3 bg-slate-900 text-white rounded-2xl font-black shadow-xl hover:bg-indigo-600 transition-all flex items-center gap-2 text-xs uppercase tracking-widest border-b-4 border-slate-950"><Icon name="check" className="w-4 h-4" /> Save Assessment</button>
+                <button 
+                    onClick={handleSubmit} 
+                    className="px-5 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-950 rounded-[4px] text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                    <Icon name="check" className="w-3.5 h-3.5" /> 
+                    <span>Save Assessment</span>
+                </button>
             </div>
         </Modal>
     );

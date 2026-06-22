@@ -11,25 +11,36 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         const studentNames = payload[0].payload.students as string[] | undefined;
         
+        const toSentenceCase = (str: string) => {
+            if (!str) return '';
+            const clean = str.toLowerCase();
+            return clean.charAt(0).toUpperCase() + clean.slice(1);
+        };
+        
         return (
-            <div className="bg-white p-5 rounded-[1.5rem] shadow-2xl border border-slate-100 ring-1 ring-black/5 min-w-[220px] max-w-[280px]">
-                <p className="font-black text-slate-900 mb-3 border-b border-slate-50 pb-2 tracking-tight">{label || payload[0].name}</p>
-                {payload.map((p: any, i: number) => (
-                    <div key={i} className="flex items-center gap-3 text-sm mb-3 last:mb-0">
-                        <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: p.color || p.fill }}></div>
-                        <span className="text-slate-500 font-bold">{p.name}:</span>
-                        <span className="font-black text-slate-800">
-                            {typeof p.value === 'number' ? (p.unit === '%' ? `${p.value}%` : p.value) : p.value}
-                        </span>
-                    </div>
-                ))}
+            <div className="bg-[oklch(0.18_0.01_250)] p-3 rounded-[4px] border border-[oklch(0.60_0_0_/_0.15)] shadow-none ring-0 min-w-[180px] max-w-[260px]">
+                <p className="font-sans text-[12px] font-medium text-[oklch(0.97_0_0)] mb-3 pb-2 border-b border-b-[0.5px] border-[oklch(0.60_0_0_/_0.15)]">
+                    {label || payload[0].name}
+                </p>
+                {payload.map((p: any, i: number) => {
+                    const formattedName = toSentenceCase(p.name || '');
+                    return (
+                        <div key={i} className="flex items-center gap-2 mb-2 last:mb-0">
+                            <div className="w-[2px] h-[10px] shrink-0" style={{ backgroundColor: p.color || p.fill }}></div>
+                            <span className="font-['IBM_Plex_Mono'] text-[11px] font-medium text-[oklch(0.60_0_0)]">{formattedName}:</span>
+                            <span className="font-['IBM_Plex_Mono'] text-[13px] font-semibold text-[oklch(0.97_0_0)]">
+                                {typeof p.value === 'number' ? (p.unit === '%' ? `${p.value}%` : p.value) : p.value}
+                            </span>
+                        </div>
+                    );
+                })}
                 
                 {studentNames && studentNames.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-slate-100">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Student Roster</p>
+                    <div className="mt-4 pt-4 border-t border-t-[0.5px] border-[oklch(0.60_0_0_/_0.15)]">
+                        <p className="font-['IBM_Plex_Mono'] text-[11px] font-medium text-[oklch(0.60_0_0)] mb-3">Student roster</p>
                         <div className="flex flex-wrap gap-1.5">
                             {studentNames.map((name, idx) => (
-                                <span key={idx} className="text-[10px] bg-slate-50 text-slate-700 px-2.5 py-1 rounded-lg font-black border border-slate-100 shadow-sm">
+                                <span key={idx} className="bg-[oklch(0.14_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-[4px] px-2.5 py-1 font-['IBM_Plex_Mono'] text-[10px] text-[oklch(0.97_0_0)] shadow-none">
                                     {name}
                                 </span>
                             ))}

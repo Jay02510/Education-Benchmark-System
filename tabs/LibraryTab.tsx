@@ -25,14 +25,14 @@ const ResourceRow: React.FC<ResourceRowProps> = ({ resource, onView, onDownload 
                 <span className="font-sans text-[14px] text-[oklch(0.97_0_0)] block font-medium truncate group-hover:text-[oklch(0.72_0.18_145)] transition-colors">
                     {resource.title}
                 </span>
-                <span className="font-mono text-[10px] text-[oklch(0.60_0_0)] block mt-1 uppercase tracking-wider">
+                <span className="font-mono text-[10px] text-[oklch(0.60_0_0)] block mt-1 tracking-normal">
                     Level {resource.level} • {resource.domain}
                 </span>
             </div>
 
             {/* Type tag center (IBM Plex Mono 11px) with 2px left border in accent, no background fill, no pill shape */}
             <div className="shrink-0 w-48 px-2 flex items-center justify-start text-left">
-                <span className="font-mono text-[11px] text-[oklch(0.72_0.18_145)] pl-2 border-l-2 border-[oklch(0.72_0.18_145)] leading-tight uppercase tracking-wider block">
+                <span className="font-mono text-[11px] text-[oklch(0.72_0.18_145)] pl-2 border-l-2 border-[oklch(0.72_0.18_145)] leading-tight tracking-normal block">
                     {resource.type}
                 </span>
             </div>
@@ -106,7 +106,7 @@ export const LibraryTab: React.FC = () => {
                 
                 {/* Standard Period Select toolbelt using plain text toggles */}
                 <div className="flex items-center gap-4 bg-[oklch(0.14_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] px-4 py-2 rounded-[4px]">
-                    <span className="font-mono text-[10px] text-[oklch(0.60_0_0)] uppercase tracking-wider">Interval:</span>
+                    <span className="font-mono text-[10px] text-[oklch(0.60_0_0)] tracking-normal">Interval:</span>
                     <div className="flex gap-x-4 select-none">
                         {Object.values(TestPeriod).map(p => (
                             <button 
@@ -129,7 +129,7 @@ export const LibraryTab: React.FC = () => {
                     <div className="bg-[oklch(0.14_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-[8px] p-6 md:p-8 select-none flex flex-col">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 pb-4 border-b border-[oklch(0.60_0_0_/_0.10)]">
                             <div>
-                                <h3 className="text-sm font-semibold text-white tracking-tight uppercase">Academic Benchmarks</h3>
+                                <h3 className="text-sm font-semibold text-white tracking-tight">Academic Benchmarks</h3>
                                 <p className="text-xs text-[oklch(0.60_0_0)] font-sans mt-0.5">
                                     Grade goals for cycle <span className="font-mono font-medium">{selectedPeriod}</span>
                                 </p>
@@ -139,7 +139,7 @@ export const LibraryTab: React.FC = () => {
                                     CEFR {displayedBenchmarks[0]?.cefr || 'A1'}
                                 </span>
                                 <span className="text-[11px] text-[oklch(0.60_0_0)] font-sans">•</span>
-                                <span className="text-[11px] text-[oklch(0.60_0_0)] font-mono uppercase">
+                                <span className="text-[11px] text-[oklch(0.60_0_0)] font-mono">
                                     {displayedBenchmarks[0]?.yle || 'Starters'}
                                 </span>
                             </div>
@@ -152,11 +152,11 @@ export const LibraryTab: React.FC = () => {
                                     className="p-5 bg-[oklch(0.14_0.01_250)]/40 border border-[oklch(0.60_0_0_/_0.10)] rounded-none flex items-center justify-between gap-6 hover:bg-[oklch(0.18_0.01_250)] transition-colors"
                                 >
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="font-sans text-[13px] font-semibold text-white tracking-tight uppercase leading-none mb-1.5">{b.domain}</h4>
+                                        <h4 className="font-sans text-[13px] font-semibold text-white tracking-tight leading-none mb-1.5">{b.domain}</h4>
                                         <p className="text-xs text-[oklch(0.60_0_0)] font-sans italic leading-relaxed">"{b.descriptor}"</p>
                                     </div>
                                     <div className="text-right shrink-0">
-                                        <span className="block font-mono text-[9px] text-[oklch(0.60_0_0)] uppercase tracking-wider">Target</span>
+                                        <span className="block font-mono text-[9px] text-[oklch(0.60_0_0)] tracking-normal">Target</span>
                                         <span className="block font-mono text-base font-bold text-white tabular-nums mt-0.5">{b.target}%</span>
                                     </div>
                                 </div>
@@ -168,7 +168,7 @@ export const LibraryTab: React.FC = () => {
                     <div className="p-6 border border-[oklch(0.60_0_0_/_0.15)] bg-[oklch(0.14_0.01_250)] text-[oklch(0.60_0_0)] rounded-[8px] select-none">
                         <div className="flex items-center gap-2 mb-2">
                             <Icon name="info" className="w-4 h-4 text-[oklch(0.72_0.18_145)]" />
-                            <span className="font-mono text-[10px] uppercase font-semibold text-[oklch(0.72_0.18_145)] tracking-wider">Instructional Directive</span>
+                            <span className="font-mono text-[10px] font-semibold text-[oklch(0.72_0.18_145)] tracking-normal">Instructional Directive</span>
                         </div>
                         <p className="font-sans text-xs text-zinc-300 leading-relaxed italic">
                             "Cross-reference indexed resources with period benchmarks to ensure consistent developmental scaling."
@@ -180,7 +180,7 @@ export const LibraryTab: React.FC = () => {
                 <div className="xl:col-span-7">
                     <div className="bg-[oklch(0.14_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-[8px] p-6 md:p-8 select-none flex flex-col">
                         <div className="space-y-1 mb-8">
-                            <h3 className="text-sm font-semibold text-white tracking-tight uppercase">Curriculum Repositories</h3>
+                            <h3 className="text-sm font-semibold text-white tracking-tight">Curriculum Repositories</h3>
                             <p className="text-xs text-[oklch(0.60_0_0)] font-sans">
                                 Reference systems and downloadable diagnostic aids mapped to level
                             </p>
@@ -209,7 +209,7 @@ export const LibraryTab: React.FC = () => {
 
                         {/* Domain Filters: Plain text toggles, no button class with backgrounds */}
                         <div className="mb-8 space-y-2">
-                            <span className="block font-mono text-[9px] text-[oklch(0.60_0_0)] uppercase tracking-wider">Filter Domains</span>
+                            <span className="block font-mono text-[9px] text-[oklch(0.60_0_0)] tracking-normal">Filter Domains</span>
                             <div className="flex flex-wrap gap-x-5 gap-y-1.5 select-none pt-1">
                                 <button 
                                     onClick={() => setSelectedDomain('All')}

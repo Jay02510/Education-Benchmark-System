@@ -27,9 +27,9 @@ type TabName = typeof TABS[keyof typeof TABS];
 // --- DESKTOP NAV ITEM (RE-STYLED COMPONENT) ---
 const NavItem: React.FC<{
     label: TabName;
-    iconName: string;
-    isActive: boolean;
     isCollapsed: boolean;
+    isActive: boolean;
+    iconName: string;
     onClick: () => void;
 }> = ({ label, iconName, isActive, isCollapsed, onClick }) => (
     <li role="listitem">
@@ -37,9 +37,9 @@ const NavItem: React.FC<{
             onClick={onClick}
             title={isCollapsed ? label : ''}
             aria-current={isActive ? "page" : undefined}
-            className={`group flex items-center w-full py-3 h-10 transition-all duration-300 focus-visible:outline-none focus:outline-none ${
+            className={`group flex items-center w-full py-3 h-10 transition-all duration-300 focus-visible:outline-none focus:outline-none rounded-none shadow-none ${
                 isActive
-                    ? 'clean-surface-raised border-l-[2px] border-[oklch(0.72_0.18_145)] text-white font-medium'
+                    ? 'bg-zinc-900/40 border-l-[2px] border-[oklch(0.72_0.18_145)] text-white font-medium'
                     : 'text-zinc-400 border-l-[2px] border-transparent hover:bg-zinc-900/50 hover:text-white font-normal'
             } ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}
         >
@@ -82,64 +82,35 @@ const MainAppLayout: React.FC = () => {
         }
     };
     
-    // REDESIGNED LOADING STATE WITH SKELETON SHIMMER ACROSS CONTENT
+    // REDESIGNED LOADING STATE WITH A SUBTLE FADE-IN WORDMARK (PREMIUM VS AI CLICHÉ)
     if (isLoading) {
         return (
-            <div className="h-screen w-full flex flex-col clean-bg p-8 font-sans overflow-hidden">
+            <div className="h-screen w-full flex flex-col items-center justify-center bg-[oklch(0.10_0.01_250)] font-sans select-none animate-fadeIn">
                 <style dangerouslySetInnerHTML={{ __html: `
-                    @keyframes skeletonShimmer {
-                        0% { background-position: -200% 0; }
-                        100% { background-position: 200% 0; }
+                    @keyframes fadeIn {
+                        0% { opacity: 0; transform: scale(0.98); }
+                        100% { opacity: 1; transform: scale(1); }
                     }
-                    .skeleton-shimmer {
-                        background: linear-gradient(90deg, #12141c 25%, #1e222d 50%, #12141c 75%);
-                        background-size: 200% 100%;
-                        animation: skeletonShimmer 1.5s infinite linear;
+                    .animate-fadeIn {
+                        animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.30, 1) forwards;
                     }
-                    :root {
-                        --clean-bg: oklch(0.10 0.01 250);
+                    @keyframes shimmerLine {
+                        0% { left: -50%; }
+                        100% { left: 100%; }
                     }
-                    .clean-bg { background-color: var(--clean-bg); }
+                    .animate-shimmer-line {
+                        animation: shimmerLine 1.5s infinite ease-in-out;
+                    }
                 `}} />
-                
-                {/* Header skeleton */}
-                <div className="flex items-center justify-between pb-6 border-b border-zinc-800/60 mb-8 select-none">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-[4px] bg-zinc-900"></div>
-                        <div className="h-4 w-32 bg-zinc-900 rounded-[4px]"></div>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-[4px] bg-[oklch(0.72_0.18_145)] flex items-center justify-center text-zinc-950 font-bold">
+                            <Icon name="benchmark" className="w-5 h-5 text-zinc-950" strokeWidth={3} />
+                        </div>
+                        <span className="text-base font-semibold text-white tracking-tight">Benchmark AI</span>
                     </div>
-                    <div className="h-8 w-24 bg-zinc-900 rounded-[4px]"></div>
-                </div>
-
-                {/* Grid layout content skeleton */}
-                <div className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-8 pointer-events-none select-none">
-                    {/* Left Sidebar skeleton */}
-                    <div className="hidden lg:block md:col-span-3 space-y-6">
-                        <div className="h-9 w-full skeleton-shimmer rounded-[4px] opacity-80"></div>
-                        <div className="h-9 w-5/6 skeleton-shimmer rounded-[4px] opacity-80"></div>
-                        <div className="h-9 w-4/5 skeleton-shimmer rounded-[4px] opacity-80"></div>
-                        <div className="h-9 w-3/4 skeleton-shimmer rounded-[4px] opacity-80"></div>
-                    </div>
-
-                    {/* Main Content skeleton */}
-                    <div className="col-span-1 lg:col-span-9 space-y-8">
-                        <div className="space-y-3">
-                            <div className="h-7 w-1/3 skeleton-shimmer rounded-[4px]"></div>
-                            <div className="h-4 w-2/3 skeleton-shimmer rounded-[4px] opacity-60"></div>
-                        </div>
-
-                        {/* Card Grid skeleton representation */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="h-28 skeleton-shimmer rounded-[4px] opacity-40"></div>
-                            <div className="h-28 skeleton-shimmer rounded-[4px] opacity-40"></div>
-                            <div className="h-28 skeleton-shimmer rounded-[4px] opacity-40"></div>
-                        </div>
-
-                        <div className="p-6 bg-zinc-900/10 border border-zinc-900 rounded-[4px] space-y-4">
-                            <div className="h-4 w-1/4 skeleton-shimmer rounded-[4px]"></div>
-                            <div className="h-2.5 w-full skeleton-shimmer rounded-[4px] opacity-50"></div>
-                            <div className="h-2.5 w-5/6 skeleton-shimmer rounded-[4px] opacity-50"></div>
-                        </div>
+                    <div className="w-24 h-[1px] bg-zinc-900 rounded-full overflow-hidden relative">
+                        <div className="absolute top-0 left-0 h-full bg-[oklch(0.72_0.18_145)] rounded-full animate-shimmer-line w-1/2"></div>
                     </div>
                 </div>
             </div>
@@ -191,15 +162,15 @@ const MainAppLayout: React.FC = () => {
 
             {/* 💡 PERSISTENT INDUSTRIAL DEMO BAR */}
             {user?.isDemo && (
-                <div className="bg-[oklch(0.20_0.06_145)] border-b border-[oklch(0.72_0.18_145)/0.2] text-[oklch(0.72_0.18_145)] px-4 py-2 text-center text-xs relative z-[1000] flex items-center justify-center gap-4 flex-wrap select-none font-sans">
-                    <span className="font-semibold text-center select-none">
+                <div className="bg-indigo-950 border-b border-indigo-500/20 text-indigo-200 px-4 py-2.5 text-center text-[12px] tracking-normal font-normal relative z-[1000] flex items-center justify-center gap-4 flex-wrap select-none font-sans">
+                    <span className="select-none">
                         {language === 'EN' 
                           ? 'Demo active. Changes are temporary. Create a permanent account to save students.' 
                           : '인터랙티브 데모 활성화 상태입니다. 입력 정보는 임시 유지되며 계정 생성 시 데이터가 저장됩니다.'}
                     </span>
                     <button 
                         onClick={logout} 
-                        className="px-3 py-1 bg-[oklch(0.72_0.18_145)] text-zinc-950 rounded-[4px] hover:brightness-110 transition active:scale-95 text-xs font-semibold focus-visible:outline-none focus:outline-none"
+                        className="px-3 py-1 bg-indigo-600 text-white rounded-[4px] hover:bg-indigo-500 transition active:scale-95 text-[11px] font-medium focus-visible:outline-none focus:outline-none"
                     >
                         {language === 'EN' ? 'Create account' : '계정 등록'}
                     </button>
@@ -226,7 +197,7 @@ const MainAppLayout: React.FC = () => {
                             <Icon name="benchmark" className="w-5 h-5 text-zinc-950" strokeWidth={3} />
                         </div>
                         <div className={`transition-all duration-300 overflow-hidden ${isSidebarCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
-                            <h1 className="text-base font-semibold text-white tracking-tight leading-none uppercase">Benchmark AI</h1>
+                            <h1 className="text-base font-semibold text-white tracking-tight leading-none">Benchmark AI</h1>
                         </div>
                     </div>
                     

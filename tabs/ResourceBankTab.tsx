@@ -17,12 +17,12 @@ const ResourceCard: React.FC<{ resource: Resource, onClick: () => void }> = ({ r
     };
 
     return (
-        <Card className="p-5 flex flex-col h-full hover:border-zinc-800 transition-colors cursor-pointer" onClick={onClick}>
+        <Card className="p-6 flex flex-col h-full hover:border-zinc-800 transition-colors cursor-pointer" onClick={onClick}>
             <div className="flex-1">
                 <div className="flex justify-between items-start select-none">
-                    <span className="text-[10px] font-mono text-zinc-550 uppercase tracking-wider mb-2">{resource.domain} • Lvl {resource.level}</span>
+                    <span className="text-[10px] font-mono text-zinc-550 mb-2">Level {resource.level} • {resource.domain}</span>
                 </div>
-                <h3 className="text-xs font-semibold text-zinc-200 mb-2 uppercase tracking-tight">{resource.title}</h3>
+                <h3 className="text-xs font-semibold text-zinc-200 mb-2 tracking-tight">{resource.title}</h3>
                 <p className="text-[11px] text-zinc-450 leading-relaxed line-clamp-2">{resource.description}</p>
             </div>
             <div className="mt-4 flex flex-wrap gap-1.5 text-[9px] font-mono select-none">
@@ -57,22 +57,22 @@ export const ResourceBankTab: React.FC = () => {
                     <Icon name="library" className="w-5 h-5" />
                 </div>
                 <div>
-                    <h1 className="text-xl font-medium tracking-tight text-white uppercase">Curriculum Materials</h1>
-                    <p className="text-zinc-[600] text-[10px] font-mono uppercase tracking-wider block mt-1">Resource bank and diagnostics worksheets</p>
+                    <h1 className="text-xl font-medium tracking-tight text-white">Curriculum Materials</h1>
+                    <p className="text-zinc-[600] text-[10px] font-mono block mt-1">Resource bank and diagnostics worksheets</p>
                 </div>
             </div>
             
             <Card className="p-6 bg-zinc-950 border border-zinc-900 rounded-[4px]">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 items-end">
                     <div>
-                        <label className="block text-[9px] font-mono uppercase text-zinc-500 tracking-wider mb-2 select-none">Domain</label>
+                        <label className="block text-[9px] font-mono text-zinc-500 tracking-normal mb-2 select-none">Domain</label>
                         <select value={selectedDomain} onChange={e => setSelectedDomain(e.target.value as any)} className="w-full px-3 py-2 border border-zinc-90 w-full bg-zinc-950 text-zinc-200 rounded-[4px] text-xs outline-none focus:border-zinc-700">
                             <option value="All">All Domains</option>
                             {DOMAINS.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>
                     </div>
                      <div>
-                        <label className="block text-[9px] font-mono uppercase text-zinc-500 tracking-wider mb-2 select-none">Subdomain</label>
+                        <label className="block text-[9px] font-mono text-zinc-500 tracking-normal mb-2 select-none">Subdomain</label>
                         <select 
                             value={selectedSubdomain} 
                             onChange={e => setSelectedSubdomain(e.target.value)} 
@@ -84,7 +84,7 @@ export const ResourceBankTab: React.FC = () => {
                         </select>
                     </div>
                      <div>
-                        <label className="block text-[9px] font-mono uppercase text-zinc-500 tracking-wider mb-2 select-none">Type</label>
+                        <label className="block text-[9px] font-mono text-zinc-500 tracking-normal mb-2 select-none">Type</label>
                         <select value={selectedType} onChange={e => setSelectedType(e.target.value as any)} className="w-full px-3 py-2 border border-zinc-90 w-full bg-zinc-950 text-zinc-200 rounded-[4px] text-xs outline-none focus:border-zinc-700">
                             <option value="All">All Types</option>
                             {RESOURCE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -103,7 +103,7 @@ export const ResourceBankTab: React.FC = () => {
                 ) : (
                     <div className="text-center py-20 bg-zinc-950 rounded-[4px] border border-zinc-900 border-dashed select-none">
                         <Icon name="library" className="w-10 h-10 text-zinc-700 mx-auto mb-3" />
-                        <h3 className="text-xs font-mono text-zinc-300 uppercase tracking-wider mb-2">No pedagogical resources detected</h3>
+                        <h3 className="text-xs font-mono text-zinc-300 mb-2">No pedagogical resources detected</h3>
                         <p className="text-xs text-zinc-500">Please adjust standard or domain mappings dynamically.</p>
                     </div>
                 )}
@@ -113,10 +113,10 @@ export const ResourceBankTab: React.FC = () => {
                 {selectedResource && (
                     <div className="space-y-4 font-sans max-h-[80vh] overflow-y-auto pr-1">
                         <div className="border-b border-zinc-90 pb-3 select-none">
-                            <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider block mb-1">Pedagogical Description Context</span>
+                            <span className="text-[9px] font-mono text-zinc-500 block mb-1">Pedagogical Description Context</span>
                             <p className="text-xs text-zinc-400 leading-relaxed font-sans">{selectedResource.description}</p>
                         </div>
-                        <div className="bg-zinc-90 border border-zinc-900 p-5 rounded-[4px]">
+                        <div className="bg-zinc-90 border border-zinc-900 p-6 rounded-[4px]">
                            <pre className="whitespace-pre-wrap font-mono text-xs text-zinc-300 leading-relaxed">{selectedResource.content}</pre>
                         </div>
                         <div className="flex justify-end pt-4 border-t border-zinc-900">

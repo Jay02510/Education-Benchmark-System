@@ -415,14 +415,14 @@ export const InsightsTab: React.FC = () => {
                         {smartGroups.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {smartGroups.map((group: any, idx: number) => (
-                                    <div 
-                                        key={idx} 
-                                        className="p-5 bg-[oklch(0.18_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-none flex flex-col justify-between"
-                                    >
-                                        <div>
-                                            <h4 className="font-mono text-[10px] font-semibold text-[oklch(0.72_0.18_145)] uppercase tracking-wide mb-3">
-                                                {group.groupName}
-                                            </h4>
+                                <div 
+                                    key={idx} 
+                                    className="p-6 bg-[oklch(0.18_0.01_250)] border border-[oklch(0.60_0_0_/_0.15)] rounded-none flex flex-col justify-between"
+                                >
+                                    <div>
+                                        <h4 className="font-mono text-[10px] font-semibold text-[oklch(0.72_0.18_145)] tracking-normal mb-3">
+                                            {group.groupName}
+                                        </h4>
                                             <div className="space-y-2 mb-6">
                                                 {group.studentIds.map((sid: string) => {
                                                     const s = students.find(item => item.id === sid);
@@ -447,7 +447,7 @@ export const InsightsTab: React.FC = () => {
                             </div>
                         ) : (
                             <div className="py-16 text-center border-dashed border border-[oklch(0.60_0_0_/_0.15)] bg-zinc-950/20 rounded-none select-none">
-                                <p className="text-[11px] font-mono uppercase tracking-wide text-[oklch(0.60_0_0)]">
+                                <p className="text-[11px] font-mono text-[oklch(0.60_0_0)]">
                                     Assemble clustering engine to map curricular focus groups.
                                 </p>
                             </div>
